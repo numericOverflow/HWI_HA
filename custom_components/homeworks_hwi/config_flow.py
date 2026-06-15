@@ -29,6 +29,7 @@ from homeassistant.const import (
 from homeassistant.core import callback
 from homeassistant.helpers import (
     config_validation as cv,
+    device_registry as dr,
     entity_registry as er,
     selector,
 )
@@ -596,19 +597,28 @@ async def validate_remove_qed_cover(
 ) -> dict[str, Any]:
     """Remove selected QED covers."""
     removed = set(user_input[CONF_INDEX])
-    registry = er.async_get(handler.parent_handler.hass)
+    ent_registry = er.async_get(handler.parent_handler.hass)
+    dev_registry = dr.async_get(handler.parent_handler.hass)
+    controller_id = handler.options[CONF_CONTROLLER_ID]
 
     new_items = []
     for i, item in enumerate(handler.options.get(CONF_QED_COVERS, [])):
         if str(i) not in removed:
             new_items.append(item)
         else:
-            for entity_id in list(registry.entities):
-                entity = registry.entities[entity_id]
+            # Remove entity from entity registry
+            for entity_id in list(ent_registry.entities):
+                entity = ent_registry.entities[entity_id]
                 if entity.platform == DOMAIN and item[CONF_ADDR] in (
                     entity.unique_id or ""
                 ):
-                    registry.async_remove(entity_id)
+                    ent_registry.async_remove(entity_id)
+            # Remove device from device registry
+            device = dev_registry.async_get_device(
+                identifiers={(DOMAIN, f"{controller_id}.qed_cover.{item[CONF_ADDR]}.v2")}
+            )
+            if device:
+                dev_registry.async_remove_device(device.id)
 
     handler.options[CONF_QED_COVERS] = new_items
     return {}
