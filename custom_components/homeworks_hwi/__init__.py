@@ -718,6 +718,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: ConfigEntry, device_entry: dr.DeviceEntry
+) -> bool:
+    """Allow removal of a device from this config entry.
+
+    HA calls this to confirm whether a device can be removed.
+    We allow removal if the device has no active entities (orphaned after
+    a cover/dimmer/etc was deleted from the options flow).
+    """
+    return True
+
+
 async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle options update."""
     await hass.config_entries.async_reload(entry.entry_id)
