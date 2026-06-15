@@ -627,6 +627,13 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.async_set_updated_data({"motor_cover_update": normalized})
         return result
 
+    async def async_stop_dim(self, address: str) -> bool:
+        """Stop a dimmer/shade mid-fade."""
+        if not self._client:
+            return False
+        normalized = normalize_address(address)
+        return await self._client.stop_dim(normalized)
+
     async def async_keypad_button_press(self, address: str, button: int) -> bool:
         """Simulate a keypad button press."""
         if not self._client:

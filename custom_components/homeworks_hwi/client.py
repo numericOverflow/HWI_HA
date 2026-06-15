@@ -327,6 +327,13 @@ class HomeworksClient:
             await asyncio.sleep(self._config.command_delay)
             return result
 
+    async def stop_dim(self, address: str) -> bool:
+        """Stop a dimmer/shade mid-fade (STOPDIM command)."""
+        async with self._command_lock:
+            result = await self._client.stop_dim(address)
+            await asyncio.sleep(self._config.command_delay)
+            return result
+
     async def keypad_button_press(self, address: str, button: int) -> bool:
         """Simulate keypad button press."""
         async with self._command_lock:

@@ -6,6 +6,7 @@ import logging
 from typing import Any
 
 from homeassistant.components.cover import (
+    ATTR_POSITION,
     CoverDeviceClass,
     CoverEntity,
     CoverEntityFeature,
@@ -28,10 +29,12 @@ from .const import (
     CONF_COVERS,
     CONF_ENTITY_TYPE,
     CONF_INVERTED,
+    CONF_QED_COVERS,
     CONF_RELAY_NUMBER,
     CONF_RPM_COVERS,
     CCO_TYPE_COVER,
     DEFAULT_COVER_NAME,
+    DEFAULT_QED_COVER_NAME,
     DEFAULT_RPM_COVER_NAME,
     DOMAIN,
 )
@@ -48,7 +51,7 @@ async def async_setup_entry(
     data: HomeworksData = hass.data[DOMAIN][entry.entry_id]
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
-    entities: list[HomeworksCCOCover | HomeworksRPMCover] = []
+    entities: list[HomeworksCCOCover | HomeworksRPMCover | HomeworksQEDCover] = []
 
     # New-style CCO devices with type=cover
     for device_config in entry.options.get(CONF_CCO_DEVICES, []):
@@ -134,6 +137,21 @@ async def async_setup_entry(
             entities.append(entity)
         except Exception as err:
             _LOGGER.error("Failed to create RPM cover for %s: %s", rpm_cover_config, err)
+
+    # QED Sivoia shades (position-trackable)
+    for qed_cover_config in entry.options.get(CONF_QED_COVERS, []):
+        try:
+            addr = normalize_address(qed_cover_config[CONF_ADDR])
+            entity = HomeworksQEDCover(
+                coordinator=coordinator,
+                controller_id=controller_id,
+                address=addr,
+                name=qed_cover_config.get(CONF_NAME, DEFAULT_QED_COVER_NAME),
+                area=resolve_area_name(hass, qed_cover_config.get(CONF_AREA)),
+            )
+            entities.append(entity)
+        except Exception as err:
+            _LOGGER.error("Failed to create QED cover for %s: %s", qed_cover_config, err)
 
     if entities:
         _LOGGER.debug("Adding %d cover entities", len(entities))
@@ -434,6 +452,137 @@ class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, Re
                 _LOGGER.debug("Restored %s last position: open", self._entity_name)
 
         # Register as a dimmer to receive DL (dimmer level) updates
+        self.coordinator.register_dimmer(self._address)
+
+        # Request initial state from controller
+        await self.coordinator.async_request_dimmer_level(self._address)
+
+
+class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
+    """Homeworks Sivoia QED shade with continuous position feedback.
+
+    QED shades behave like dimmers: FADEDIM sets position (0-100),
+    RDL requests position, and DL reports current position.
+    Unlike RPM motor covers, QED shades provide exact position tracking.
+    """
+
+    _attr_device_class = CoverDeviceClass.SHADE
+    _attr_supported_features = (
+        CoverEntityFeature.OPEN
+        | CoverEntityFeature.CLOSE
+        | CoverEntityFeature.STOP
+        | CoverEntityFeature.SET_POSITION
+    )
+
+    def __init__(
+        self,
+        coordinator: HomeworksCoordinator,
+        controller_id: str,
+        address: str,
+        name: str,
+        area: str | None = None,
+    ) -> None:
+        """Initialize the QED cover."""
+        super().__init__(coordinator)
+        self._address = address
+        self._controller_id = controller_id
+        self._is_opening = False
+        self._is_closing = False
+
+        self._entity_name = name
+        self._attr_unique_id = f"homeworks.{controller_id}.qed_cover.{address}.v2"
+        device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{controller_id}.qed_cover.{address}.v2")},
+            name=name,
+            manufacturer="Lutron",
+            model="Sivoia QED Shade",
+        )
+        if area:
+            device_info["suggested_area"] = area
+        self._attr_device_info = device_info
+
+    @property
+    def name(self) -> str:
+        """Return the name of the entity."""
+        return self._entity_name
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return extra state attributes."""
+        return {
+            "homeworks_address": self._address,
+        }
+
+    @property
+    def current_cover_position(self) -> int:
+        """Return current position of cover (0=closed, 100=open)."""
+        return self.coordinator.get_dimmer_level(self._address)
+
+    @property
+    def is_closed(self) -> bool:
+        """Return True if the cover is closed."""
+        return self.coordinator.get_dimmer_level(self._address) < 1
+
+    @property
+    def is_opening(self) -> bool:
+        """Return True if the cover is opening."""
+        return self._is_opening
+
+    @property
+    def is_closing(self) -> bool:
+        """Return True if the cover is closing."""
+        return self._is_closing
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator.
+
+        Clears optimistic movement flags when a real DL update arrives.
+        """
+        self._is_opening = False
+        self._is_closing = False
+        self.async_write_ha_state()
+
+    async def async_open_cover(self, **kwargs: Any) -> None:
+        """Open the cover."""
+        self._is_opening = True
+        self._is_closing = False
+        self.async_write_ha_state()
+        await self.coordinator.async_fade_dim(self._address, 100.0, 0.0, 0.0)
+
+    async def async_close_cover(self, **kwargs: Any) -> None:
+        """Close the cover."""
+        self._is_closing = True
+        self._is_opening = False
+        self.async_write_ha_state()
+        await self.coordinator.async_fade_dim(self._address, 0.0, 0.0, 0.0)
+
+    async def async_set_cover_position(self, **kwargs: Any) -> None:
+        """Move the cover to a specific position."""
+        position = kwargs[ATTR_POSITION]
+        current = self.coordinator.get_dimmer_level(self._address)
+        if position > current:
+            self._is_opening = True
+            self._is_closing = False
+        elif position < current:
+            self._is_closing = True
+            self._is_opening = False
+        self.async_write_ha_state()
+        await self.coordinator.async_fade_dim(self._address, float(position), 0.0, 0.0)
+
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        """Stop the cover mid-travel."""
+        self._is_opening = False
+        self._is_closing = False
+        await self.coordinator.async_stop_dim(self._address)
+        # Request updated position after stop
+        await self.coordinator.async_request_dimmer_level(self._address)
+
+    async def async_added_to_hass(self) -> None:
+        """Register with coordinator when added to hass."""
+        await super().async_added_to_hass()
+
+        # Register as a dimmer to receive DL updates
         self.coordinator.register_dimmer(self._address)
 
         # Request initial state from controller
