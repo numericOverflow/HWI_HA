@@ -571,6 +571,73 @@ def _parse_entity_type(type_str: str) -> CCOEntityType:
     return type_map.get(type_str.lower(), CCOEntityType.SWITCH)
 
 
+def parse_cco_device_config(
+    hass: HomeAssistant,
+    device_config: dict[str, Any],
+    entity_type: CCOEntityType,
+    default_name: str,
+) -> CCODevice:
+    """Parse a CCO device config dict into a CCODevice."""
+    addr_str = device_config[CONF_ADDR]
+    button = device_config.get(
+        CONF_BUTTON_NUMBER, device_config.get(CONF_RELAY_NUMBER, 1)
+    )
+    if "," not in addr_str:
+        full_addr = f"{addr_str},{button}"
+    else:
+        full_addr = addr_str
+
+    address = CCOAddress.from_string(full_addr)
+
+    return CCODevice(
+        address=address,
+        name=device_config.get(CONF_NAME, default_name),
+        entity_type=entity_type,
+        inverted=device_config.get(CONF_INVERTED, False),
+        area=resolve_area_name(hass, device_config.get(CONF_AREA)),
+    )
+
+
+def create_cco_entities_for_type(
+    hass: HomeAssistant,
+    entry: HomeworksHWIConfigEntry,
+    coordinator: HomeworksCoordinator,
+    controller_id: str,
+    target_type: str,
+    entity_type: CCOEntityType,
+    entity_cls: type,
+    default_name: str,
+) -> list[Entity]:
+    """Create CCO entities of a given type from config options.
+
+    Constructor contract: entity_cls MUST accept keyword arguments
+    (coordinator, controller_id, device). All CCO entity classes follow this.
+    """
+    entities: list[Entity] = []
+    for device_config in entry.options.get(CONF_CCO_DEVICES, []):
+        if device_config.get(CONF_ENTITY_TYPE) != target_type:
+            continue
+        try:
+            device = parse_cco_device_config(
+                hass, device_config, entity_type, default_name
+            )
+            entities.append(
+                entity_cls(
+                    coordinator=coordinator,
+                    controller_id=controller_id,
+                    device=device,
+                )
+            )
+        except (ValueError, KeyError, TypeError) as err:
+            _LOGGER.error(
+                "Invalid config for %s device '%s': %s",
+                target_type,
+                device_config.get(CONF_NAME, "unknown"),
+                err,
+            )
+    return entities
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry) -> bool:
     """Unload a config entry."""
     if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):

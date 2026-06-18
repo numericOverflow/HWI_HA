@@ -12,15 +12,12 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
+from . import HomeworksData, HomeworksHWIConfigEntry, create_cco_entities_for_type, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
-    CONF_BUTTON_NUMBER,
-    CONF_CCO_DEVICES,
     CONF_CCOS,
     CONF_CONTROLLER_ID,
-    CONF_ENTITY_TYPE,
     CONF_INVERTED,
     CONF_RELAY_NUMBER,
     CCO_TYPE_SWITCH,
@@ -42,68 +39,12 @@ async def async_setup_entry(
     data = entry.runtime_data
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
-    entities: list[HomeworksCCOSwitch] = []
 
     # New-style CCO devices with type=switch
-    _LOGGER.debug(
-        "Switch platform: reading %d CCO devices from config",
-        len(entry.options.get(CONF_CCO_DEVICES, [])),
+    entities: list[HomeworksCCOSwitch] = create_cco_entities_for_type(
+        hass, entry, coordinator, controller_id,
+        CCO_TYPE_SWITCH, CCOEntityType.SWITCH, HomeworksCCOSwitch, DEFAULT_SWITCH_NAME,
     )
-
-    for device_config in entry.options.get(CONF_CCO_DEVICES, []):
-        entity_type = device_config.get(CONF_ENTITY_TYPE, CCO_TYPE_SWITCH)
-        _LOGGER.debug(
-            "Switch platform checking device %s: entity_type=%s",
-            device_config.get(CONF_NAME, "unknown"),
-            entity_type,
-        )
-        if entity_type != CCO_TYPE_SWITCH:
-            _LOGGER.debug("Skipping - not a switch (type=%s)", entity_type)
-            continue
-
-        try:
-            addr_str = device_config[CONF_ADDR]
-            # Check CONF_BUTTON_NUMBER (new) then CONF_RELAY_NUMBER (legacy)
-            button = device_config.get(
-                CONF_BUTTON_NUMBER, device_config.get(CONF_RELAY_NUMBER, 1)
-            )
-
-            # Handle address with or without button
-            if "," not in addr_str:
-                full_addr = f"{addr_str},{button}"
-            else:
-                full_addr = addr_str
-
-            address = CCOAddress.from_string(full_addr)
-
-            area = resolve_area_name(hass, device_config.get(CONF_AREA))
-            _LOGGER.debug(
-                "Creating switch %s with area=%s (config=%s)",
-                device_config.get(CONF_NAME),
-                area,
-                device_config,
-            )
-            device = CCODevice(
-                address=address,
-                name=device_config.get(CONF_NAME, DEFAULT_SWITCH_NAME),
-                entity_type=CCOEntityType.SWITCH,
-                inverted=device_config.get(CONF_INVERTED, False),
-                area=area,
-            )
-
-            entity = HomeworksCCOSwitch(
-                coordinator=coordinator,
-                controller_id=controller_id,
-                device=device,
-            )
-            entities.append(entity)
-
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error(
-                "Invalid config for switch device '%s': %s",
-                device_config.get(CONF_NAME, "unknown"),
-                err,
-            )
 
     # Legacy CCOS format
     for cco_config in entry.options.get(CONF_CCOS, []):
