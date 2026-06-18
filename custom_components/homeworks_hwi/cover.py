@@ -87,8 +87,12 @@ async def async_setup_entry(
             )
             entities.append(entity)
 
-        except Exception as err:
-            _LOGGER.error("Failed to create cover for %s: %s", device_config, err)
+        except (ValueError, KeyError, TypeError) as err:
+            _LOGGER.error(
+                "Invalid config for cover device '%s': %s",
+                device_config.get(CONF_NAME, "unknown"),
+                err,
+            )
 
     # Legacy covers format
     for cover_config in entry.options.get(CONF_COVERS, []):
@@ -120,8 +124,12 @@ async def async_setup_entry(
             )
             entities.append(entity)
 
-        except Exception as err:
-            _LOGGER.error("Failed to create legacy cover for %s: %s", cover_config, err)
+        except (ValueError, KeyError, TypeError) as err:
+            _LOGGER.error(
+                "Invalid config for legacy cover device '%s': %s",
+                cover_config.get(CONF_NAME, "unknown"),
+                err,
+            )
 
     # RPM motor covers
     for rpm_cover_config in entry.options.get(CONF_RPM_COVERS, []):
@@ -135,8 +143,12 @@ async def async_setup_entry(
                 area=resolve_area_name(hass, rpm_cover_config.get(CONF_AREA)),
             )
             entities.append(entity)
-        except Exception as err:
-            _LOGGER.error("Failed to create RPM cover for %s: %s", rpm_cover_config, err)
+        except (ValueError, KeyError, TypeError) as err:
+            _LOGGER.error(
+                "Invalid config for RPM cover '%s': %s",
+                rpm_cover_config.get(CONF_NAME, "unknown"),
+                err,
+            )
 
     # QED Sivoia shades (position-trackable)
     for qed_cover_config in entry.options.get(CONF_QED_COVERS, []):
@@ -150,8 +162,12 @@ async def async_setup_entry(
                 area=resolve_area_name(hass, qed_cover_config.get(CONF_AREA)),
             )
             entities.append(entity)
-        except Exception as err:
-            _LOGGER.error("Failed to create QED cover for %s: %s", qed_cover_config, err)
+        except (ValueError, KeyError, TypeError) as err:
+            _LOGGER.error(
+                "Invalid config for QED cover '%s': %s",
+                qed_cover_config.get(CONF_NAME, "unknown"),
+                err,
+            )
 
     if entities:
         _LOGGER.debug("Adding %d cover entities", len(entities))

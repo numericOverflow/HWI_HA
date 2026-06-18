@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from datetime import datetime, timedelta
 import logging
 from typing import Any
@@ -102,10 +103,10 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._dimmer_addresses: set[str] = set()
 
         # Event callbacks
-        self._button_callbacks: dict[str, list[callable[[str, int, str], None]]] = {}
+        self._button_callbacks: dict[str, list[Callable[[str, int, str], None]]] = {}
 
         # CCI state change callbacks
-        self._cci_callbacks: dict[tuple[int, int, int, int], list[callable[[bool], None]]] = {}
+        self._cci_callbacks: dict[tuple[int, int, int, int], list[Callable[[bool], None]]] = {}
 
     @property
     def controller_id(self) -> str:
@@ -218,8 +219,8 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self,
         address: str,
         input_number: int,
-        callback: callable[[bool], None],
-    ) -> callable[[], None]:
+        callback: Callable[[bool], None],
+    ) -> Callable[[], None]:
         """Register a callback for CCI state changes.
 
         Returns a function to unregister the callback.
@@ -242,8 +243,8 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def register_button_callback(
         self,
         address: str,
-        callback: callable[[str, int, str], None],
-    ) -> callable[[], None]:
+        callback: Callable[[str, int, str], None],
+    ) -> Callable[[], None]:
         """Register a callback for button events.
 
         Returns a function to unregister the callback.

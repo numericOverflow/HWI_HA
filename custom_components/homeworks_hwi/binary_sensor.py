@@ -124,8 +124,12 @@ async def async_setup_entry(
             )
             entities.append(entity)
 
-        except Exception as err:
-            _LOGGER.error("Failed to create CCI binary sensor for %s: %s", device_config, err)
+        except (ValueError, KeyError, TypeError) as err:
+            _LOGGER.error(
+                "Invalid config for CCI binary sensor '%s': %s",
+                device_config.get(CONF_NAME, "unknown"),
+                err,
+            )
 
     if entities:
         _LOGGER.debug("Adding %d binary sensor entities", len(entities))

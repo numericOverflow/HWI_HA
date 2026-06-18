@@ -61,6 +61,7 @@ from .const import (
     CONF_RPM_COVERS,
     CCO_TYPE_CLIMATE,
     CCO_TYPE_COVER,
+    CCO_TYPE_FAN,
     CCO_TYPE_LIGHT,
     CCO_TYPE_LOCK,
     CCO_TYPE_SWITCH,
@@ -657,7 +658,7 @@ def _register_cco_devices_from_options(
                 inverted=device_config.get(CONF_INVERTED, False),
             )
             coordinator.register_cco_device(device)
-        except Exception as err:
+        except (ValueError, KeyError, TypeError) as err:
             _LOGGER.error("Failed to register CCO device: %s - %s", device_config, err)
 
     # Legacy CCO format (switches)
@@ -681,7 +682,7 @@ def _register_cco_devices_from_options(
                 inverted=cco_config.get(CONF_INVERTED, False),
             )
             coordinator.register_cco_device(device)
-        except Exception as err:
+        except (ValueError, KeyError, TypeError) as err:
             _LOGGER.error("Failed to register legacy CCO: %s - %s", cco_config, err)
 
     # Legacy covers
@@ -704,7 +705,7 @@ def _register_cco_devices_from_options(
                 inverted=cover_config.get(CONF_INVERTED, False),
             )
             coordinator.register_cco_device(device)
-        except Exception as err:
+        except (ValueError, KeyError, TypeError) as err:
             _LOGGER.error("Failed to register legacy cover: %s - %s", cover_config, err)
 
     # Legacy locks
@@ -728,7 +729,7 @@ def _register_cco_devices_from_options(
                 inverted=lock_config.get(CONF_INVERTED, False),
             )
             coordinator.register_cco_device(device)
-        except Exception as err:
+        except (ValueError, KeyError, TypeError) as err:
             _LOGGER.error("Failed to register legacy lock: %s - %s", lock_config, err)
 
 
@@ -739,6 +740,8 @@ def _parse_entity_type(type_str: str) -> CCOEntityType:
         CCO_TYPE_LIGHT: CCOEntityType.LIGHT,
         CCO_TYPE_COVER: CCOEntityType.COVER,
         CCO_TYPE_LOCK: CCOEntityType.LOCK,
+        CCO_TYPE_CLIMATE: CCOEntityType.CLIMATE,
+        CCO_TYPE_FAN: CCOEntityType.FAN,
     }
     return type_map.get(type_str.lower(), CCOEntityType.SWITCH)
 
