@@ -23,7 +23,6 @@ from .const import (
     CONF_ADDR,
     CONF_AREA,
     CONF_CONTROLLER_ID,
-    CONF_COVERS,
     CONF_QED_COVERS,
     CONF_RPM_COVERS,
     CCO_TYPE_COVER,
@@ -33,7 +32,7 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import HomeworksCoordinator
-from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
+from .models import CCODevice, CCOEntityType, normalize_address
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,43 +54,6 @@ async def async_setup_entry(
         CCO_TYPE_COVER, CCOEntityType.COVER, HomeworksCCOCover, DEFAULT_COVER_NAME,
     )
     entities.extend(cco_covers)
-
-    # Legacy covers format
-    for cover_config in entry.options.get(CONF_COVERS, []):
-        try:
-            addr = normalize_address(cover_config[CONF_ADDR])
-            parts = addr.strip("[]").split(":")
-
-            # For legacy covers, we need two buttons: one for open, one for close
-            # Button 1 typically controls the cover
-            address = CCOAddress(
-                processor=int(parts[0]),
-                link=int(parts[1]),
-                address=int(parts[2]),
-                button=1,  # Default button for cover control
-            )
-
-            device = CCODevice(
-                address=address,
-                name=cover_config.get(CONF_NAME, DEFAULT_COVER_NAME),
-                entity_type=CCOEntityType.COVER,
-                inverted=cover_config.get(CONF_INVERTED, False),
-                area=resolve_area_name(hass, cover_config.get(CONF_AREA)),
-            )
-
-            entity = HomeworksCCOCover(
-                coordinator=coordinator,
-                controller_id=controller_id,
-                device=device,
-            )
-            entities.append(entity)
-
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error(
-                "Invalid config for legacy cover device '%s': %s",
-                cover_config.get(CONF_NAME, "unknown"),
-                err,
-            )
 
     # RPM motor covers
     for rpm_cover_config in entry.options.get(CONF_RPM_COVERS, []):

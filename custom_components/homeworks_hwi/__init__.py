@@ -71,7 +71,7 @@ from .const import (
     MAX_COMMAND_DELAY_MS,
 )
 from .coordinator import HomeworksCoordinator
-from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
+from .models import CCOAddress, CCODevice, CCOEntityType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -368,15 +368,75 @@ def _cleanup_orphaned_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
             device_registry.async_remove_device(device_entry.id)
 
 
+async def async_migrate_entry(
+    hass: HomeAssistant, config_entry: ConfigEntry
+) -> bool:
+    """Migrate config entry to current version."""
+    if config_entry.version == 1:
+        _LOGGER.info(
+            "Migrating config entry %s from v1 to v2", config_entry.entry_id
+        )
+        new_options = dict(config_entry.options)
+
+        # Convert legacy CCOS → CCO_DEVICES (switches)
+        for cco in new_options.pop(CONF_CCOS, []):
+            device = {
+                CONF_ADDR: cco[CONF_ADDR],
+                CONF_BUTTON_NUMBER: cco.get(CONF_RELAY_NUMBER, 1),
+                CONF_NAME: cco.get(CONF_NAME, ""),
+                CONF_ENTITY_TYPE: CCO_TYPE_SWITCH,
+                CONF_INVERTED: cco.get(CONF_INVERTED, False),
+            }
+            if CONF_AREA in cco:
+                device[CONF_AREA] = cco[CONF_AREA]
+            new_options.setdefault(CONF_CCO_DEVICES, []).append(device)
+
+        # Convert legacy COVERS → CCO_DEVICES
+        for cover in new_options.pop(CONF_COVERS, []):
+            device = {
+                CONF_ADDR: cover[CONF_ADDR],
+                CONF_BUTTON_NUMBER: 1,
+                CONF_NAME: cover.get(CONF_NAME, ""),
+                CONF_ENTITY_TYPE: CCO_TYPE_COVER,
+                CONF_INVERTED: cover.get(CONF_INVERTED, False),
+            }
+            if CONF_AREA in cover:
+                device[CONF_AREA] = cover[CONF_AREA]
+            new_options.setdefault(CONF_CCO_DEVICES, []).append(device)
+
+        # Convert legacy LOCKS → CCO_DEVICES
+        for lock_cfg in new_options.pop(CONF_LOCKS, []):
+            device = {
+                CONF_ADDR: lock_cfg[CONF_ADDR],
+                CONF_BUTTON_NUMBER: lock_cfg.get(CONF_RELAY_NUMBER, 1),
+                CONF_NAME: lock_cfg.get(CONF_NAME, ""),
+                CONF_ENTITY_TYPE: CCO_TYPE_LOCK,
+                CONF_INVERTED: lock_cfg.get(CONF_INVERTED, False),
+            }
+            if CONF_AREA in lock_cfg:
+                device[CONF_AREA] = lock_cfg[CONF_AREA]
+            new_options.setdefault(CONF_CCO_DEVICES, []).append(device)
+
+        hass.config_entries.async_update_entry(
+            config_entry, options=new_options, version=2
+        )
+        _LOGGER.info(
+            "Migration complete: %d CCO devices total",
+            len(new_options.get(CONF_CCO_DEVICES, [])),
+        )
+
+    # Clean up old entities with legacy unique_id format (pre-v2 suffix)
+    _cleanup_old_entities(hass, config_entry)
+
+    return True
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry) -> bool:
     """Set up Homeworks from a config entry.
 
     Credentials are read from entry.data (secrets).
     Devices and settings are read from entry.options (non-secrets).
     """
-    # Clean up old entities with legacy unique_id format
-    _cleanup_old_entities(hass, entry)
-
     # Read credentials from entry.data
     host = entry.data[CONF_HOST]
     port = entry.data[CONF_PORT]
@@ -454,11 +514,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
 def _register_cco_devices_from_options(
     coordinator: HomeworksCoordinator, options: dict[str, Any]
 ) -> None:
-    """Register CCO devices from the config entry options.
-
-    Handles both new-style CCO_DEVICES and legacy CCOS/COVERS/LOCKS format.
-    """
-    # New-style unified CCO devices
+    """Register CCO devices from the config entry options."""
     for device_config in options.get(CONF_CCO_DEVICES, []):
         try:
             entity_type_str = device_config.get(CONF_ENTITY_TYPE, CCO_TYPE_SWITCH)
@@ -485,77 +541,6 @@ def _register_cco_devices_from_options(
             coordinator.register_cco_device(device)
         except (ValueError, KeyError, TypeError) as err:
             _LOGGER.error("Failed to register CCO device: %s - %s", device_config, err)
-
-    # Legacy CCO format (switches)
-    for cco_config in options.get(CONF_CCOS, []):
-        try:
-            addr = normalize_address(cco_config[CONF_ADDR])
-            relay = cco_config.get(CONF_RELAY_NUMBER, 1)
-            parts = addr.strip("[]").split(":")
-
-            address = CCOAddress(
-                processor=int(parts[0]),
-                link=int(parts[1]),
-                address=int(parts[2]),
-                button=relay,
-            )
-
-            device = CCODevice(
-                address=address,
-                name=cco_config.get(CONF_NAME, ""),
-                entity_type=CCOEntityType.SWITCH,
-                inverted=cco_config.get(CONF_INVERTED, False),
-            )
-            coordinator.register_cco_device(device)
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error("Failed to register legacy CCO: %s - %s", cco_config, err)
-
-    # Legacy covers
-    for cover_config in options.get(CONF_COVERS, []):
-        try:
-            addr = normalize_address(cover_config[CONF_ADDR])
-            parts = addr.strip("[]").split(":")
-
-            address = CCOAddress(
-                processor=int(parts[0]),
-                link=int(parts[1]),
-                address=int(parts[2]),
-                button=1,
-            )
-
-            device = CCODevice(
-                address=address,
-                name=cover_config.get(CONF_NAME, ""),
-                entity_type=CCOEntityType.COVER,
-                inverted=cover_config.get(CONF_INVERTED, False),
-            )
-            coordinator.register_cco_device(device)
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error("Failed to register legacy cover: %s - %s", cover_config, err)
-
-    # Legacy locks
-    for lock_config in options.get(CONF_LOCKS, []):
-        try:
-            addr = normalize_address(lock_config[CONF_ADDR])
-            relay = lock_config.get(CONF_RELAY_NUMBER, 1)
-            parts = addr.strip("[]").split(":")
-
-            address = CCOAddress(
-                processor=int(parts[0]),
-                link=int(parts[1]),
-                address=int(parts[2]),
-                button=relay,
-            )
-
-            device = CCODevice(
-                address=address,
-                name=lock_config.get(CONF_NAME, ""),
-                entity_type=CCOEntityType.LOCK,
-                inverted=lock_config.get(CONF_INVERTED, False),
-            )
-            coordinator.register_cco_device(device)
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error("Failed to register legacy lock: %s - %s", lock_config, err)
 
 
 def _parse_entity_type(type_str: str) -> CCOEntityType:

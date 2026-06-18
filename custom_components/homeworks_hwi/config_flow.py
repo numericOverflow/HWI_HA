@@ -1694,7 +1694,7 @@ class HomeworksConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     Non-secrets (devices, settings) are stored in entry.options.
     """
 
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self) -> None:
         """Initialize."""

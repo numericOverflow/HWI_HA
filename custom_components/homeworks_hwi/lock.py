@@ -6,25 +6,20 @@ import logging
 from typing import Any
 
 from homeassistant.components.lock import LockEntity
-from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksHWIConfigEntry, create_cco_entities_for_type, resolve_area_name
+from . import HomeworksHWIConfigEntry, create_cco_entities_for_type
 from .const import (
-    CONF_ADDR,
-    CONF_AREA,
     CONF_CONTROLLER_ID,
-    CONF_LOCKS,
-    CONF_RELAY_NUMBER,
     CCO_TYPE_LOCK,
     DEFAULT_LOCK_NAME,
     DOMAIN,
 )
 from .coordinator import HomeworksCoordinator
-from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
+from .models import CCODevice, CCOEntityType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,47 +34,10 @@ async def async_setup_entry(
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
 
-    # New-style CCO devices with type=lock
-    entities: list[HomeworksCCOLock] = create_cco_entities_for_type(
+    entities = create_cco_entities_for_type(
         hass, entry, coordinator, controller_id,
         CCO_TYPE_LOCK, CCOEntityType.LOCK, HomeworksCCOLock, DEFAULT_LOCK_NAME,
     )
-
-    # Legacy locks format
-    for lock_config in entry.options.get(CONF_LOCKS, []):
-        try:
-            addr = normalize_address(lock_config[CONF_ADDR])
-            relay = lock_config.get(CONF_RELAY_NUMBER, 1)
-            parts = addr.strip("[]").split(":")
-
-            address = CCOAddress(
-                processor=int(parts[0]),
-                link=int(parts[1]),
-                address=int(parts[2]),
-                button=relay,
-            )
-
-            device = CCODevice(
-                address=address,
-                name=lock_config.get(CONF_NAME, DEFAULT_LOCK_NAME),
-                entity_type=CCOEntityType.LOCK,
-                inverted=lock_config.get(CONF_INVERTED, False),
-                area=resolve_area_name(hass, lock_config.get(CONF_AREA)),
-            )
-
-            entity = HomeworksCCOLock(
-                coordinator=coordinator,
-                controller_id=controller_id,
-                device=device,
-            )
-            entities.append(entity)
-
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error(
-                "Invalid config for legacy lock device '%s': %s",
-                lock_config.get(CONF_NAME, "unknown"),
-                err,
-            )
 
     if entities:
         _LOGGER.debug("Adding %d lock entities", len(entities))
