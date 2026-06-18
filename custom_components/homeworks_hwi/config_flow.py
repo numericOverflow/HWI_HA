@@ -38,6 +38,7 @@ from homeassistant.helpers.schema_config_entry_flow import (
     SchemaFlowFormStep,
     SchemaFlowMenuStep,
     SchemaOptionsFlowHandler,
+    SchemaOptionsFlowHandlerWithReload,
 )
 from homeassistant.helpers.typing import VolDictType
 from homeassistant.util import slugify
@@ -1719,6 +1720,16 @@ class HomeworksConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     and entry.data.get(CONF_PORT) == port
                 ):
                     return self.async_abort(reason="already_configured")
+                if entry.options.get(CONF_CONTROLLER_ID) == controller_id:
+                    errors["base"] = "duplicated_controller_id"
+                    break
+
+            if errors:
+                return self.async_show_form(
+                    step_id="user",
+                    data_schema=DATA_SCHEMA_ADD_CONTROLLER,
+                    errors=errors,
+                )
 
             try:
                 await _try_connection(host, port, username, password)
@@ -1865,4 +1876,4 @@ class HomeworksConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> SchemaOptionsFlowHandler:
         """Options flow handler."""
-        return SchemaOptionsFlowHandler(config_entry, OPTIONS_FLOW)
+        return SchemaOptionsFlowHandlerWithReload(config_entry, OPTIONS_FLOW)

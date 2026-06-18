@@ -10,6 +10,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
+from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -48,6 +49,7 @@ class HomeworksHealthSensor(CoordinatorEntity[HomeworksCoordinator], SensorEntit
 
     _attr_has_entity_name = True
     _attr_entity_registry_enabled_default = False  # Disabled by default
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,
