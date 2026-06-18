@@ -449,6 +449,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
         hass=hass,
         config=client_config,
         controller_id=controller_id,
+        config_entry=entry,
         kls_poll_interval=timedelta(seconds=kls_poll_interval),
         kls_window_offset=kls_window_offset,
     )
