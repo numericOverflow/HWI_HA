@@ -9,18 +9,7 @@ Terminated with CRLF (handled by transport layer).
 
 from __future__ import annotations
 
-
-def normalize_address(address: str) -> str:
-    """Normalize an address to [pp:ll:aa:...] format.
-
-    Examples:
-        1:2:3 -> [01:02:03]
-        [1:2:3] -> [01:02:03]
-    """
-    addr = address.strip("[]")
-    parts = addr.split(":")
-    formatted = ":".join(p.zfill(2) for p in parts)
-    return f"[{formatted}]"
+from .protocol import normalize_address
 
 
 # =============================================================================

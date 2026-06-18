@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 import logging
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
@@ -63,6 +64,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         hass: HomeAssistant,
         config: HomeworksClientConfig,
         controller_id: str,
+        config_entry: ConfigEntry,
         kls_poll_interval: timedelta = DEFAULT_KLS_POLL_INTERVAL,
         kls_window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
     ) -> None:
@@ -70,6 +72,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             name=f"Homeworks {controller_id}",
             update_interval=kls_poll_interval,
         )
@@ -77,6 +80,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._controller_id = controller_id
         self._client: HomeworksClient | None = None
         self._kls_window_offset = kls_window_offset
+        self._poll_count: int = 0
 
         # CCO device registry: unique_key -> CCODevice
         self._cco_devices: dict[tuple[int, int, int, int], CCODevice] = {}
@@ -305,13 +309,8 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Poll all KLS addresses
         await self._poll_kls_states()
 
-        # Return current state
-        return {
-            "cco_states": dict(self._cco_states),
-            "dimmer_states": dict(self._dimmer_states),
-            "connected": self.connected,
-            "last_update": datetime.now(timezone.utc).isoformat(),
-        }
+        self._poll_count += 1
+        return {"connected": True, "poll_count": self._poll_count}
 
     async def _poll_all_states(self) -> None:
         """Poll all device states."""

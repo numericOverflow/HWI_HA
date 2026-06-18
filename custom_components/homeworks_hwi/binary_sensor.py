@@ -17,14 +17,13 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, resolve_area_name
+from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
@@ -43,6 +42,8 @@ from .coordinator import HomeworksCoordinator
 from .models import normalize_address
 
 _LOGGER = logging.getLogger(__name__)
+
+PARALLEL_UPDATES = 0
 
 # Map string device classes to HA device classes for CCI
 DEVICE_CLASS_MAP = {
@@ -66,10 +67,10 @@ DEVICE_CLASS_MAP = {
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up Homeworks binary sensors."""
-    data: HomeworksData = hass.data[DOMAIN][entry.entry_id]
+    data = entry.runtime_data
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
     entities: list[BinarySensorEntity] = []

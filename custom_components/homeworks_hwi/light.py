@@ -10,14 +10,13 @@ from homeassistant.components.light import (
     ColorMode,
     LightEntity,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, resolve_area_name
+from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
@@ -39,12 +38,16 @@ from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
 
 _LOGGER = logging.getLogger(__name__)
 
+# Serialization handled by client-layer asyncio.Lock (50ms inter-command delay).
+# 0 = unlimited HA-level parallelism — entities queue at the client lock.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up Homeworks lights."""
-    data: HomeworksData = hass.data[DOMAIN][entry.entry_id]
+    data = entry.runtime_data
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
     entities: list[LightEntity] = []
@@ -133,7 +136,8 @@ class HomeworksDimmableLight(CoordinatorEntity[HomeworksCoordinator], LightEntit
         self._level = 0
         self._prev_level = 0
 
-        self._entity_name = name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.light.{self._addr}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.{self._addr}.v2")},
@@ -145,11 +149,6 @@ class HomeworksDimmableLight(CoordinatorEntity[HomeworksCoordinator], LightEntit
             device_info["suggested_area"] = area
         self._attr_device_info = device_info
         self._attr_extra_state_attributes = {"homeworks_address": self._addr}
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def brightness(self) -> int:
@@ -199,6 +198,11 @@ class HomeworksDimmableLight(CoordinatorEntity[HomeworksCoordinator], LightEntit
         # Request initial state
         await self.coordinator.async_request_dimmer_level(self._addr)
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister dimmer when removed from hass."""
+        self.coordinator.unregister_dimmer(self._addr)
+        await super().async_will_remove_from_hass()
+
 
 class HomeworksCCOLight(CoordinatorEntity[HomeworksCoordinator], LightEntity):
     """Homeworks CCO-based On/Off Light.
@@ -220,7 +224,8 @@ class HomeworksCCOLight(CoordinatorEntity[HomeworksCoordinator], LightEntity):
         self._device = device
         self._controller_id = controller_id
 
-        self._entity_name = device.name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.ccolight.{device.unique_id}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.ccolight.{device.address}.v2")},
@@ -235,11 +240,6 @@ class HomeworksCCOLight(CoordinatorEntity[HomeworksCoordinator], LightEntity):
             "homeworks_address": str(device.address),
             "inverted": device.inverted,
         }
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def is_on(self) -> bool:
@@ -282,3 +282,8 @@ class HomeworksCCOLight(CoordinatorEntity[HomeworksCoordinator], LightEntity):
         await self.coordinator.async_request_keypad_led_states(
             self._device.address.to_kls_address()
         )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister CCO device when removed from hass."""
+        self.coordinator.unregister_cco_device(self._device.address)
+        await super().async_will_remove_from_hass()

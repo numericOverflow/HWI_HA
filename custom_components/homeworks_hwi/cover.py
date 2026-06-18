@@ -11,7 +11,6 @@ from homeassistant.components.cover import (
     CoverEntity,
     CoverEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -19,7 +18,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, resolve_area_name
+from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
@@ -43,12 +42,14 @@ from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up Homeworks covers."""
-    data: HomeworksData = hass.data[DOMAIN][entry.entry_id]
+    data = entry.runtime_data
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
     entities: list[HomeworksCCOCover | HomeworksRPMCover | HomeworksQEDCover] = []
@@ -201,7 +202,8 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self._is_opening = False
         self._is_closing = False
 
-        self._entity_name = device.name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.cover.{device.unique_id}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.cover.{device.address}.v2")},
@@ -215,11 +217,6 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self._attr_extra_state_attributes = {
             "homeworks_address": str(device.address),
         }
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def is_closed(self) -> bool | None:
@@ -303,6 +300,11 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
             self._device.address.to_kls_address()
         )
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister CCO device when removed from hass."""
+        self.coordinator.unregister_cco_device(self._device.address)
+        await super().async_will_remove_from_hass()
+
 
 # RPM motor command values (from FADEDIM)
 RPM_MOTOR_UP = 16
@@ -350,7 +352,8 @@ class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, Re
         # Last known position: True=closed, False=open, None=unknown
         self._last_known_closed: bool | None = None
 
-        self._entity_name = name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.rpm_cover.{address}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.rpm_cover.{address}.v2")},
@@ -361,11 +364,6 @@ class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, Re
         if area:
             device_info["suggested_area"] = area
         self._attr_device_info = device_info
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -462,16 +460,21 @@ class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, Re
         if (last_state := await self.async_get_last_state()) is not None:
             if last_state.attributes.get(ATTR_LAST_KNOWN_POSITION) == "closed":
                 self._last_known_closed = True
-                _LOGGER.debug("Restored %s last position: closed", self._entity_name)
+                _LOGGER.debug("Restored %s last position: closed", self._address)
             elif last_state.attributes.get(ATTR_LAST_KNOWN_POSITION) == "open":
                 self._last_known_closed = False
-                _LOGGER.debug("Restored %s last position: open", self._entity_name)
+                _LOGGER.debug("Restored %s last position: open", self._address)
 
         # Register as a dimmer to receive DL (dimmer level) updates
         self.coordinator.register_dimmer(self._address)
 
         # Request initial state from controller
         await self.coordinator.async_request_dimmer_level(self._address)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister dimmer address when removed from hass."""
+        self.coordinator.unregister_dimmer(self._address)
+        await super().async_will_remove_from_hass()
 
 
 class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
@@ -505,7 +508,8 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self._is_opening = False
         self._is_closing = False
 
-        self._entity_name = name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.qed_cover.{address}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.qed_cover.{address}.v2")},
@@ -516,11 +520,6 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         if area:
             device_info["suggested_area"] = area
         self._attr_device_info = device_info
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -603,3 +602,8 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
 
         # Request initial state from controller
         await self.coordinator.async_request_dimmer_level(self._address)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister dimmer address when removed from hass."""
+        self.coordinator.unregister_dimmer(self._address)
+        await super().async_will_remove_from_hass()

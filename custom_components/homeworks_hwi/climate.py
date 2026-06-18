@@ -9,14 +9,13 @@ from homeassistant.components.climate import (
     ClimateEntityFeature,
     HVACMode,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, resolve_area_name
+from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
@@ -34,14 +33,16 @@ from .models import CCOAddress, CCODevice, CCOEntityType
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 DEFAULT_CLIMATE_NAME = "Homeworks Climate"
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up Homeworks CCO relays as climate devices."""
-    data: HomeworksData = hass.data[DOMAIN][entry.entry_id]
+    data = entry.runtime_data
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
     entities: list[HomeworksCCOClimate] = []
@@ -129,8 +130,8 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
         self._device = device
         self._controller_id = controller_id
 
-        # Set up entity attributes
-        self._entity_name = device.name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.climate.{device.unique_id}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.climate.{device.address}.v2")},
@@ -146,11 +147,6 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
             "button": device.address.button,
             "inverted": device.inverted,
         }
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def hvac_mode(self) -> HVACMode:
@@ -206,3 +202,8 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
         await self.coordinator.async_request_keypad_led_states(
             self._device.address.to_kls_address()
         )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister CCO device when removed from hass."""
+        self.coordinator.unregister_cco_device(self._device.address)
+        await super().async_will_remove_from_hass()

@@ -5,11 +5,10 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 
-from . import HomeworksData
+from . import HomeworksData, HomeworksHWIConfigEntry
 from .const import (
     CONF_CCO_DEVICES,
     CONF_CCOS,
@@ -30,10 +29,10 @@ TO_REDACT = {
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant, entry: HomeworksHWIConfigEntry
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    data: HomeworksData = hass.data[DOMAIN][entry.entry_id]
+    data = entry.runtime_data
     coordinator = data.coordinator
 
     # Collect health metrics

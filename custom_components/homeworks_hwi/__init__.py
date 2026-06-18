@@ -107,6 +107,9 @@ class HomeworksData:
     controller_id: str
 
 
+type HomeworksHWIConfigEntry = ConfigEntry[HomeworksData]
+
+
 def _normalize_whitespace(text: str) -> str:
     """Normalize whitespace in a string.
 
@@ -246,11 +249,15 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
 
     def get_controller_ids() -> list[str]:
         """Get controller IDs."""
-        return [hw_data.controller_id for hw_data in hass.data[DOMAIN].values()]
+        return [
+            entry.runtime_data.controller_id
+            for entry in hass.config_entries.async_loaded_entries(DOMAIN)
+        ]
 
     def get_homeworks_data(controller_id: str) -> HomeworksData | None:
         """Get homeworks data for controller ID."""
-        for hw_data in hass.data[DOMAIN].values():
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            hw_data: HomeworksData = entry.runtime_data
             if hw_data.controller_id == controller_id:
                 return hw_data
         return None
@@ -328,48 +335,6 @@ def _cleanup_old_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.info("Cleaned up %d old entities", len(entities_to_remove))
 
 
-def _cleanup_devices_without_areas(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Remove devices that don't have areas assigned.
-
-    This ensures that devices will be recreated fresh with the correct
-    suggested_area from the config. This is necessary because HA only
-    applies suggested_area when a device is first created.
-    """
-    device_registry = dr.async_get(hass)
-    devices_to_remove = []
-
-    for device_entry in list(device_registry.devices.values()):
-        # Only process devices for this config entry
-        if entry.entry_id not in device_entry.config_entries:
-            continue
-
-        # Check if it's one of our domain's devices
-        is_our_device = any(
-            identifier[0] == DOMAIN for identifier in device_entry.identifiers
-        )
-        if not is_our_device:
-            continue
-
-        # Remove devices without area assignment
-        if device_entry.area_id is None:
-            devices_to_remove.append(device_entry.id)
-            _LOGGER.debug(
-                "Marking device for removal (no area): %s (identifiers: %s)",
-                device_entry.name,
-                device_entry.identifiers,
-            )
-
-    for device_id in devices_to_remove:
-        _LOGGER.info("Removing device without area: %s", device_id)
-        device_registry.async_remove_device(device_id)
-
-    if devices_to_remove:
-        _LOGGER.info(
-            "Cleaned up %d devices without areas (will be recreated with areas)",
-            len(devices_to_remove),
-        )
-
-
 def _cleanup_orphaned_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Remove devices that have no entities after platform setup.
 
@@ -403,7 +368,7 @@ def _cleanup_orphaned_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
             device_registry.async_remove_device(device_entry.id)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry) -> bool:
     """Set up Homeworks from a config entry.
 
     Credentials are read from entry.data (secrets).
@@ -411,11 +376,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """
     # Clean up old entities with legacy unique_id format
     _cleanup_old_entities(hass, entry)
-
-    # Clean up devices without areas so they get recreated with correct areas
-    _cleanup_devices_without_areas(hass, entry)
-
-    hass.data.setdefault(DOMAIN, {})
 
     # Read credentials from entry.data
     host = entry.data[CONF_HOST]
@@ -444,6 +404,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass=hass,
         config=client_config,
         controller_id=controller_id,
+        config_entry=entry,
         kls_poll_interval=timedelta(seconds=kls_poll_interval),
         kls_window_offset=kls_window_offset,
     )
@@ -466,8 +427,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             raise ConfigEntryAuthFailed("Authentication failed") from err
         raise ConfigEntryNotReady(f"Connection failed: {err}") from err
 
-    # Store data
-    hass.data[DOMAIN][entry.entry_id] = HomeworksData(
+    # Store data in entry.runtime_data (auto-cleaned by HA on unload)
+    entry.runtime_data = HomeworksData(
         coordinator=coordinator,
         controller_id=controller_id,
     )
@@ -478,157 +439,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Remove orphaned devices (devices with no entities after reload)
     _cleanup_orphaned_devices(hass, entry)
 
-    # Force-assign areas to devices after platforms are set up
-    # This is more reliable than suggested_area which only works on first creation
-    await _assign_areas_to_devices(hass, entry, controller_id)
-
     # Handle HA stop
     async def cleanup(event: Event) -> None:
         await coordinator.async_shutdown()
 
     entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, cleanup))
-    entry.async_on_unload(entry.add_update_listener(update_listener))
 
     # Start the coordinator's regular updates
     await coordinator.async_config_entry_first_refresh()
 
     return True
-
-
-async def _assign_areas_to_devices(
-    hass: HomeAssistant, entry: ConfigEntry, controller_id: str
-) -> None:
-    """Directly assign areas to devices using device registry.
-
-    This is called after all platforms are set up to ensure devices exist.
-    It's more reliable than suggested_area which only works on first creation.
-    """
-    device_registry = dr.async_get(hass)
-    options = entry.options
-
-    # Build a mapping from device identifier to expected area
-    identifier_to_area: dict[str, str] = {}
-
-    # CCO devices (switches, lights, covers, locks, climate, fans)
-    for device_config in options.get(CONF_CCO_DEVICES, []):
-        try:
-            addr_str = device_config[CONF_ADDR]
-            button = device_config.get(
-                CONF_BUTTON_NUMBER, device_config.get(CONF_RELAY_NUMBER, 1)
-            )
-            entity_type = device_config.get(CONF_ENTITY_TYPE, CCO_TYPE_SWITCH)
-
-            if "," not in addr_str:
-                full_addr = f"{addr_str},{button}"
-            else:
-                full_addr = addr_str
-
-            address = CCOAddress.from_string(full_addr)
-
-            # Map entity type to device identifier prefix
-            type_prefix_map = {
-                CCO_TYPE_SWITCH: "cco",
-                CCO_TYPE_LIGHT: "ccolight",
-                CCO_TYPE_COVER: "cover",
-                CCO_TYPE_LOCK: "lock",
-                CCO_TYPE_CLIMATE: "climate",
-                "fan": "fan",
-            }
-            prefix = type_prefix_map.get(entity_type, "cco")
-
-            # Build the identifier that matches what's used in entity files
-            identifier = f"{controller_id}.{prefix}.{address}.v2"
-
-            area_name = device_config.get(CONF_AREA)
-            if area_name:
-                area_id = resolve_area_name(hass, area_name)
-                if area_id:
-                    identifier_to_area[identifier] = area_id
-
-        except Exception as err:
-            _LOGGER.debug("Error building area mapping for CCO: %s", err)
-
-    # Dimmers
-    for dimmer_config in options.get(CONF_DIMMERS, []):
-        try:
-            addr = normalize_address(dimmer_config[CONF_ADDR])
-            identifier = f"{controller_id}.{addr}.v2"
-
-            area_name = dimmer_config.get(CONF_AREA)
-            if area_name:
-                area_id = resolve_area_name(hass, area_name)
-                if area_id:
-                    identifier_to_area[identifier] = area_id
-
-        except Exception as err:
-            _LOGGER.debug("Error building area mapping for dimmer: %s", err)
-
-    # CCI devices
-    for cci_config in options.get(CONF_CCI_DEVICES, []):
-        try:
-            addr = normalize_address(cci_config[CONF_ADDR])
-            input_num = cci_config.get(CONF_INPUT_NUMBER, 1)
-            identifier = f"{controller_id}.cci.{addr}_{input_num}.v2"
-
-            area_name = cci_config.get(CONF_AREA)
-            if area_name:
-                area_id = resolve_area_name(hass, area_name)
-                if area_id:
-                    identifier_to_area[identifier] = area_id
-
-        except Exception as err:
-            _LOGGER.debug("Error building area mapping for CCI: %s", err)
-
-    # RPM motor covers
-    for rpm_config in options.get(CONF_RPM_COVERS, []):
-        try:
-            addr = normalize_address(rpm_config[CONF_ADDR])
-            identifier = f"{controller_id}.rpm_cover.{addr}.v2"
-
-            area_name = rpm_config.get(CONF_AREA)
-            if area_name:
-                area_id = resolve_area_name(hass, area_name)
-                if area_id:
-                    identifier_to_area[identifier] = area_id
-
-        except Exception as err:
-            _LOGGER.debug("Error building area mapping for RPM cover: %s", err)
-
-    _LOGGER.debug(
-        "Area assignment mapping built: %d devices with areas",
-        len(identifier_to_area),
-    )
-
-    # Now iterate through all devices and assign areas
-    updated_count = 0
-    for device_entry in device_registry.devices.values():
-        # Only process devices for this config entry
-        if entry.entry_id not in device_entry.config_entries:
-            continue
-
-        # Check each identifier
-        for identifier in device_entry.identifiers:
-            if identifier[0] != DOMAIN:
-                continue
-
-            device_id_str = identifier[1]
-            expected_area = identifier_to_area.get(device_id_str)
-
-            if expected_area and device_entry.area_id != expected_area:
-                _LOGGER.info(
-                    "Assigning area '%s' to device '%s' (identifier: %s)",
-                    expected_area,
-                    device_entry.name,
-                    device_id_str,
-                )
-                device_registry.async_update_device(
-                    device_entry.id, area_id=expected_area
-                )
-                updated_count += 1
-                break
-
-    if updated_count:
-        _LOGGER.info("Assigned areas to %d devices", updated_count)
 
 
 def _register_cco_devices_from_options(
@@ -751,13 +571,12 @@ def _parse_entity_type(type_str: str) -> CCOEntityType:
     return type_map.get(type_str.lower(), CCOEntityType.SWITCH)
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry) -> bool:
     """Unload a config entry."""
     if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         return False
 
-    data: HomeworksData = hass.data[DOMAIN].pop(entry.entry_id)
-    await data.coordinator.async_shutdown()
+    await entry.runtime_data.coordinator.async_shutdown()
 
     return True
 
@@ -787,11 +606,6 @@ async def async_remove_config_entry_device(
         return False
 
     return True
-
-
-async def update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle options update."""
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 def calculate_unique_id(controller_id: str, addr: str, idx: int) -> str:
