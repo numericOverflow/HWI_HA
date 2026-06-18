@@ -44,18 +44,10 @@ async def async_setup_entry(
     entities: list[HomeworksCCOSwitch] = []
 
     # New-style CCO devices with type=switch
-    _LOGGER.info(
-        "=== SWITCH PLATFORM: Reading %d CCO devices from config ===",
+    _LOGGER.debug(
+        "Switch platform: reading %d CCO devices from config",
         len(entry.options.get(CONF_CCO_DEVICES, [])),
     )
-    for i, cfg in enumerate(entry.options.get(CONF_CCO_DEVICES, [])):
-        _LOGGER.info(
-            "Config CCO[%d]: name=%s, type=%s, area=%s",
-            i,
-            cfg.get(CONF_NAME),
-            cfg.get(CONF_ENTITY_TYPE),
-            cfg.get(CONF_AREA, "*** NO AREA ***"),
-        )
 
     for device_config in entry.options.get(CONF_CCO_DEVICES, []):
         entity_type = device_config.get(CONF_ENTITY_TYPE, CCO_TYPE_SWITCH)

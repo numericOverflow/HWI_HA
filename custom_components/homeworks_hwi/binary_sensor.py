@@ -80,7 +80,7 @@ async def async_setup_entry(
         keypad_name = keypad.get(CONF_NAME, "Keypad")
 
         # Register keypad address for KLS polling
-        coordinator._kls_poll_addresses.add(keypad_addr)
+        coordinator.register_kls_poll_address(keypad_addr)
 
         for button in keypad.get(CONF_BUTTONS, []):
             if not button.get(CONF_LED, False):

@@ -1164,17 +1164,7 @@ async def validate_confirm_import(
     """Process selected devices, skipping duplicates."""
     devices = handler.flow_state.get("import_devices", [])
 
-    # Debug: dump parsed devices to verify areas were parsed from CSV
-    _LOGGER.info("=== PARSED DEVICES FROM CSV ===")
-    for i, dev in enumerate(devices):
-        _LOGGER.info(
-            "Parsed[%d]: type=%s, name=%s, entity_type=%s, area=%s",
-            i,
-            dev.device_type,
-            dev.name,
-            dev.entity_type,
-            dev.area if dev.area else "*** NO AREA ***",
-        )
+    _LOGGER.debug("Processing %d parsed devices from CSV", len(devices))
     selected = user_input.get("devices", [])
     skipped = 0
 
@@ -1324,19 +1314,10 @@ async def validate_confirm_import(
                 _LOGGER.warning("No area found for CCO device %s", device.name)
             items.append(cco_config)
 
-    # Debug: dump final CCO config to verify areas are stored
-    _LOGGER.info(
-        "=== FINAL CCO CONFIG DUMP ===\nTotal CCO devices: %d",
+    _LOGGER.debug(
+        "CSV import complete: %d CCO devices total",
         len(handler.options.get(CONF_CCO_DEVICES, [])),
     )
-    for i, cfg in enumerate(handler.options.get(CONF_CCO_DEVICES, [])):
-        _LOGGER.info(
-            "CCO[%d]: name=%s, type=%s, area=%s",
-            i,
-            cfg.get(CONF_NAME),
-            cfg.get(CONF_ENTITY_TYPE),
-            cfg.get(CONF_AREA, "*** NO AREA ***"),
-        )
 
     return {}
 

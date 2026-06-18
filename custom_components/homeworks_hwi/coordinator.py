@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
 from typing import Any
 
@@ -98,6 +98,13 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # Addresses that need KLS polling
         self._kls_poll_addresses: set[str] = set()
+
+    def register_kls_poll_address(self, address: str) -> None:
+        """Register an address for KLS polling."""
+        normalized = normalize_address(address)
+        self._kls_poll_addresses.add(normalized)
+        if self._client:
+            self._client.register_kls_address(normalized)
 
         # Dimmer addresses for polling
         self._dimmer_addresses: set[str] = set()
@@ -303,7 +310,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "cco_states": dict(self._cco_states),
             "dimmer_states": dict(self._dimmer_states),
             "connected": self.connected,
-            "last_update": datetime.now().isoformat(),
+            "last_update": datetime.now(timezone.utc).isoformat(),
         }
 
     async def _poll_all_states(self) -> None:

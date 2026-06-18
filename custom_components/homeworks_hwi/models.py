@@ -218,7 +218,7 @@ class KLSState:
 
     address: str  # Normalized [pp:ll:aa] format
     led_states: list[int]  # 24 integers (0-3)
-    timestamp: datetime = field(default_factory=datetime.now)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def get_button_state(self, button: int) -> int:
         """Get raw LED state for a specific button (1-24).

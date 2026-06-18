@@ -8,7 +8,7 @@ and clear structure for parsed protocol messages.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum, auto
 
 
@@ -56,7 +56,7 @@ class HomeworksMessage:
     @classmethod
     def create(cls, raw: str) -> "HomeworksMessage":
         """Create a message with current timestamp."""
-        return cls(raw=raw, timestamp=datetime.now())
+        return cls(raw=raw, timestamp=datetime.now(tz=timezone.utc))
 
 
 # CCO button window configuration
