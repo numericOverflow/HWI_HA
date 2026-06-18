@@ -38,6 +38,10 @@ from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
 
 _LOGGER = logging.getLogger(__name__)
 
+# Serialization handled by client-layer asyncio.Lock (50ms inter-command delay).
+# 0 = unlimited HA-level parallelism — entities queue at the client lock.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
@@ -198,6 +202,11 @@ class HomeworksDimmableLight(CoordinatorEntity[HomeworksCoordinator], LightEntit
         # Request initial state
         await self.coordinator.async_request_dimmer_level(self._addr)
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister dimmer when removed from hass."""
+        self.coordinator.unregister_dimmer(self._addr)
+        await super().async_will_remove_from_hass()
+
 
 class HomeworksCCOLight(CoordinatorEntity[HomeworksCoordinator], LightEntity):
     """Homeworks CCO-based On/Off Light.
@@ -281,3 +290,8 @@ class HomeworksCCOLight(CoordinatorEntity[HomeworksCoordinator], LightEntity):
         await self.coordinator.async_request_keypad_led_states(
             self._device.address.to_kls_address()
         )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister CCO device when removed from hass."""
+        self.coordinator.unregister_cco_device(self._device.address)
+        await super().async_will_remove_from_hass()

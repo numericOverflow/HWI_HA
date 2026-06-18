@@ -42,6 +42,8 @@ from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
@@ -302,6 +304,11 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
             self._device.address.to_kls_address()
         )
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister CCO device when removed from hass."""
+        self.coordinator.unregister_cco_device(self._device.address)
+        await super().async_will_remove_from_hass()
+
 
 # RPM motor command values (from FADEDIM)
 RPM_MOTOR_UP = 16
@@ -472,6 +479,11 @@ class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, Re
         # Request initial state from controller
         await self.coordinator.async_request_dimmer_level(self._address)
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister dimmer address when removed from hass."""
+        self.coordinator.unregister_dimmer(self._address)
+        await super().async_will_remove_from_hass()
+
 
 class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
     """Homeworks Sivoia QED shade with continuous position feedback.
@@ -602,3 +614,8 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
 
         # Request initial state from controller
         await self.coordinator.async_request_dimmer_level(self._address)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister dimmer address when removed from hass."""
+        self.coordinator.unregister_dimmer(self._address)
+        await super().async_will_remove_from_hass()

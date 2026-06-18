@@ -43,6 +43,8 @@ from .models import normalize_address
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 # Map string device classes to HA device classes for CCI
 DEVICE_CLASS_MAP = {
     "door": BinarySensorDeviceClass.DOOR,
