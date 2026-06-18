@@ -362,6 +362,8 @@
             "duplicate_cco": "This CCO address and button combination already exists",
             "duplicated_number": "This button number is already used on this keypad",
             "invalid_csv": "Invalid CSV format. Check that all required columns are present.",
+            "csv_too_large": "CSV file exceeds maximum size (1MB)",
+            "csv_too_many_rows": "CSV file exceeds maximum row count (5000)",
             "no_devices_in_csv": "No valid devices found in CSV",
             "no_devices": "No devices configured. Add devices first.",
             "no_buttons": "No buttons configured on this keypad. Add buttons first.",

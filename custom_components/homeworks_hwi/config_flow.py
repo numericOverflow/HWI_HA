@@ -86,6 +86,8 @@ from .const import (
     DEFAULT_QED_COVER_NAME,
     DEFAULT_RPM_COVER_NAME,
     DOMAIN,
+    MAX_CSV_ROWS,
+    MAX_CSV_SIZE,
 )
 from .models import CCOAddress, normalize_address
 
@@ -849,6 +851,10 @@ async def async_parse_csv(
 ) -> dict[str, Any]:
     """Parse CSV content."""
     content = user_input["csv_file"]
+
+    if len(content) > MAX_CSV_SIZE:
+        raise SchemaFlowError("csv_too_large")
+
     # Remove BOM (Byte Order Mark) if present - Excel often adds this
     if content.startswith('\ufeff'):
         content = content[1:]
@@ -860,8 +866,12 @@ async def async_parse_csv(
     _LOGGER.debug("CSV field names: %s", reader.fieldnames)
 
     devices = []
+    row_count = 0
     try:
         for row in reader:
+            row_count += 1
+            if row_count > MAX_CSV_ROWS:
+                raise SchemaFlowError("csv_too_many_rows")
             device_type = row.get("device_type", "").strip().upper()
             # Get optional entity type for CCO devices (switch/light/cover/lock/climate)
             cco_type = row.get("type", "").strip().lower() or None

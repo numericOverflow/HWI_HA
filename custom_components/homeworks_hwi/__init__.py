@@ -68,6 +68,7 @@ from .const import (
     DEFAULT_KLS_POLL_INTERVAL,
     DEFAULT_KLS_WINDOW_OFFSET,
     DOMAIN,
+    MAX_COMMAND_DELAY_MS,
 )
 from .coordinator import HomeworksCoordinator
 from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
@@ -277,7 +278,11 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
 
     for command in commands:
         if command.lower().startswith("delay"):
-            delay = int(command.partition(" ")[2])
+            try:
+                delay = min(int(command.partition(" ")[2]), MAX_COMMAND_DELAY_MS)
+            except (ValueError, IndexError):
+                _LOGGER.warning("Invalid delay command ignored: %s", command)
+                continue
             _LOGGER.debug("Sleeping for %s ms", delay)
             await asyncio.sleep(delay / 1000)
         else:
@@ -760,12 +765,27 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_config_entry_device(
     hass: HomeAssistant, entry: ConfigEntry, device_entry: dr.DeviceEntry
 ) -> bool:
-    """Allow removal of a device from this config entry.
+    """Allow removal of a device only if it has no active entities.
 
     HA calls this to confirm whether a device can be removed.
-    We allow removal if the device has no active entities (orphaned after
+    We allow removal only if the device has no active entities (orphaned after
     a cover/dimmer/etc was deleted from the options flow).
     """
+    entity_registry = async_get_entity_registry(hass)
+
+    has_entities = any(
+        entity.device_id == device_entry.id
+        for entity in entity_registry.entities.values()
+        if entity.config_entry_id == entry.entry_id
+    )
+
+    if has_entities:
+        _LOGGER.debug(
+            "Refusing device removal — device '%s' still has active entities",
+            device_entry.name,
+        )
+        return False
+
     return True
 
 
