@@ -26,6 +26,7 @@ from .const import (
     CONF_INVERTED,
     CONF_RELAY_NUMBER,
     CCO_TYPE_CLIMATE,
+    DEFAULT_CLIMATE_NAME,
     DOMAIN,
 )
 from .coordinator import HomeworksCoordinator
@@ -34,8 +35,6 @@ from .models import CCOAddress, CCODevice, CCOEntityType
 _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
-
-DEFAULT_CLIMATE_NAME = "Homeworks Climate"
 
 
 async def async_setup_entry(
