@@ -6,14 +6,13 @@ import logging
 from typing import Any
 
 from homeassistant.components.lock import LockEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, resolve_area_name
+from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
@@ -35,10 +34,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up Homeworks locks."""
-    data: HomeworksData = hass.data[DOMAIN][entry.entry_id]
+    data = entry.runtime_data
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
     entities: list[HomeworksCCOLock] = []

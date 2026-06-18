@@ -10,13 +10,12 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData
+from . import HomeworksData, HomeworksHWIConfigEntry
 from .const import CONF_CONTROLLER_ID, DOMAIN
 from .coordinator import HomeworksCoordinator
 
@@ -24,10 +23,10 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
     """Set up Homeworks health sensors."""
-    data: HomeworksData = hass.data[DOMAIN][entry.entry_id]
+    data = entry.runtime_data
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
 

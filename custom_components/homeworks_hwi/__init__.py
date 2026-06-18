@@ -107,6 +107,9 @@ class HomeworksData:
     controller_id: str
 
 
+type HomeworksHWIConfigEntry = ConfigEntry[HomeworksData]
+
+
 def _normalize_whitespace(text: str) -> str:
     """Normalize whitespace in a string.
 
@@ -246,11 +249,15 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
 
     def get_controller_ids() -> list[str]:
         """Get controller IDs."""
-        return [hw_data.controller_id for hw_data in hass.data[DOMAIN].values()]
+        return [
+            entry.runtime_data.controller_id
+            for entry in hass.config_entries.async_loaded_entries(DOMAIN)
+        ]
 
     def get_homeworks_data(controller_id: str) -> HomeworksData | None:
         """Get homeworks data for controller ID."""
-        for hw_data in hass.data[DOMAIN].values():
+        for entry in hass.config_entries.async_loaded_entries(DOMAIN):
+            hw_data: HomeworksData = entry.runtime_data
             if hw_data.controller_id == controller_id:
                 return hw_data
         return None
@@ -403,7 +410,7 @@ def _cleanup_orphaned_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
             device_registry.async_remove_device(device_entry.id)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry) -> bool:
     """Set up Homeworks from a config entry.
 
     Credentials are read from entry.data (secrets).
@@ -414,8 +421,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Clean up devices without areas so they get recreated with correct areas
     _cleanup_devices_without_areas(hass, entry)
-
-    hass.data.setdefault(DOMAIN, {})
 
     # Read credentials from entry.data
     host = entry.data[CONF_HOST]
@@ -466,8 +471,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             raise ConfigEntryAuthFailed("Authentication failed") from err
         raise ConfigEntryNotReady(f"Connection failed: {err}") from err
 
-    # Store data
-    hass.data[DOMAIN][entry.entry_id] = HomeworksData(
+    # Store data in entry.runtime_data (auto-cleaned by HA on unload)
+    entry.runtime_data = HomeworksData(
         coordinator=coordinator,
         controller_id=controller_id,
     )
@@ -751,13 +756,12 @@ def _parse_entity_type(type_str: str) -> CCOEntityType:
     return type_map.get(type_str.lower(), CCOEntityType.SWITCH)
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry) -> bool:
     """Unload a config entry."""
     if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         return False
 
-    data: HomeworksData = hass.data[DOMAIN].pop(entry.entry_id)
-    await data.coordinator.async_shutdown()
+    await entry.runtime_data.coordinator.async_shutdown()
 
     return True
 
