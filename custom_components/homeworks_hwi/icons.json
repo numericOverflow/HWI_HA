@@ -1,5 +1,29 @@
 {
+  "entity": {
+    "sensor": {
+      "connection": {
+        "default": "mdi:check-network",
+        "state": {
+          "disconnected": "mdi:network-off"
+        }
+      },
+      "last_kls_time": {
+        "default": "mdi:clock-check"
+      },
+      "reconnect_count": {
+        "default": "mdi:connection"
+      },
+      "poll_failure_count": {
+        "default": "mdi:alert-circle"
+      },
+      "parse_error_count": {
+        "default": "mdi:alert"
+      }
+    }
+  },
   "services": {
-    "send_command": "mdi:console"
+    "send_command": {
+      "service": "mdi:console"
+    }
   }
 }

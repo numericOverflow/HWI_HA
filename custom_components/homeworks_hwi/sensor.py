@@ -77,6 +77,7 @@ class HomeworksConnectionSensor(HomeworksHealthSensor):
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["connected", "disconnected"]
     _attr_entity_registry_enabled_default = True  # This one is enabled by default
+    _attr_translation_key = "connection"
 
     def __init__(self, coordinator: HomeworksCoordinator, controller_id: str) -> None:
         """Initialize the connection sensor."""
@@ -86,13 +87,6 @@ class HomeworksConnectionSensor(HomeworksHealthSensor):
     def native_value(self) -> str:
         """Return the connection status."""
         return "connected" if self.coordinator.connected else "disconnected"
-
-    @property
-    def icon(self) -> str:
-        """Return the icon."""
-        if self.coordinator.connected:
-            return "mdi:check-network"
-        return "mdi:network-off"
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -104,6 +98,7 @@ class HomeworksLastKLSTimeSensor(HomeworksHealthSensor):
     """Sensor showing last KLS message timestamp."""
 
     _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_translation_key = "last_kls_time"
 
     def __init__(self, coordinator: HomeworksCoordinator, controller_id: str) -> None:
         """Initialize the last KLS time sensor."""
@@ -113,11 +108,6 @@ class HomeworksLastKLSTimeSensor(HomeworksHealthSensor):
     def native_value(self) -> datetime | None:
         """Return the last KLS timestamp."""
         return self.coordinator.health.last_kls_time
-
-    @property
-    def icon(self) -> str:
-        """Return the icon."""
-        return "mdi:clock-check"
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -129,6 +119,7 @@ class HomeworksReconnectCountSensor(HomeworksHealthSensor):
     """Sensor showing reconnection count."""
 
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_translation_key = "reconnect_count"
 
     def __init__(self, coordinator: HomeworksCoordinator, controller_id: str) -> None:
         """Initialize the reconnect count sensor."""
@@ -141,11 +132,6 @@ class HomeworksReconnectCountSensor(HomeworksHealthSensor):
         """Return the reconnect count."""
         return self.coordinator.health.reconnect_count
 
-    @property
-    def icon(self) -> str:
-        """Return the icon."""
-        return "mdi:connection"
-
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
@@ -156,6 +142,7 @@ class HomeworksPollFailureCountSensor(HomeworksHealthSensor):
     """Sensor showing poll failure count."""
 
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_translation_key = "poll_failure_count"
 
     def __init__(self, coordinator: HomeworksCoordinator, controller_id: str) -> None:
         """Initialize the poll failure count sensor."""
@@ -168,11 +155,6 @@ class HomeworksPollFailureCountSensor(HomeworksHealthSensor):
         """Return the poll failure count."""
         return self.coordinator.health.poll_failure_count
 
-    @property
-    def icon(self) -> str:
-        """Return the icon."""
-        return "mdi:alert-circle"
-
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
@@ -183,6 +165,7 @@ class HomeworksParseErrorCountSensor(HomeworksHealthSensor):
     """Sensor showing parse error count."""
 
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_translation_key = "parse_error_count"
 
     def __init__(self, coordinator: HomeworksCoordinator, controller_id: str) -> None:
         """Initialize the parse error count sensor."""
@@ -194,11 +177,6 @@ class HomeworksParseErrorCountSensor(HomeworksHealthSensor):
     def native_value(self) -> int:
         """Return the parse error count."""
         return self.coordinator.health.parse_error_count
-
-    @property
-    def icon(self) -> str:
-        """Return the icon."""
-        return "mdi:alert"
 
     @callback
     def _handle_coordinator_update(self) -> None:
