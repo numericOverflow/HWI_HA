@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 import logging
 from typing import Any
 
@@ -431,12 +431,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Notify listeners if any state changed
         if state_changed:
             self.async_set_updated_data(
-                {
-                    "cco_states": dict(self._cco_states),
-                    "dimmer_states": dict(self._dimmer_states),
-                    "connected": self.connected,
-                    "last_update": datetime.now().isoformat(),
-                }
+                {"connected": True, "poll_count": self._poll_count}
             )
 
     def _handle_dimmer_update(self, address: str, level: int) -> None:
@@ -454,12 +449,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     level,
                 )
                 self.async_set_updated_data(
-                    {
-                        "cco_states": dict(self._cco_states),
-                        "dimmer_states": dict(self._dimmer_states),
-                        "connected": self.connected,
-                        "last_update": datetime.now().isoformat(),
-                    }
+                    {"connected": True, "poll_count": self._poll_count}
                 )
 
     def _dispatch_button_event(
@@ -529,13 +519,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
             # Notify coordinator listeners
             self.async_set_updated_data(
-                {
-                    "cco_states": dict(self._cco_states),
-                    "cci_states": dict(self._cci_states),
-                    "dimmer_states": dict(self._dimmer_states),
-                    "connected": self.connected,
-                    "last_update": datetime.now().isoformat(),
-                }
+                {"connected": True, "poll_count": self._poll_count}
             )
 
     # === Command Methods (proxies to client) ===
