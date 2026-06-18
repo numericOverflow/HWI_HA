@@ -130,8 +130,8 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
         self._device = device
         self._controller_id = controller_id
 
-        # Set up entity attributes
-        self._entity_name = device.name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.climate.{device.unique_id}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.climate.{device.address}.v2")},
@@ -147,11 +147,6 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
             "button": device.address.button,
             "inverted": device.inverted,
         }
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def hvac_mode(self) -> HVACMode:

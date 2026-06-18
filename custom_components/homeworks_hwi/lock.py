@@ -147,7 +147,8 @@ class HomeworksCCOLock(CoordinatorEntity[HomeworksCoordinator], LockEntity):
         self._device = device
         self._controller_id = controller_id
 
-        self._entity_name = device.name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.lock.{device.unique_id}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.lock.{device.address}.v2")},
@@ -162,11 +163,6 @@ class HomeworksCCOLock(CoordinatorEntity[HomeworksCoordinator], LockEntity):
             "homeworks_address": str(device.address),
             "inverted": device.inverted,
         }
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def is_locked(self) -> bool:

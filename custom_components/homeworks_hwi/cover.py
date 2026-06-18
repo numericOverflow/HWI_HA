@@ -202,7 +202,8 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self._is_opening = False
         self._is_closing = False
 
-        self._entity_name = device.name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.cover.{device.unique_id}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.cover.{device.address}.v2")},
@@ -216,11 +217,6 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self._attr_extra_state_attributes = {
             "homeworks_address": str(device.address),
         }
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def is_closed(self) -> bool | None:
@@ -356,7 +352,8 @@ class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, Re
         # Last known position: True=closed, False=open, None=unknown
         self._last_known_closed: bool | None = None
 
-        self._entity_name = name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.rpm_cover.{address}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.rpm_cover.{address}.v2")},
@@ -367,11 +364,6 @@ class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, Re
         if area:
             device_info["suggested_area"] = area
         self._attr_device_info = device_info
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -468,10 +460,10 @@ class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, Re
         if (last_state := await self.async_get_last_state()) is not None:
             if last_state.attributes.get(ATTR_LAST_KNOWN_POSITION) == "closed":
                 self._last_known_closed = True
-                _LOGGER.debug("Restored %s last position: closed", self._entity_name)
+                _LOGGER.debug("Restored %s last position: closed", self._address)
             elif last_state.attributes.get(ATTR_LAST_KNOWN_POSITION) == "open":
                 self._last_known_closed = False
-                _LOGGER.debug("Restored %s last position: open", self._entity_name)
+                _LOGGER.debug("Restored %s last position: open", self._address)
 
         # Register as a dimmer to receive DL (dimmer level) updates
         self.coordinator.register_dimmer(self._address)
@@ -516,7 +508,8 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self._is_opening = False
         self._is_closing = False
 
-        self._entity_name = name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         self._attr_unique_id = f"homeworks.{controller_id}.qed_cover.{address}.v2"
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.qed_cover.{address}.v2")},
@@ -527,11 +520,6 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         if area:
             device_info["suggested_area"] = area
         self._attr_device_info = device_info
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
