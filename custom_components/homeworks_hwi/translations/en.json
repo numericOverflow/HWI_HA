@@ -62,6 +62,7 @@
                     "manage_cco_devices": "Manage CCO devices (switches, lights, covers, locks)",
                     "manage_dimmers": "Manage dimmable lights",
                     "manage_rpm_covers": "Manage motor covers (RPM)",
+                    "manage_qed_covers": "Manage QED shades (Sivoia)",
                     "manage_keypads": "Manage keypads",
                     "controller_settings": "Controller settings",
                     "import_csv": "Import devices from CSV",
@@ -125,6 +126,47 @@
                 "description": "Select covers to remove.",
                 "data": {
                     "index": "Covers to remove"
+                }
+            },
+            "manage_qed_covers": {
+                "title": "QED Shade Management",
+                "description": "Sivoia QED shades support precise position control (0-100%).",
+                "menu_options": {
+                    "add_qed_cover": "Add QED shade",
+                    "select_edit_qed_cover": "Edit QED shade",
+                    "remove_qed_cover": "Remove QED shade"
+                }
+            },
+            "add_qed_cover": {
+                "title": "Add QED Shade",
+                "description": "Sivoia QED shades use dimmer addresses and report continuous position feedback.",
+                "data": {
+                    "name": "Shade name",
+                    "addr": "Shade address",
+                    "area": "Area"
+                },
+                "data_description": {
+                    "addr": "Dimmer address in format [processor:link:module:zone] (4-part) or [processor:link:MI:module:zone] (5-part)",
+                    "area": "Assign this shade to an area in Home Assistant"
+                }
+            },
+            "select_edit_qed_cover": {
+                "title": "Select QED Shade to Edit",
+                "data": {
+                    "index": "Shade"
+                }
+            },
+            "edit_qed_cover": {
+                "title": "Edit QED Shade",
+                "data": {
+                    "name": "Shade name"
+                }
+            },
+            "remove_qed_cover": {
+                "title": "Remove QED Shades",
+                "description": "Select shades to remove.",
+                "data": {
+                    "index": "Shades to remove"
                 }
             },
             "manage_keypads": {

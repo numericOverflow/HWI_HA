@@ -193,13 +193,15 @@ def _parse_dl(line: str, parts: list[str], ts: datetime) -> DimmerLevelMessage |
     """Parse DL (Dimmer Level) message.
 
     Format: DL, [address], <level>
+    Level may be integer ("75") or float ("97.00") depending on device type.
+    Sivoia QED shades report floats; standard dimmers report integers.
     """
     if len(parts) < 3:
         return None
 
     address = normalize_address(parts[1])
     try:
-        level = int(parts[2])
+        level = int(round(float(parts[2])))
     except ValueError:
         return None
 

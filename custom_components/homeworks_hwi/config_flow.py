@@ -64,6 +64,7 @@ from .const import (
     CONF_LED,
     CONF_LOCKS,
     CONF_NUMBER,
+    CONF_QED_COVERS,
     CONF_RATE,
     CONF_RELAY_NUMBER,
     CONF_RELEASE_DELAY,
@@ -82,6 +83,7 @@ from .const import (
     DEFAULT_KLS_POLL_INTERVAL,
     DEFAULT_KLS_WINDOW_OFFSET,
     DEFAULT_LIGHT_NAME,
+    DEFAULT_QED_COVER_NAME,
     DEFAULT_RPM_COVER_NAME,
     DOMAIN,
 )
@@ -513,6 +515,105 @@ async def validate_remove_rpm_cover(
     return {}
 
 
+# === QED Shade CRUD ===
+
+
+async def validate_add_qed_cover(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Validate QED cover input."""
+    addr = _validate_address(user_input[CONF_ADDR])
+    user_input[CONF_ADDR] = addr
+    for item in handler.options.get(CONF_QED_COVERS, []):
+        if normalize_address(item[CONF_ADDR]) == addr:
+            raise SchemaFlowError("duplicated_addr")
+    items = handler.options.setdefault(CONF_QED_COVERS, [])
+    items.append(user_input)
+    return {}
+
+
+async def get_select_qed_cover_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
+    """Return schema for selecting a QED cover."""
+    covers = handler.options.get(CONF_QED_COVERS, [])
+    if not covers:
+        raise SchemaFlowError("no_devices")
+    return vol.Schema(
+        {
+            vol.Required(CONF_INDEX): vol.In(
+                {
+                    str(i): f"{c.get(CONF_NAME, 'QED')} ({c[CONF_ADDR]})"
+                    for i, c in enumerate(covers)
+                }
+            )
+        }
+    )
+
+
+async def validate_select_qed_cover(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Store QED cover index."""
+    handler.flow_state["_qed_idx"] = int(user_input[CONF_INDEX])
+    return {}
+
+
+async def get_edit_qed_cover_suggested_values(
+    handler: SchemaCommonFlowHandler,
+) -> dict[str, Any]:
+    """Return suggested values for QED cover editing."""
+    idx = handler.flow_state["_qed_idx"]
+    return dict(handler.options[CONF_QED_COVERS][idx])
+
+
+async def validate_qed_cover_edit(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Update edited QED cover."""
+    idx = handler.flow_state["_qed_idx"]
+    handler.options[CONF_QED_COVERS][idx].update(user_input)
+    return {}
+
+
+async def get_remove_qed_cover_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
+    """Return schema for QED cover removal."""
+    covers = handler.options.get(CONF_QED_COVERS, [])
+    if not covers:
+        raise SchemaFlowError("no_devices")
+    return vol.Schema(
+        {
+            vol.Required(CONF_INDEX): cv.multi_select(
+                {
+                    str(i): f"{c.get(CONF_NAME, 'QED')} ({c[CONF_ADDR]})"
+                    for i, c in enumerate(covers)
+                }
+            )
+        }
+    )
+
+
+async def validate_remove_qed_cover(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Remove selected QED covers."""
+    removed = set(user_input[CONF_INDEX])
+    ent_registry = er.async_get(handler.parent_handler.hass)
+
+    new_items = []
+    for i, item in enumerate(handler.options.get(CONF_QED_COVERS, [])):
+        if str(i) not in removed:
+            new_items.append(item)
+        else:
+            for entity_id in list(ent_registry.entities):
+                entity = ent_registry.entities[entity_id]
+                if entity.platform == DOMAIN and item[CONF_ADDR] in (
+                    entity.unique_id or ""
+                ):
+                    ent_registry.async_remove(entity_id)
+
+    handler.options[CONF_QED_COVERS] = new_items
+    return {}
+
+
 # === Keypad CRUD ===
 
 
@@ -884,6 +985,18 @@ async def async_parse_csv(
                         area,
                     )
                 )
+            elif device_type in ("QED", "QED_SHADE", "SIVOIA_QED", "QED_COVER"):
+                # QED Sivoia shades (position-trackable)
+                devices.append(
+                    DeviceImport(
+                        "QED_COVER",
+                        normalize_address(row["address"].strip()),
+                        None,  # No button for QED shades
+                        row.get("name", "").strip(),
+                        None,  # entity_type not used for QED covers
+                        area,
+                    )
+                )
     except Exception as err:
         _LOGGER.exception("Error processing CSV")
         raise SchemaFlowError("invalid_csv") from err
@@ -961,6 +1074,20 @@ def _find_existing_rpm_cover(handler: SchemaCommonFlowHandler, address: str) -> 
     return None
 
 
+def _is_duplicate_qed_cover(handler: SchemaCommonFlowHandler, address: str) -> bool:
+    """Check if a QED cover already exists."""
+    return _find_existing_qed_cover(handler, address) is not None
+
+
+def _find_existing_qed_cover(handler: SchemaCommonFlowHandler, address: str) -> int | None:
+    """Find existing QED cover index, or None if not found."""
+    normalized = normalize_address(address)
+    for i, cover in enumerate(handler.options.get(CONF_QED_COVERS, [])):
+        if normalize_address(cover[CONF_ADDR]) == normalized:
+            return i
+    return None
+
+
 async def get_confirm_import_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
     """Return schema for confirming imports."""
     devices = handler.flow_state.get("import_devices", [])
@@ -988,6 +1115,14 @@ async def get_confirm_import_schema(handler: SchemaCommonFlowHandler) -> vol.Sch
         elif dev.device_type == "MOTOR_COVER":
             is_dup = _is_duplicate_rpm_cover(handler, dev.address)
             label = f"Motor Cover: {dev.name} ({dev.address})"
+            if is_dup:
+                label += " [ALREADY EXISTS]"
+            else:
+                default_selected.append(str(idx))
+            selections[str(idx)] = label
+        elif dev.device_type == "QED_COVER":
+            is_dup = _is_duplicate_qed_cover(handler, dev.address)
+            label = f"QED Shade: {dev.name} ({dev.address})"
             if is_dup:
                 label += " [ALREADY EXISTS]"
             else:
@@ -1114,6 +1249,31 @@ async def validate_confirm_import(
             if device.area:
                 rpm_config[CONF_AREA] = device.area
             items.append(rpm_config)
+        elif device.device_type == "QED_COVER":
+            # Check if duplicate - if so, update the area instead of skipping
+            existing_idx = _find_existing_qed_cover(handler, device.address)
+            if existing_idx is not None:
+                if device.area:
+                    handler.options[CONF_QED_COVERS][existing_idx][CONF_AREA] = device.area
+                    _LOGGER.debug(
+                        "Updated existing QED cover %s with area=%s",
+                        device.name,
+                        device.area,
+                    )
+                skipped += 1
+                continue
+            _LOGGER.debug(
+                "Importing QED cover %s",
+                device.name,
+            )
+            items = handler.options.setdefault(CONF_QED_COVERS, [])
+            qed_config = {
+                CONF_ADDR: device.address,
+                CONF_NAME: device.name or DEFAULT_QED_COVER_NAME,
+            }
+            if device.area:
+                qed_config[CONF_AREA] = device.area
+            items.append(qed_config)
         else:
             # CCO device
             # Check if duplicate - if so, update the area instead of skipping
@@ -1372,6 +1532,20 @@ DATA_SCHEMA_EDIT_RPM_COVER = vol.Schema(
     }
 )
 
+DATA_SCHEMA_ADD_QED_COVER = vol.Schema(
+    {
+        vol.Optional(CONF_NAME, default=DEFAULT_QED_COVER_NAME): selector.TextSelector(),
+        vol.Required(CONF_ADDR): selector.TextSelector(),
+        vol.Optional(CONF_AREA): selector.AreaSelector(),
+    }
+)
+
+DATA_SCHEMA_EDIT_QED_COVER = vol.Schema(
+    {
+        vol.Optional(CONF_NAME): selector.TextSelector(),
+    }
+)
+
 # === Options Flow Definition ===
 
 OPTIONS_FLOW = {
@@ -1380,6 +1554,7 @@ OPTIONS_FLOW = {
             "manage_cco_devices",
             "manage_dimmers",
             "manage_rpm_covers",
+            "manage_qed_covers",
             "manage_keypads",
             "controller_settings",
             "import_csv",
@@ -1442,6 +1617,25 @@ OPTIONS_FLOW = {
     ),
     "remove_rpm_cover": SchemaFlowFormStep(
         get_remove_rpm_cover_schema, validate_user_input=validate_remove_rpm_cover
+    ),
+    "manage_qed_covers": SchemaFlowMenuStep(
+        ["add_qed_cover", "select_edit_qed_cover", "remove_qed_cover"]
+    ),
+    "add_qed_cover": SchemaFlowFormStep(
+        DATA_SCHEMA_ADD_QED_COVER, validate_user_input=validate_add_qed_cover
+    ),
+    "select_edit_qed_cover": SchemaFlowFormStep(
+        get_select_qed_cover_schema,
+        validate_user_input=validate_select_qed_cover,
+        next_step="edit_qed_cover",
+    ),
+    "edit_qed_cover": SchemaFlowFormStep(
+        DATA_SCHEMA_EDIT_QED_COVER,
+        suggested_values=get_edit_qed_cover_suggested_values,
+        validate_user_input=validate_qed_cover_edit,
+    ),
+    "remove_qed_cover": SchemaFlowFormStep(
+        get_remove_qed_cover_schema, validate_user_input=validate_remove_qed_cover
     ),
     "manage_keypads": SchemaFlowMenuStep(
         ["add_keypad", "select_edit_keypad", "remove_keypad"]

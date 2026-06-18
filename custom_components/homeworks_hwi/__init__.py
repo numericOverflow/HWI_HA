@@ -364,6 +364,39 @@ def _cleanup_devices_without_areas(hass: HomeAssistant, entry: ConfigEntry) -> N
         )
 
 
+def _cleanup_orphaned_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove devices that have no entities after platform setup.
+
+    After a config entry reload (e.g., after removing a device via options flow),
+    devices whose entities were not recreated become orphaned. This removes them.
+    """
+    device_registry = dr.async_get(hass)
+    entity_registry = async_get_entity_registry(hass)
+
+    for device_entry in list(device_registry.devices.values()):
+        if entry.entry_id not in device_entry.config_entries:
+            continue
+
+        is_our_device = any(
+            identifier[0] == DOMAIN for identifier in device_entry.identifiers
+        )
+        if not is_our_device:
+            continue
+
+        # Check if any entities reference this device
+        has_entities = any(
+            entity.device_id == device_entry.id
+            for entity in entity_registry.entities.values()
+        )
+        if not has_entities:
+            _LOGGER.info(
+                "Removing orphaned device: %s (%s)",
+                device_entry.name,
+                device_entry.identifiers,
+            )
+            device_registry.async_remove_device(device_entry.id)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Homeworks from a config entry.
 
@@ -435,6 +468,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Remove orphaned devices (devices with no entities after reload)
+    _cleanup_orphaned_devices(hass, entry)
 
     # Force-assign areas to devices after platforms are set up
     # This is more reliable than suggested_area which only works on first creation
@@ -715,6 +751,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     data: HomeworksData = hass.data[DOMAIN].pop(entry.entry_id)
     await data.coordinator.async_shutdown()
 
+    return True
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: ConfigEntry, device_entry: dr.DeviceEntry
+) -> bool:
+    """Allow removal of a device from this config entry.
+
+    HA calls this to confirm whether a device can be removed.
+    We allow removal if the device has no active entities (orphaned after
+    a cover/dimmer/etc was deleted from the options flow).
+    """
     return True
 
 

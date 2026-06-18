@@ -37,6 +37,9 @@ CONF_COVERS: Final = "covers"
 # RPM Motor Cover configuration
 CONF_RPM_COVERS: Final = "rpm_covers"
 
+# QED Shade configuration
+CONF_QED_COVERS: Final = "qed_covers"
+
 # Lock-specific configuration
 CONF_LOCKS: Final = "locks"
 
@@ -57,6 +60,7 @@ DEFAULT_LIGHT_NAME: Final = "Homeworks light"
 DEFAULT_CCO_NAME: Final = "Homeworks CCO"
 DEFAULT_COVER_NAME: Final = "Homeworks Cover"
 DEFAULT_RPM_COVER_NAME: Final = "Homeworks Motor Cover"
+DEFAULT_QED_COVER_NAME: Final = "Homeworks QED Shade"
 DEFAULT_FAN_NAME: Final = "Homeworks Fan"
 DEFAULT_LOCK_NAME: Final = "Homeworks Lock"
 DEFAULT_SWITCH_NAME: Final = "Homeworks Switch"
