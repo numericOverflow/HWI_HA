@@ -16,25 +16,20 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
+from . import HomeworksHWIConfigEntry, create_cco_entities_for_type, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
-    CONF_BUTTON_NUMBER,
-    CONF_CCO_DEVICES,
     CONF_CONTROLLER_ID,
     CONF_DIMMERS,
-    CONF_ENTITY_TYPE,
-    CONF_INVERTED,
     CONF_RATE,
-    CONF_RELAY_NUMBER,
     CCO_TYPE_LIGHT,
     DEFAULT_FADE_RATE,
     DEFAULT_LIGHT_NAME,
     DOMAIN,
 )
 from .coordinator import HomeworksCoordinator
-from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
+from .models import CCODevice, CCOEntityType, normalize_address
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,45 +60,11 @@ async def async_setup_entry(
         entities.append(entity)
 
     # CCO-based on/off lights
-    for device_config in entry.options.get(CONF_CCO_DEVICES, []):
-        if device_config.get(CONF_ENTITY_TYPE) != CCO_TYPE_LIGHT:
-            continue
-
-        try:
-            addr_str = device_config[CONF_ADDR]
-            # Check CONF_BUTTON_NUMBER (new) then CONF_RELAY_NUMBER (legacy)
-            button = device_config.get(
-                CONF_BUTTON_NUMBER, device_config.get(CONF_RELAY_NUMBER, 1)
-            )
-
-            if "," not in addr_str:
-                full_addr = f"{addr_str},{button}"
-            else:
-                full_addr = addr_str
-
-            address = CCOAddress.from_string(full_addr)
-
-            device = CCODevice(
-                address=address,
-                name=device_config.get(CONF_NAME, DEFAULT_LIGHT_NAME),
-                entity_type=CCOEntityType.LIGHT,
-                inverted=device_config.get(CONF_INVERTED, False),
-                area=resolve_area_name(hass, device_config.get(CONF_AREA)),
-            )
-
-            entity = HomeworksCCOLight(
-                coordinator=coordinator,
-                controller_id=controller_id,
-                device=device,
-            )
-            entities.append(entity)
-
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error(
-                "Invalid config for CCO light device '%s': %s",
-                device_config.get(CONF_NAME, "unknown"),
-                err,
-            )
+    cco_lights = create_cco_entities_for_type(
+        hass, entry, coordinator, controller_id,
+        CCO_TYPE_LIGHT, CCOEntityType.LIGHT, HomeworksCCOLight, DEFAULT_LIGHT_NAME,
+    )
+    entities.extend(cco_lights)
 
     if entities:
         _LOGGER.debug("Adding %d light entities", len(entities))

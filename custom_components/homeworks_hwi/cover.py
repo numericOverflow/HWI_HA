@@ -18,18 +18,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
+from . import HomeworksHWIConfigEntry, create_cco_entities_for_type, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
-    CONF_BUTTON_NUMBER,
-    CONF_CCO_DEVICES,
     CONF_CONTROLLER_ID,
-    CONF_COVERS,
-    CONF_ENTITY_TYPE,
-    CONF_INVERTED,
     CONF_QED_COVERS,
-    CONF_RELAY_NUMBER,
     CONF_RPM_COVERS,
     CCO_TYPE_COVER,
     DEFAULT_COVER_NAME,
@@ -38,7 +32,7 @@ from .const import (
     DOMAIN,
 )
 from .coordinator import HomeworksCoordinator
-from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
+from .models import CCODevice, CCOEntityType, normalize_address
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,82 +49,11 @@ async def async_setup_entry(
     entities: list[HomeworksCCOCover | HomeworksRPMCover | HomeworksQEDCover] = []
 
     # New-style CCO devices with type=cover
-    for device_config in entry.options.get(CONF_CCO_DEVICES, []):
-        if device_config.get(CONF_ENTITY_TYPE) != CCO_TYPE_COVER:
-            continue
-
-        try:
-            addr_str = device_config[CONF_ADDR]
-            # Check CONF_BUTTON_NUMBER (new) then CONF_RELAY_NUMBER (legacy)
-            button = device_config.get(
-                CONF_BUTTON_NUMBER, device_config.get(CONF_RELAY_NUMBER, 1)
-            )
-
-            if "," not in addr_str:
-                full_addr = f"{addr_str},{button}"
-            else:
-                full_addr = addr_str
-
-            address = CCOAddress.from_string(full_addr)
-
-            device = CCODevice(
-                address=address,
-                name=device_config.get(CONF_NAME, DEFAULT_COVER_NAME),
-                entity_type=CCOEntityType.COVER,
-                inverted=device_config.get(CONF_INVERTED, False),
-                area=resolve_area_name(hass, device_config.get(CONF_AREA)),
-            )
-
-            entity = HomeworksCCOCover(
-                coordinator=coordinator,
-                controller_id=controller_id,
-                device=device,
-            )
-            entities.append(entity)
-
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error(
-                "Invalid config for cover device '%s': %s",
-                device_config.get(CONF_NAME, "unknown"),
-                err,
-            )
-
-    # Legacy covers format
-    for cover_config in entry.options.get(CONF_COVERS, []):
-        try:
-            addr = normalize_address(cover_config[CONF_ADDR])
-            parts = addr.strip("[]").split(":")
-
-            # For legacy covers, we need two buttons: one for open, one for close
-            # Button 1 typically controls the cover
-            address = CCOAddress(
-                processor=int(parts[0]),
-                link=int(parts[1]),
-                address=int(parts[2]),
-                button=1,  # Default button for cover control
-            )
-
-            device = CCODevice(
-                address=address,
-                name=cover_config.get(CONF_NAME, DEFAULT_COVER_NAME),
-                entity_type=CCOEntityType.COVER,
-                inverted=cover_config.get(CONF_INVERTED, False),
-                area=resolve_area_name(hass, cover_config.get(CONF_AREA)),
-            )
-
-            entity = HomeworksCCOCover(
-                coordinator=coordinator,
-                controller_id=controller_id,
-                device=device,
-            )
-            entities.append(entity)
-
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error(
-                "Invalid config for legacy cover device '%s': %s",
-                cover_config.get(CONF_NAME, "unknown"),
-                err,
-            )
+    cco_covers = create_cco_entities_for_type(
+        hass, entry, coordinator, controller_id,
+        CCO_TYPE_COVER, CCOEntityType.COVER, HomeworksCCOCover, DEFAULT_COVER_NAME,
+    )
+    entities.extend(cco_covers)
 
     # RPM motor covers
     for rpm_cover_config in entry.options.get(CONF_RPM_COVERS, []):

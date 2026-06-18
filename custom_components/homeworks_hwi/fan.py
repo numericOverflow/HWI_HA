@@ -6,28 +6,20 @@ import logging
 from typing import Any
 
 from homeassistant.components.fan import FanEntity, FanEntityFeature
-from homeassistant.const import CONF_NAME
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
+from . import HomeworksHWIConfigEntry, create_cco_entities_for_type
 from .const import (
-    CONF_ADDR,
-    CONF_AREA,
-    CONF_BUTTON_NUMBER,
-    CONF_CCO_DEVICES,
     CONF_CONTROLLER_ID,
-    CONF_ENTITY_TYPE,
-    CONF_INVERTED,
-    CONF_RELAY_NUMBER,
     CCO_TYPE_FAN,
     DEFAULT_FAN_NAME,
     DOMAIN,
 )
 from .coordinator import HomeworksCoordinator
-from .models import CCOAddress, CCODevice, CCOEntityType
+from .models import CCODevice, CCOEntityType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,49 +33,11 @@ async def async_setup_entry(
     data = entry.runtime_data
     coordinator = data.coordinator
     controller_id = entry.options[CONF_CONTROLLER_ID]
-    entities: list[HomeworksCCOFan] = []
 
-    # CCO devices with type=fan
-    for device_config in entry.options.get(CONF_CCO_DEVICES, []):
-        if device_config.get(CONF_ENTITY_TYPE) != CCO_TYPE_FAN:
-            continue
-
-        try:
-            addr_str = device_config[CONF_ADDR]
-            # Check CONF_BUTTON_NUMBER (new) then CONF_RELAY_NUMBER (legacy)
-            button = device_config.get(
-                CONF_BUTTON_NUMBER, device_config.get(CONF_RELAY_NUMBER, 1)
-            )
-
-            # Handle address with or without button
-            if "," not in addr_str:
-                full_addr = f"{addr_str},{button}"
-            else:
-                full_addr = addr_str
-
-            address = CCOAddress.from_string(full_addr)
-
-            device = CCODevice(
-                address=address,
-                name=device_config.get(CONF_NAME, DEFAULT_FAN_NAME),
-                entity_type=CCOEntityType.FAN,
-                inverted=device_config.get(CONF_INVERTED, False),
-                area=resolve_area_name(hass, device_config.get(CONF_AREA)),
-            )
-
-            entity = HomeworksCCOFan(
-                coordinator=coordinator,
-                controller_id=controller_id,
-                device=device,
-            )
-            entities.append(entity)
-
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error(
-                "Invalid config for fan device '%s': %s",
-                device_config.get(CONF_NAME, "unknown"),
-                err,
-            )
+    entities = create_cco_entities_for_type(
+        hass, entry, coordinator, controller_id,
+        CCO_TYPE_FAN, CCOEntityType.FAN, HomeworksCCOFan, DEFAULT_FAN_NAME,
+    )
 
     if entities:
         _LOGGER.debug("Adding %d CCO fan entities", len(entities))
