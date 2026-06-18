@@ -86,6 +86,8 @@ from .const import (
     DEFAULT_QED_COVER_NAME,
     DEFAULT_RPM_COVER_NAME,
     DOMAIN,
+    MAX_CSV_ROWS,
+    MAX_CSV_SIZE,
 )
 from .models import CCOAddress, normalize_address
 
@@ -849,6 +851,10 @@ async def async_parse_csv(
 ) -> dict[str, Any]:
     """Parse CSV content."""
     content = user_input["csv_file"]
+
+    if len(content) > MAX_CSV_SIZE:
+        raise SchemaFlowError("csv_too_large")
+
     # Remove BOM (Byte Order Mark) if present - Excel often adds this
     if content.startswith('\ufeff'):
         content = content[1:]
@@ -860,8 +866,12 @@ async def async_parse_csv(
     _LOGGER.debug("CSV field names: %s", reader.fieldnames)
 
     devices = []
+    row_count = 0
     try:
         for row in reader:
+            row_count += 1
+            if row_count > MAX_CSV_ROWS:
+                raise SchemaFlowError("csv_too_many_rows")
             device_type = row.get("device_type", "").strip().upper()
             # Get optional entity type for CCO devices (switch/light/cover/lock/climate)
             cco_type = row.get("type", "").strip().lower() or None
@@ -1154,17 +1164,7 @@ async def validate_confirm_import(
     """Process selected devices, skipping duplicates."""
     devices = handler.flow_state.get("import_devices", [])
 
-    # Debug: dump parsed devices to verify areas were parsed from CSV
-    _LOGGER.info("=== PARSED DEVICES FROM CSV ===")
-    for i, dev in enumerate(devices):
-        _LOGGER.info(
-            "Parsed[%d]: type=%s, name=%s, entity_type=%s, area=%s",
-            i,
-            dev.device_type,
-            dev.name,
-            dev.entity_type,
-            dev.area if dev.area else "*** NO AREA ***",
-        )
+    _LOGGER.debug("Processing %d parsed devices from CSV", len(devices))
     selected = user_input.get("devices", [])
     skipped = 0
 
@@ -1314,19 +1314,10 @@ async def validate_confirm_import(
                 _LOGGER.warning("No area found for CCO device %s", device.name)
             items.append(cco_config)
 
-    # Debug: dump final CCO config to verify areas are stored
-    _LOGGER.info(
-        "=== FINAL CCO CONFIG DUMP ===\nTotal CCO devices: %d",
+    _LOGGER.debug(
+        "CSV import complete: %d CCO devices total",
         len(handler.options.get(CONF_CCO_DEVICES, [])),
     )
-    for i, cfg in enumerate(handler.options.get(CONF_CCO_DEVICES, [])):
-        _LOGGER.info(
-            "CCO[%d]: name=%s, type=%s, area=%s",
-            i,
-            cfg.get(CONF_NAME),
-            cfg.get(CONF_ENTITY_TYPE),
-            cfg.get(CONF_AREA, "*** NO AREA ***"),
-        )
 
     return {}
 

@@ -61,12 +61,14 @@ from .const import (
     CONF_RPM_COVERS,
     CCO_TYPE_CLIMATE,
     CCO_TYPE_COVER,
+    CCO_TYPE_FAN,
     CCO_TYPE_LIGHT,
     CCO_TYPE_LOCK,
     CCO_TYPE_SWITCH,
     DEFAULT_KLS_POLL_INTERVAL,
     DEFAULT_KLS_WINDOW_OFFSET,
     DOMAIN,
+    MAX_COMMAND_DELAY_MS,
 )
 from .coordinator import HomeworksCoordinator
 from .models import CCOAddress, CCODevice, CCOEntityType, normalize_address
@@ -276,7 +278,11 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
 
     for command in commands:
         if command.lower().startswith("delay"):
-            delay = int(command.partition(" ")[2])
+            try:
+                delay = min(int(command.partition(" ")[2]), MAX_COMMAND_DELAY_MS)
+            except (ValueError, IndexError):
+                _LOGGER.warning("Invalid delay command ignored: %s", command)
+                continue
             _LOGGER.debug("Sleeping for %s ms", delay)
             await asyncio.sleep(delay / 1000)
         else:
@@ -657,7 +663,7 @@ def _register_cco_devices_from_options(
                 inverted=device_config.get(CONF_INVERTED, False),
             )
             coordinator.register_cco_device(device)
-        except Exception as err:
+        except (ValueError, KeyError, TypeError) as err:
             _LOGGER.error("Failed to register CCO device: %s - %s", device_config, err)
 
     # Legacy CCO format (switches)
@@ -681,7 +687,7 @@ def _register_cco_devices_from_options(
                 inverted=cco_config.get(CONF_INVERTED, False),
             )
             coordinator.register_cco_device(device)
-        except Exception as err:
+        except (ValueError, KeyError, TypeError) as err:
             _LOGGER.error("Failed to register legacy CCO: %s - %s", cco_config, err)
 
     # Legacy covers
@@ -704,7 +710,7 @@ def _register_cco_devices_from_options(
                 inverted=cover_config.get(CONF_INVERTED, False),
             )
             coordinator.register_cco_device(device)
-        except Exception as err:
+        except (ValueError, KeyError, TypeError) as err:
             _LOGGER.error("Failed to register legacy cover: %s - %s", cover_config, err)
 
     # Legacy locks
@@ -728,7 +734,7 @@ def _register_cco_devices_from_options(
                 inverted=lock_config.get(CONF_INVERTED, False),
             )
             coordinator.register_cco_device(device)
-        except Exception as err:
+        except (ValueError, KeyError, TypeError) as err:
             _LOGGER.error("Failed to register legacy lock: %s - %s", lock_config, err)
 
 
@@ -739,6 +745,8 @@ def _parse_entity_type(type_str: str) -> CCOEntityType:
         CCO_TYPE_LIGHT: CCOEntityType.LIGHT,
         CCO_TYPE_COVER: CCOEntityType.COVER,
         CCO_TYPE_LOCK: CCOEntityType.LOCK,
+        CCO_TYPE_CLIMATE: CCOEntityType.CLIMATE,
+        CCO_TYPE_FAN: CCOEntityType.FAN,
     }
     return type_map.get(type_str.lower(), CCOEntityType.SWITCH)
 
@@ -757,12 +765,27 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_remove_config_entry_device(
     hass: HomeAssistant, entry: ConfigEntry, device_entry: dr.DeviceEntry
 ) -> bool:
-    """Allow removal of a device from this config entry.
+    """Allow removal of a device only if it has no active entities.
 
     HA calls this to confirm whether a device can be removed.
-    We allow removal if the device has no active entities (orphaned after
+    We allow removal only if the device has no active entities (orphaned after
     a cover/dimmer/etc was deleted from the options flow).
     """
+    entity_registry = async_get_entity_registry(hass)
+
+    has_entities = any(
+        entity.device_id == device_entry.id
+        for entity in entity_registry.entities.values()
+        if entity.config_entry_id == entry.entry_id
+    )
+
+    if has_entities:
+        _LOGGER.debug(
+            "Refusing device removal — device '%s' still has active entities",
+            device_entry.name,
+        )
+        return False
+
     return True
 
 

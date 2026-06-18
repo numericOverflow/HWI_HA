@@ -70,6 +70,13 @@ DEFAULT_CCI_NAME: Final = "Homeworks Input"
 DEFAULT_KLS_POLL_INTERVAL: Final = 10
 DEFAULT_DIMMER_POLL_INTERVAL: Final = 30
 
+# Maximum delay allowed in send_command service (milliseconds)
+MAX_COMMAND_DELAY_MS: Final = 60000
+
+# CSV import limits
+MAX_CSV_SIZE: Final = 1_000_000  # 1MB
+MAX_CSV_ROWS: Final = 5000
+
 # KLS button window (0-indexed start of 8-button window in 24-digit KLS string)
 DEFAULT_KLS_WINDOW_OFFSET: Final = 9
 

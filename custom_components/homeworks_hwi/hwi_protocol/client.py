@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Callable
 
 from . import commands
@@ -157,7 +157,7 @@ class HomeworksClient:
         try:
             await self._transport.connect()
             await self._subscribe()
-            self._connected_at = datetime.now()
+            self._connected_at = datetime.now(tz=timezone.utc)
             self._reconnect_delay = RECONNECT_DELAY_MIN
             return True
         except HomeworksException as err:
@@ -171,7 +171,7 @@ class HomeworksClient:
                 try:
                     await self._transport.connect()
                     await self._subscribe()
-                    self._connected_at = datetime.now()
+                    self._connected_at = datetime.now(tz=timezone.utc)
                     self._reconnect_delay = RECONNECT_DELAY_MIN
                     _LOGGER.info("Connected to controller")
                 except HomeworksException as err:
@@ -190,7 +190,7 @@ class HomeworksClient:
                     messages = self._parser.feed(data)
                     for msg in messages:
                         self._message_count += 1
-                        self._last_message_at = datetime.now()
+                        self._last_message_at = datetime.now(tz=timezone.utc)
                         if self._callback:
                             try:
                                 self._callback(msg)

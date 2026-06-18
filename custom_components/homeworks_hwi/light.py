@@ -95,8 +95,12 @@ async def async_setup_entry(
             )
             entities.append(entity)
 
-        except Exception as err:
-            _LOGGER.error("Failed to create CCO light for %s: %s", device_config, err)
+        except (ValueError, KeyError, TypeError) as err:
+            _LOGGER.error(
+                "Invalid config for CCO light device '%s': %s",
+                device_config.get(CONF_NAME, "unknown"),
+                err,
+            )
 
     if entities:
         _LOGGER.debug("Adding %d light entities", len(entities))
