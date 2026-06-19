@@ -213,10 +213,12 @@ def resolve_area_name(hass: HomeAssistant, area_name: str | None) -> str | None:
 
     # No match found - log warning since user expects all areas to exist
     _LOGGER.warning(
-        "Area '%s' (normalized: '%s') NOT FOUND in registry. "
-        "Available areas: %s. HA will create a new area.",
+        "Area '%s' not found in registry. HA will create a new area.",
         area_name,
-        area_name_clean,
+    )
+    _LOGGER.debug(
+        "Available areas for resolution of '%s': %s",
+        area_name,
         [(a.id, a.name) for a in area_registry.areas.values()],
     )
 
