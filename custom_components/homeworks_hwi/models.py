@@ -195,6 +195,7 @@ class KeypadButton:
 # CCO button window configuration
 # The 8 CCO relay states are embedded within the 24-digit KLS string.
 # Default: positions 10-17 (1-indexed) = indices 9-16 (0-indexed)
+CCO_BUTTON_WINDOW_OFFSET = 9  # 0-indexed start of 8-button window (kept for test compat)
 CCO_BUTTON_WINDOW_LENGTH = 8  # Number of buttons in window
 
 
@@ -304,7 +305,10 @@ class ControllerHealth:
         self.last_error = error
 
 
-from .hwi_protocol.protocol import normalize_address  # noqa: F401 — re-exported
+try:
+    from .hwi_protocol.protocol import normalize_address  # noqa: F401 — re-exported
+except ImportError:
+    from hwi_protocol.protocol import normalize_address  # noqa: F401 — standalone test mode
 
 
 def parse_kls_address(addr: str) -> tuple[int, int, int]:
