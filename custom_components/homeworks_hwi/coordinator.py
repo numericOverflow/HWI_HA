@@ -103,13 +103,6 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Addresses that need KLS polling
         self._kls_poll_addresses: set[str] = set()
 
-    def register_kls_poll_address(self, address: str) -> None:
-        """Register an address for KLS polling."""
-        normalized = normalize_address(address)
-        self._kls_poll_addresses.add(normalized)
-        if self._client:
-            self._client.register_kls_address(normalized)
-
         # Dimmer addresses for polling
         self._dimmer_addresses: set[str] = set()
 
@@ -118,6 +111,13 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # CCI state change callbacks
         self._cci_callbacks: dict[tuple[int, int, int, int], list[Callable[[bool], None]]] = {}
+
+    def register_kls_poll_address(self, address: str) -> None:
+        """Register an address for KLS polling."""
+        normalized = normalize_address(address)
+        self._kls_poll_addresses.add(normalized)
+        if self._client:
+            self._client.register_kls_address(normalized)
 
     @property
     def controller_id(self) -> str:
