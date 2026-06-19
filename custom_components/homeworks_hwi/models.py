@@ -195,7 +195,6 @@ class KeypadButton:
 # CCO button window configuration
 # The 8 CCO relay states are embedded within the 24-digit KLS string.
 # Default: positions 10-17 (1-indexed) = indices 9-16 (0-indexed)
-CCO_BUTTON_WINDOW_OFFSET = 9  # 0-indexed start of 8-button window
 CCO_BUTTON_WINDOW_LENGTH = 8  # Number of buttons in window
 
 
@@ -233,7 +232,7 @@ class KLSState:
     def get_cco_state(
         self,
         button: int,
-        window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
+        window_offset: int = 9,
     ) -> bool:
         """Get CCO relay state from the button window.
 
@@ -305,26 +304,7 @@ class ControllerHealth:
         self.last_error = error
 
 
-def normalize_address(addr: str) -> str:
-    """Normalize Homeworks address format.
-
-    Converts various address formats to standard [##:##:##...] format.
-    Examples:
-        1:2:3:4 -> [01:02:03:04]
-        [1:2:3:4] -> [01:02:03:04]
-        1:2:3 -> [01:02:03]
-    """
-    # Remove brackets if present
-    addr = addr.strip("[]")
-
-    # Split into parts
-    parts = addr.split(":")
-
-    # Pad each part with leading zeros
-    parts = [part.zfill(2) for part in parts]
-
-    # Reconstruct with brackets
-    return f"[{':'.join(parts)}]"
+from .hwi_protocol.protocol import normalize_address  # noqa: F401 — re-exported
 
 
 def parse_kls_address(addr: str) -> tuple[int, int, int]:

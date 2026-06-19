@@ -27,8 +27,8 @@ from .client import (
     HomeworksClient,
     HomeworksClientConfig,
 )
+from .const import DEFAULT_KLS_WINDOW_OFFSET
 from .models import (
-    CCO_BUTTON_WINDOW_OFFSET,
     CCOAddress,
     CCODevice,
     ControllerHealth,
@@ -66,7 +66,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         controller_id: str,
         config_entry: ConfigEntry,
         kls_poll_interval: timedelta = DEFAULT_KLS_POLL_INTERVAL,
-        kls_window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
+        kls_window_offset: int = DEFAULT_KLS_WINDOW_OFFSET,
     ) -> None:
         """Initialize the coordinator."""
         super().__init__(
