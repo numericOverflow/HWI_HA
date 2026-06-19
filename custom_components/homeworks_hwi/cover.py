@@ -108,9 +108,7 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
     """
 
     _attr_device_class = CoverDeviceClass.SHADE
-    _attr_supported_features = (
-        CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP
-    )
+    _attr_supported_features = CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
 
     def __init__(
         self,
@@ -186,17 +184,6 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self.async_write_ha_state()
         # Close = logical ON state
         await self.coordinator.async_cco_turn_on(self._device)
-
-    async def async_stop_cover(self, **kwargs: Any) -> None:
-        """Stop the cover.
-
-        For CCO covers, there may not be a direct stop command.
-        This implementation clears movement flags only.
-        """
-        _LOGGER.debug("Stopping cover: %s", self._device.address)
-        self._is_opening = False
-        self._is_closing = False
-        self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
         """Register with coordinator when added to hass."""
@@ -417,6 +404,7 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self._controller_id = controller_id
         self._is_opening = False
         self._is_closing = False
+        self._received_initial_state = False
 
         self._attr_has_entity_name = True
         self._attr_name = None
@@ -444,8 +432,10 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         return self.coordinator.get_dimmer_level(self._address)
 
     @property
-    def is_closed(self) -> bool:
+    def is_closed(self) -> bool | None:
         """Return True if the cover is closed."""
+        if not self._received_initial_state:
+            return None
         return self.coordinator.get_dimmer_level(self._address) < 1
 
     @property
@@ -464,6 +454,7 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
 
         Clears optimistic movement flags when a real DL update arrives.
         """
+        self._received_initial_state = True
         self._is_opening = False
         self._is_closing = False
         self.async_write_ha_state()
