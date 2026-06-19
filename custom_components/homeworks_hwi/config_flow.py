@@ -893,6 +893,21 @@ async def async_parse_csv(
                 dict(row),
             )
 
+            # Validate address format before processing
+            raw_addr = row.get("address", "").strip()
+            if not raw_addr:
+                _LOGGER.warning("Skipping CSV row %d: missing address", row_count)
+                continue
+            try:
+                validated_addr = _validate_address(raw_addr)
+            except SchemaFlowError:
+                _LOGGER.warning(
+                    "Skipping CSV row %d: invalid address '%s'",
+                    row_count,
+                    raw_addr,
+                )
+                continue
+
             if device_type in ("CCO", "SWITCH"):
                 button = int(row.get("relay", row.get("button", 1)))
                 # Map type column to entity type, default to switch
@@ -903,7 +918,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         entity_type,
@@ -914,7 +929,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "DIMMER",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         None,
                         row.get("name", "").strip(),
                         None,
@@ -926,7 +941,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         CCO_TYPE_COVER,
@@ -938,7 +953,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         CCO_TYPE_LOCK,
@@ -950,7 +965,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         CCO_TYPE_CLIMATE,
@@ -962,7 +977,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         CCO_TYPE_FAN,
@@ -976,7 +991,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCI",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         input_num,
                         row.get("name", "").strip(),
                         None,  # entity_type not used for CCI
@@ -989,7 +1004,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "MOTOR_COVER",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         None,  # No button for motor covers
                         row.get("name", "").strip(),
                         None,  # entity_type not used for motor covers
@@ -1001,7 +1016,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "QED_COVER",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         None,  # No button for QED shades
                         row.get("name", "").strip(),
                         None,  # entity_type not used for QED covers
@@ -1749,12 +1764,11 @@ class HomeworksConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     CONF_CCO_DEVICES: [],
                     CONF_DIMMERS: [],
                     CONF_KEYPADS: [],
+                    CONF_RPM_COVERS: [],
+                    CONF_QED_COVERS: [],
+                    CONF_CCI_DEVICES: [],
                     CONF_KLS_POLL_INTERVAL: DEFAULT_KLS_POLL_INTERVAL,
                     CONF_KLS_WINDOW_OFFSET: DEFAULT_KLS_WINDOW_OFFSET,
-                    # Legacy keys for migration
-                    CONF_CCOS: [],
-                    CONF_COVERS: [],
-                    CONF_LOCKS: [],
                 }
                 return self.async_create_entry(title=name, data=data, options=options)
 
