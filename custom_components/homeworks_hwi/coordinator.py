@@ -524,6 +524,56 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     # === Command Methods (proxies to client) ===
 
+    async def async_cco_turn_on(self, device: CCODevice) -> bool:
+        """Turn on a CCO device (handles inversion internally).
+
+        Sets the correct logical optimistic state regardless of inversion.
+        """
+        address = device.address
+        if device.inverted:
+            result = await self._send_cco_open(address)
+        else:
+            result = await self._send_cco_close(address)
+        if result:
+            self._cco_states[address.unique_key] = True  # Logical ON
+            self.async_set_updated_data(
+                {"connected": True, "poll_count": self._poll_count}
+            )
+        return result
+
+    async def async_cco_turn_off(self, device: CCODevice) -> bool:
+        """Turn off a CCO device (handles inversion internally).
+
+        Sets the correct logical optimistic state regardless of inversion.
+        """
+        address = device.address
+        if device.inverted:
+            result = await self._send_cco_close(address)
+        else:
+            result = await self._send_cco_open(address)
+        if result:
+            self._cco_states[address.unique_key] = False  # Logical OFF
+            self.async_set_updated_data(
+                {"connected": True, "poll_count": self._poll_count}
+            )
+        return result
+
+    async def _send_cco_close(self, address: CCOAddress) -> bool:
+        """Send physical CCO close command."""
+        if not self._client:
+            return False
+        return await self._client.cco_close(
+            address.to_command_address(), address.button
+        )
+
+    async def _send_cco_open(self, address: CCOAddress) -> bool:
+        """Send physical CCO open command."""
+        if not self._client:
+            return False
+        return await self._client.cco_open(
+            address.to_command_address(), address.button
+        )
+
     async def async_cco_close(self, address: CCOAddress) -> bool:
         """Close a CCO relay (turn on)."""
         if not self._client:
@@ -532,14 +582,9 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             address.to_command_address(), address.button
         )
         if result:
-            # Optimistic state update - assume command succeeded
             self._cco_states[address.unique_key] = True
             self.async_set_updated_data(
-                {
-                    "cco_states": dict(self._cco_states),
-                    "dimmer_states": dict(self._dimmer_states),
-                    "connected": self.connected,
-                }
+                {"connected": True, "poll_count": self._poll_count}
             )
         return result
 
@@ -551,14 +596,9 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             address.to_command_address(), address.button
         )
         if result:
-            # Optimistic state update - assume command succeeded
             self._cco_states[address.unique_key] = False
             self.async_set_updated_data(
-                {
-                    "cco_states": dict(self._cco_states),
-                    "dimmer_states": dict(self._dimmer_states),
-                    "connected": self.connected,
-                }
+                {"connected": True, "poll_count": self._poll_count}
             )
         return result
 

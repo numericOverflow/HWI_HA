@@ -147,12 +147,9 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
 
         For CCO-based covers, we derive this from the KLS state.
         When the CCO state is ON (relay closed), the cover is closed.
+        Inversion is already handled by the coordinator's state engine.
         """
-        is_on = self.coordinator.get_cco_state(self._device.address)
-
-        if self._device.inverted:
-            return not is_on
-        return is_on
+        return self.coordinator.get_cco_state(self._device.address)
 
     @property
     def is_opening(self) -> bool:
@@ -178,13 +175,8 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self._is_opening = True
         self._is_closing = False
         self.async_write_ha_state()
-
-        # Open = CCO relay open (off state)
-        if self._device.inverted:
-            await self.coordinator.async_cco_close(self._device.address)
-        else:
-            await self.coordinator.async_cco_open(self._device.address)
-        # Optimistic state update is handled by coordinator
+        # Open = logical OFF state
+        await self.coordinator.async_cco_turn_off(self._device)
 
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close the cover."""
@@ -192,13 +184,8 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self._is_closing = True
         self._is_opening = False
         self.async_write_ha_state()
-
-        # Close = CCO relay closed (on state)
-        if self._device.inverted:
-            await self.coordinator.async_cco_open(self._device.address)
-        else:
-            await self.coordinator.async_cco_close(self._device.address)
-        # Optimistic state update is handled by coordinator
+        # Close = logical ON state
+        await self.coordinator.async_cco_turn_on(self._device)
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
         """Stop the cover.

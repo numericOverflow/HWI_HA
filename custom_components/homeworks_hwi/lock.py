@@ -87,12 +87,9 @@ class HomeworksCCOLock(CoordinatorEntity[HomeworksCoordinator], LockEntity):
         """Return True if the lock is locked.
 
         Locked = CCO relay closed (ON state from KLS).
+        Inversion is already handled by the coordinator's state engine.
         """
-        is_on = self.coordinator.get_cco_state(self._device.address)
-
-        if self._device.inverted:
-            return not is_on
-        return is_on
+        return self.coordinator.get_cco_state(self._device.address)
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -102,22 +99,12 @@ class HomeworksCCOLock(CoordinatorEntity[HomeworksCoordinator], LockEntity):
     async def async_lock(self, **kwargs: Any) -> None:
         """Lock the lock (close the CCO relay)."""
         _LOGGER.debug("Locking: %s", self._device.address)
-
-        if self._device.inverted:
-            await self.coordinator.async_cco_open(self._device.address)
-        else:
-            await self.coordinator.async_cco_close(self._device.address)
-        # Optimistic state update is handled by coordinator
+        await self.coordinator.async_cco_turn_on(self._device)
 
     async def async_unlock(self, **kwargs: Any) -> None:
         """Unlock the lock (open the CCO relay)."""
         _LOGGER.debug("Unlocking: %s", self._device.address)
-
-        if self._device.inverted:
-            await self.coordinator.async_cco_close(self._device.address)
-        else:
-            await self.coordinator.async_cco_open(self._device.address)
-        # Optimistic state update is handled by coordinator
+        await self.coordinator.async_cco_turn_off(self._device)
 
     async def async_added_to_hass(self) -> None:
         """Register with coordinator when added to hass."""

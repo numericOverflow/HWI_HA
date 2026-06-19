@@ -118,22 +118,12 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
     async def async_turn_on(self) -> None:
         """Turn on the climate device (close the CCO relay)."""
         _LOGGER.debug("Turning on CCO climate: %s", self._device.address)
-
-        if self._device.inverted:
-            await self.coordinator.async_cco_open(self._device.address)
-        else:
-            await self.coordinator.async_cco_close(self._device.address)
-        # Optimistic state update is handled by coordinator
+        await self.coordinator.async_cco_turn_on(self._device)
 
     async def async_turn_off(self) -> None:
         """Turn off the climate device (open the CCO relay)."""
         _LOGGER.debug("Turning off CCO climate: %s", self._device.address)
-
-        if self._device.inverted:
-            await self.coordinator.async_cco_close(self._device.address)
-        else:
-            await self.coordinator.async_cco_open(self._device.address)
-        # Optimistic state update is handled by coordinator
+        await self.coordinator.async_cco_turn_off(self._device)
 
     async def async_added_to_hass(self) -> None:
         """Register for coordinator updates when added to hass."""
