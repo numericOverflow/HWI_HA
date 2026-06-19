@@ -141,6 +141,36 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Return True if connected to controller."""
         return self._client is not None and self._client.connected
 
+    @property
+    def cco_device_count(self) -> int:
+        """Return number of registered CCO devices."""
+        return len(self._cco_devices)
+
+    @property
+    def cco_state_count(self) -> int:
+        """Return number of cached CCO states."""
+        return len(self._cco_states)
+
+    @property
+    def kls_poll_address_count(self) -> int:
+        """Return number of KLS addresses being polled."""
+        return len(self._kls_poll_addresses)
+
+    @property
+    def keypad_led_state_count(self) -> int:
+        """Return number of cached keypad LED states."""
+        return len(self._keypad_led_states)
+
+    @property
+    def dimmer_address_count(self) -> int:
+        """Return number of registered dimmer addresses."""
+        return len(self._dimmer_addresses)
+
+    @property
+    def dimmer_state_count(self) -> int:
+        """Return number of cached dimmer states."""
+        return len(self._dimmer_states)
+
     def register_cco_device(self, device: CCODevice) -> None:
         """Register a CCO device for state tracking."""
         key = device.address.unique_key

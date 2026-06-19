@@ -63,20 +63,20 @@ async def async_get_config_entry_diagnostics(
 
     # Collect registered CCO states (without addresses)
     cco_state_summary = {
-        "total_registered": len(coordinator._cco_devices),
-        "states_cached": len(coordinator._cco_states),
+        "total_registered": coordinator.cco_device_count,
+        "states_cached": coordinator.cco_state_count,
     }
 
     # Collect KLS cache info
     kls_cache_info = {
-        "addresses_monitored": len(coordinator._kls_poll_addresses),
-        "states_cached": len(coordinator._keypad_led_states),
+        "addresses_monitored": coordinator.kls_poll_address_count,
+        "states_cached": coordinator.keypad_led_state_count,
     }
 
     # Collect dimmer state info
     dimmer_state_info = {
-        "addresses_registered": len(coordinator._dimmer_addresses),
-        "states_cached": len(coordinator._dimmer_states),
+        "addresses_registered": coordinator.dimmer_address_count,
+        "states_cached": coordinator.dimmer_state_count,
     }
 
     return {

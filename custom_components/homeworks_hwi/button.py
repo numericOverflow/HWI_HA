@@ -114,7 +114,11 @@ class HomeworksButton(ButtonEntity):
         )
 
         if self._release_delay > 0:
-            await asyncio.sleep(self._release_delay)
-            await self._coordinator.async_keypad_button_release(
-                self._keypad_addr, self._button_number
-            )
+            self.hass.async_create_task(self._delayed_release())
+
+    async def _delayed_release(self) -> None:
+        """Release the button after delay."""
+        await asyncio.sleep(self._release_delay)
+        await self._coordinator.async_keypad_button_release(
+            self._keypad_addr, self._button_number
+        )
