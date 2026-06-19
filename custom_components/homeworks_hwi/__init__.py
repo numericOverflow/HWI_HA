@@ -12,7 +12,9 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import timedelta
 import logging
+import re
 from typing import Any
+import unicodedata
 
 import voluptuous as vol
 
@@ -69,6 +71,7 @@ from .const import (
     DEFAULT_KLS_WINDOW_OFFSET,
     DOMAIN,
     MAX_COMMAND_DELAY_MS,
+    SERVICE_SEND_COMMAND,
 )
 from .coordinator import HomeworksCoordinator
 from .models import CCOAddress, CCODevice, CCOEntityType
@@ -117,9 +120,6 @@ def _normalize_whitespace(text: str) -> str:
     - Replaces multiple consecutive spaces with single space
     - Replaces various unicode whitespace characters with regular space
     """
-    import re
-    import unicodedata
-
     # Normalize unicode (e.g., convert non-breaking spaces to regular spaces)
     text = unicodedata.normalize("NFKC", text)
     # Replace any whitespace character (including \xa0 non-breaking space) with space
@@ -238,7 +238,7 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     hass.services.async_register(
         DOMAIN,
-        "send_command",
+        SERVICE_SEND_COMMAND,
         async_call_service,
         schema=SERVICE_SEND_COMMAND_SCHEMA,
     )
@@ -319,10 +319,13 @@ def _cleanup_old_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
         if entity_entry.platform != DOMAIN:
             continue
 
-        # Remove ALL entities that don't end with .v2
-        # This ensures we catch everything regardless of unique_id pattern
+        # Only remove entities matching our legacy pattern
         unique_id = entity_entry.unique_id
-        if unique_id and not unique_id.endswith(".v2"):
+        if (
+            unique_id
+            and unique_id.startswith("homeworks.")
+            and not unique_id.endswith(".v2")
+        ):
             entities_to_remove.append(entity_entry.entity_id)
             _LOGGER.debug("Marking for removal: %s (unique_id: %s)",
                          entity_entry.entity_id, unique_id)
@@ -507,6 +510,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
         controller_id=controller_id,
     )
 
+    # Start the coordinator's regular updates (must be before platform setup)
+    await coordinator.async_config_entry_first_refresh()
+
     # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -518,9 +524,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
         await coordinator.async_shutdown()
 
     entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, cleanup))
-
-    # Start the coordinator's regular updates
-    await coordinator.async_config_entry_first_refresh()
 
     return True
 
@@ -672,39 +675,3 @@ async def async_remove_config_entry_device(
         return False
 
     return True
-
-
-def calculate_unique_id(controller_id: str, addr: str, idx: int) -> str:
-    """Calculate entity unique id."""
-    return f"homeworks.{controller_id}.{addr}.{idx}.v2"
-
-
-class HomeworksEntity(Entity):
-    """Base class of a Homeworks device."""
-
-    _attr_has_entity_name = True
-    _attr_should_poll = False
-
-    def __init__(
-        self,
-        coordinator: HomeworksCoordinator,
-        controller_id: str,
-        addr: str,
-        idx: int,
-        name: str | None,
-    ) -> None:
-        """Initialize Homeworks device."""
-        self._addr = addr
-        self._idx = idx
-        self._controller_id = controller_id
-        self._coordinator = coordinator
-        self._attr_name = name
-        self._attr_unique_id = calculate_unique_id(
-            self._controller_id, self._addr, self._idx
-        )
-        self._attr_extra_state_attributes = {"homeworks_address": self._addr}
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        return self._coordinator.connected
