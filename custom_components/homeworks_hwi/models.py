@@ -136,15 +136,15 @@ class CCODevice:
 
         KLS LED values for CCO feedback:
         - 0 = not used/not applicable
-        - 1 = relay is OPEN (device OFF) - LED shows "close available"
-        - 2 = relay is CLOSED (device ON) - LED shows "open available"
+        - 1 = relay is CLOSED (device ON) - LED ON
+        - 2 = relay is OPEN (device OFF) - LED flashing
         - 3 = fast flash (not typically used for CCO)
 
         With inversion support for devices wired in reverse.
         """
-        # LED=2 means relay is closed (device ON)
-        # LED=1 means relay is open (device OFF)
-        is_on = kls_digit == 2
+        # LED=1 means relay is closed (device ON)
+        # LED=2 means relay is open (device OFF)
+        is_on = kls_digit == 1
 
         if self.inverted:
             is_on = not is_on
@@ -195,7 +195,7 @@ class KeypadButton:
 # CCO button window configuration
 # The 8 CCO relay states are embedded within the 24-digit KLS string.
 # Default: positions 10-17 (1-indexed) = indices 9-16 (0-indexed)
-CCO_BUTTON_WINDOW_OFFSET = 9  # 0-indexed start of 8-button window
+CCO_BUTTON_WINDOW_OFFSET = 9  # 0-indexed start of 8-button window (kept for test compat)
 CCO_BUTTON_WINDOW_LENGTH = 8  # Number of buttons in window
 
 
@@ -233,7 +233,7 @@ class KLSState:
     def get_cco_state(
         self,
         button: int,
-        window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
+        window_offset: int = 9,
     ) -> bool:
         """Get CCO relay state from the button window.
 
@@ -246,15 +246,15 @@ class KLSState:
             window_offset: 0-indexed start of the 8-button window (default: 9)
 
         Returns:
-            True if relay is closed/ON (digit value is 2)
-            False if relay is open/OFF (digit value is 1 or other)
+            True if relay is closed/ON (digit value is 1)
+            False if relay is open/OFF (digit value is 2 or other)
 
         Example:
-            For "000000000221111110000000":
-            - Button 4 → index = 9 + 3 = 12 → digit '1' → False (OFF)
+            For "000000000112222220000000":
+            - Button 4 → index = 9 + 3 = 12 → digit '2' → False (OFF)
 
-            For "000000000221211110000000":
-            - Button 4 → index = 9 + 3 = 12 → digit '2' → True (ON)
+            For "000000000112122220000000":
+            - Button 4 → index = 9 + 3 = 12 → digit '1' → True (ON)
         """
         if not (1 <= button <= CCO_BUTTON_WINDOW_LENGTH):
             return False
@@ -265,8 +265,8 @@ class KLSState:
         if index >= len(self.led_states):
             return False
 
-        # 2 = ON (relay closed), 1 = OFF (relay open)
-        return self.led_states[index] == 2
+        # 1 = ON (relay closed), 2 = OFF (relay open)
+        return self.led_states[index] == 1
 
 
 @dataclass
@@ -305,26 +305,10 @@ class ControllerHealth:
         self.last_error = error
 
 
-def normalize_address(addr: str) -> str:
-    """Normalize Homeworks address format.
-
-    Converts various address formats to standard [##:##:##...] format.
-    Examples:
-        1:2:3:4 -> [01:02:03:04]
-        [1:2:3:4] -> [01:02:03:04]
-        1:2:3 -> [01:02:03]
-    """
-    # Remove brackets if present
-    addr = addr.strip("[]")
-
-    # Split into parts
-    parts = addr.split(":")
-
-    # Pad each part with leading zeros
-    parts = [part.zfill(2) for part in parts]
-
-    # Reconstruct with brackets
-    return f"[{':'.join(parts)}]"
+try:
+    from .hwi_protocol.protocol import normalize_address  # noqa: F401 — re-exported
+except ImportError:
+    from hwi_protocol.protocol import normalize_address  # noqa: F401 — standalone test mode
 
 
 def parse_kls_address(addr: str) -> tuple[int, int, int]:

@@ -99,22 +99,12 @@ class HomeworksCCOSwitch(CoordinatorEntity[HomeworksCoordinator], SwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the switch (close the CCO relay)."""
         _LOGGER.debug("Turning on CCO switch: %s", self._device.address)
-
-        if self._device.inverted:
-            await self.coordinator.async_cco_open(self._device.address)
-        else:
-            await self.coordinator.async_cco_close(self._device.address)
-        # Optimistic state update is handled by coordinator
+        await self.coordinator.async_cco_turn_on(self._device)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off the switch (open the CCO relay)."""
         _LOGGER.debug("Turning off CCO switch: %s", self._device.address)
-
-        if self._device.inverted:
-            await self.coordinator.async_cco_close(self._device.address)
-        else:
-            await self.coordinator.async_cco_open(self._device.address)
-        # Optimistic state update is handled by coordinator
+        await self.coordinator.async_cco_turn_off(self._device)
 
     async def async_added_to_hass(self) -> None:
         """Register for coordinator updates when added to hass."""

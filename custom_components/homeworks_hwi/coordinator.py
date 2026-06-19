@@ -27,8 +27,8 @@ from .client import (
     HomeworksClient,
     HomeworksClientConfig,
 )
+from .const import DEFAULT_KLS_WINDOW_OFFSET
 from .models import (
-    CCO_BUTTON_WINDOW_OFFSET,
     CCOAddress,
     CCODevice,
     ControllerHealth,
@@ -66,7 +66,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         controller_id: str,
         config_entry: ConfigEntry,
         kls_poll_interval: timedelta = DEFAULT_KLS_POLL_INTERVAL,
-        kls_window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
+        kls_window_offset: int = DEFAULT_KLS_WINDOW_OFFSET,
     ) -> None:
         """Initialize the coordinator."""
         super().__init__(
@@ -103,13 +103,6 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Addresses that need KLS polling
         self._kls_poll_addresses: set[str] = set()
 
-    def register_kls_poll_address(self, address: str) -> None:
-        """Register an address for KLS polling."""
-        normalized = normalize_address(address)
-        self._kls_poll_addresses.add(normalized)
-        if self._client:
-            self._client.register_kls_address(normalized)
-
         # Dimmer addresses for polling
         self._dimmer_addresses: set[str] = set()
 
@@ -118,6 +111,13 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # CCI state change callbacks
         self._cci_callbacks: dict[tuple[int, int, int, int], list[Callable[[bool], None]]] = {}
+
+    def register_kls_poll_address(self, address: str) -> None:
+        """Register an address for KLS polling."""
+        normalized = normalize_address(address)
+        self._kls_poll_addresses.add(normalized)
+        if self._client:
+            self._client.register_kls_address(normalized)
 
     @property
     def controller_id(self) -> str:
@@ -140,6 +140,36 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def connected(self) -> bool:
         """Return True if connected to controller."""
         return self._client is not None and self._client.connected
+
+    @property
+    def cco_device_count(self) -> int:
+        """Return number of registered CCO devices."""
+        return len(self._cco_devices)
+
+    @property
+    def cco_state_count(self) -> int:
+        """Return number of cached CCO states."""
+        return len(self._cco_states)
+
+    @property
+    def kls_poll_address_count(self) -> int:
+        """Return number of KLS addresses being polled."""
+        return len(self._kls_poll_addresses)
+
+    @property
+    def keypad_led_state_count(self) -> int:
+        """Return number of cached keypad LED states."""
+        return len(self._keypad_led_states)
+
+    @property
+    def dimmer_address_count(self) -> int:
+        """Return number of registered dimmer addresses."""
+        return len(self._dimmer_addresses)
+
+    @property
+    def dimmer_state_count(self) -> int:
+        """Return number of cached dimmer states."""
+        return len(self._dimmer_states)
 
     def register_cco_device(self, device: CCODevice) -> None:
         """Register a CCO device for state tracking."""
@@ -524,6 +554,56 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     # === Command Methods (proxies to client) ===
 
+    async def async_cco_turn_on(self, device: CCODevice) -> bool:
+        """Turn on a CCO device (handles inversion internally).
+
+        Sets the correct logical optimistic state regardless of inversion.
+        """
+        address = device.address
+        if device.inverted:
+            result = await self._send_cco_open(address)
+        else:
+            result = await self._send_cco_close(address)
+        if result:
+            self._cco_states[address.unique_key] = True  # Logical ON
+            self.async_set_updated_data(
+                {"connected": True, "poll_count": self._poll_count}
+            )
+        return result
+
+    async def async_cco_turn_off(self, device: CCODevice) -> bool:
+        """Turn off a CCO device (handles inversion internally).
+
+        Sets the correct logical optimistic state regardless of inversion.
+        """
+        address = device.address
+        if device.inverted:
+            result = await self._send_cco_close(address)
+        else:
+            result = await self._send_cco_open(address)
+        if result:
+            self._cco_states[address.unique_key] = False  # Logical OFF
+            self.async_set_updated_data(
+                {"connected": True, "poll_count": self._poll_count}
+            )
+        return result
+
+    async def _send_cco_close(self, address: CCOAddress) -> bool:
+        """Send physical CCO close command."""
+        if not self._client:
+            return False
+        return await self._client.cco_close(
+            address.to_command_address(), address.button
+        )
+
+    async def _send_cco_open(self, address: CCOAddress) -> bool:
+        """Send physical CCO open command."""
+        if not self._client:
+            return False
+        return await self._client.cco_open(
+            address.to_command_address(), address.button
+        )
+
     async def async_cco_close(self, address: CCOAddress) -> bool:
         """Close a CCO relay (turn on)."""
         if not self._client:
@@ -532,14 +612,9 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             address.to_command_address(), address.button
         )
         if result:
-            # Optimistic state update - assume command succeeded
             self._cco_states[address.unique_key] = True
             self.async_set_updated_data(
-                {
-                    "cco_states": dict(self._cco_states),
-                    "dimmer_states": dict(self._dimmer_states),
-                    "connected": self.connected,
-                }
+                {"connected": True, "poll_count": self._poll_count}
             )
         return result
 
@@ -551,14 +626,9 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             address.to_command_address(), address.button
         )
         if result:
-            # Optimistic state update - assume command succeeded
             self._cco_states[address.unique_key] = False
             self.async_set_updated_data(
-                {
-                    "cco_states": dict(self._cco_states),
-                    "dimmer_states": dict(self._dimmer_states),
-                    "connected": self.connected,
-                }
+                {"connected": True, "poll_count": self._poll_count}
             )
         return result
 

@@ -617,6 +617,138 @@ async def validate_remove_qed_cover(
     return {}
 
 
+# === CCI Device CRUD ===
+
+
+async def validate_add_cci_device(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Validate CCI device input."""
+    user_input[CONF_ADDR] = _validate_address(user_input[CONF_ADDR])
+    input_number = int(user_input.get(CONF_INPUT_NUMBER, 1))
+
+    # Check for duplicates (same address + input number)
+    for device in handler.options.get(CONF_CCI_DEVICES, []):
+        if (
+            normalize_address(device[CONF_ADDR]) == user_input[CONF_ADDR]
+            and device.get(CONF_INPUT_NUMBER, 1) == input_number
+        ):
+            raise SchemaFlowError("duplicate_cci")
+
+    user_input[CONF_INPUT_NUMBER] = input_number
+    items = handler.options.setdefault(CONF_CCI_DEVICES, [])
+    items.append(user_input)
+    return {}
+
+
+async def get_select_cci_device_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
+    """Return schema for selecting a CCI device."""
+    devices = handler.options.get(CONF_CCI_DEVICES, [])
+    if not devices:
+        raise SchemaFlowError("no_devices")
+
+    return vol.Schema(
+        {
+            vol.Required(CONF_INDEX): vol.In(
+                {
+                    str(i): f"{d.get(CONF_NAME, 'Input')} ({d[CONF_ADDR]}:{d.get(CONF_INPUT_NUMBER, 1)})"
+                    for i, d in enumerate(devices)
+                }
+            )
+        }
+    )
+
+
+async def validate_select_cci_device(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Store CCI device index."""
+    handler.flow_state["_cci_idx"] = int(user_input[CONF_INDEX])
+    return {}
+
+
+async def get_edit_cci_device_suggested_values(
+    handler: SchemaCommonFlowHandler,
+) -> dict[str, Any]:
+    """Return suggested values for CCI device editing."""
+    idx = handler.flow_state["_cci_idx"]
+    device = handler.options[CONF_CCI_DEVICES][idx]
+    values = {
+        CONF_NAME: device.get(CONF_NAME, ""),
+        CONF_ADDR: device.get(CONF_ADDR, ""),
+        CONF_INPUT_NUMBER: device.get(CONF_INPUT_NUMBER, 1),
+    }
+    if device.get(CONF_DEVICE_CLASS):
+        values[CONF_DEVICE_CLASS] = device[CONF_DEVICE_CLASS]
+    if device.get(CONF_AREA):
+        values[CONF_AREA] = device[CONF_AREA]
+    return values
+
+
+async def validate_cci_device_edit(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Update edited CCI device."""
+    idx = handler.flow_state["_cci_idx"]
+
+    if CONF_ADDR in user_input:
+        user_input[CONF_ADDR] = _validate_address(user_input[CONF_ADDR])
+        input_number = int(user_input.get(CONF_INPUT_NUMBER, 1))
+
+        # Check for duplicates (excluding current)
+        for i, device in enumerate(handler.options.get(CONF_CCI_DEVICES, [])):
+            if i == idx:
+                continue
+            if (
+                normalize_address(device[CONF_ADDR]) == user_input[CONF_ADDR]
+                and device.get(CONF_INPUT_NUMBER, 1) == input_number
+            ):
+                raise SchemaFlowError("duplicate_cci")
+
+    handler.options[CONF_CCI_DEVICES][idx].update(user_input)
+    return {}
+
+
+async def get_remove_cci_device_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
+    """Return schema for CCI device removal."""
+    devices = handler.options.get(CONF_CCI_DEVICES, [])
+    if not devices:
+        raise SchemaFlowError("no_devices")
+
+    return vol.Schema(
+        {
+            vol.Required(CONF_INDEX): cv.multi_select(
+                {
+                    str(i): f"{d.get(CONF_NAME, 'Input')} ({d[CONF_ADDR]}:{d.get(CONF_INPUT_NUMBER, 1)})"
+                    for i, d in enumerate(devices)
+                }
+            )
+        }
+    )
+
+
+async def validate_remove_cci_device(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Remove selected CCI devices."""
+    removed = set(user_input[CONF_INDEX])
+    registry = er.async_get(handler.parent_handler.hass)
+
+    new_devices = []
+    for i, device in enumerate(handler.options.get(CONF_CCI_DEVICES, [])):
+        if str(i) not in removed:
+            new_devices.append(device)
+        else:
+            addr = device[CONF_ADDR]
+            for entity_id in list(registry.entities):
+                entity = registry.entities[entity_id]
+                if entity.platform == DOMAIN and addr in (entity.unique_id or ""):
+                    registry.async_remove(entity_id)
+
+    handler.options[CONF_CCI_DEVICES] = new_devices
+    return {}
+
+
 # === Keypad CRUD ===
 
 
@@ -893,6 +1025,21 @@ async def async_parse_csv(
                 dict(row),
             )
 
+            # Validate address format before processing
+            raw_addr = row.get("address", "").strip()
+            if not raw_addr:
+                _LOGGER.warning("Skipping CSV row %d: missing address", row_count)
+                continue
+            try:
+                validated_addr = _validate_address(raw_addr)
+            except SchemaFlowError:
+                _LOGGER.warning(
+                    "Skipping CSV row %d: invalid address '%s'",
+                    row_count,
+                    raw_addr,
+                )
+                continue
+
             if device_type in ("CCO", "SWITCH"):
                 button = int(row.get("relay", row.get("button", 1)))
                 # Map type column to entity type, default to switch
@@ -903,7 +1050,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         entity_type,
@@ -914,7 +1061,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "DIMMER",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         None,
                         row.get("name", "").strip(),
                         None,
@@ -926,7 +1073,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         CCO_TYPE_COVER,
@@ -938,7 +1085,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         CCO_TYPE_LOCK,
@@ -950,7 +1097,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         CCO_TYPE_CLIMATE,
@@ -962,7 +1109,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCO",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         button,
                         row.get("name", "").strip(),
                         CCO_TYPE_FAN,
@@ -976,7 +1123,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "CCI",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         input_num,
                         row.get("name", "").strip(),
                         None,  # entity_type not used for CCI
@@ -989,7 +1136,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "MOTOR_COVER",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         None,  # No button for motor covers
                         row.get("name", "").strip(),
                         None,  # entity_type not used for motor covers
@@ -1001,7 +1148,7 @@ async def async_parse_csv(
                 devices.append(
                     DeviceImport(
                         "QED_COVER",
-                        normalize_address(row["address"].strip()),
+                        validated_addr,
                         None,  # No button for QED shades
                         row.get("name", "").strip(),
                         None,  # entity_type not used for QED covers
@@ -1538,6 +1685,50 @@ DATA_SCHEMA_EDIT_QED_COVER = vol.Schema(
     }
 )
 
+DATA_SCHEMA_ADD_CCI_DEVICE = vol.Schema(
+    {
+        vol.Optional(CONF_NAME, default=DEFAULT_CCI_NAME): selector.TextSelector(),
+        vol.Required(CONF_ADDR): selector.TextSelector(),
+        vol.Required(CONF_INPUT_NUMBER, default=1): selector.NumberSelector(
+            selector.NumberSelectorConfig(
+                min=1, max=24, step=1, mode=selector.NumberSelectorMode.BOX
+            )
+        ),
+        vol.Optional(CONF_DEVICE_CLASS): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(value="door", label="Door"),
+                    selector.SelectOptionDict(value="window", label="Window"),
+                    selector.SelectOptionDict(value="motion", label="Motion"),
+                    selector.SelectOptionDict(value="opening", label="Opening"),
+                    selector.SelectOptionDict(value="occupancy", label="Occupancy"),
+                ],
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
+        vol.Optional(CONF_AREA): selector.AreaSelector(),
+    }
+)
+
+DATA_SCHEMA_EDIT_CCI_DEVICE = vol.Schema(
+    {
+        vol.Optional(CONF_NAME): selector.TextSelector(),
+        vol.Optional(CONF_DEVICE_CLASS): selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(value="door", label="Door"),
+                    selector.SelectOptionDict(value="window", label="Window"),
+                    selector.SelectOptionDict(value="motion", label="Motion"),
+                    selector.SelectOptionDict(value="opening", label="Opening"),
+                    selector.SelectOptionDict(value="occupancy", label="Occupancy"),
+                ],
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        ),
+        vol.Optional(CONF_AREA): selector.AreaSelector(),
+    }
+)
+
 # === Options Flow Definition ===
 
 OPTIONS_FLOW = {
@@ -1547,6 +1738,7 @@ OPTIONS_FLOW = {
             "manage_dimmers",
             "manage_rpm_covers",
             "manage_qed_covers",
+            "manage_cci_devices",
             "manage_keypads",
             "controller_settings",
             "import_csv",
@@ -1629,6 +1821,25 @@ OPTIONS_FLOW = {
     "remove_qed_cover": SchemaFlowFormStep(
         get_remove_qed_cover_schema, validate_user_input=validate_remove_qed_cover
     ),
+    "manage_cci_devices": SchemaFlowMenuStep(
+        ["add_cci_device", "select_edit_cci_device", "remove_cci_device"]
+    ),
+    "add_cci_device": SchemaFlowFormStep(
+        DATA_SCHEMA_ADD_CCI_DEVICE, validate_user_input=validate_add_cci_device
+    ),
+    "select_edit_cci_device": SchemaFlowFormStep(
+        get_select_cci_device_schema,
+        validate_user_input=validate_select_cci_device,
+        next_step="edit_cci_device",
+    ),
+    "edit_cci_device": SchemaFlowFormStep(
+        DATA_SCHEMA_EDIT_CCI_DEVICE,
+        suggested_values=get_edit_cci_device_suggested_values,
+        validate_user_input=validate_cci_device_edit,
+    ),
+    "remove_cci_device": SchemaFlowFormStep(
+        get_remove_cci_device_schema, validate_user_input=validate_remove_cci_device
+    ),
     "manage_keypads": SchemaFlowMenuStep(
         ["add_keypad", "select_edit_keypad", "remove_keypad"]
     ),
@@ -1694,7 +1905,7 @@ class HomeworksConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     Non-secrets (devices, settings) are stored in entry.options.
     """
 
-    VERSION = 2
+    VERSION = 3
 
     def __init__(self) -> None:
         """Initialize."""
@@ -1749,12 +1960,11 @@ class HomeworksConfigFlowHandler(ConfigFlow, domain=DOMAIN):
                     CONF_CCO_DEVICES: [],
                     CONF_DIMMERS: [],
                     CONF_KEYPADS: [],
+                    CONF_RPM_COVERS: [],
+                    CONF_QED_COVERS: [],
+                    CONF_CCI_DEVICES: [],
                     CONF_KLS_POLL_INTERVAL: DEFAULT_KLS_POLL_INTERVAL,
                     CONF_KLS_WINDOW_OFFSET: DEFAULT_KLS_WINDOW_OFFSET,
-                    # Legacy keys for migration
-                    CONF_CCOS: [],
-                    CONF_COVERS: [],
-                    CONF_LOCKS: [],
                 }
                 return self.async_create_entry(title=name, data=data, options=options)
 

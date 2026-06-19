@@ -63,6 +63,7 @@
                     "manage_dimmers": "Manage dimmable lights",
                     "manage_rpm_covers": "Manage motor covers (RPM)",
                     "manage_qed_covers": "Manage QED shades (Sivoia)",
+                    "manage_cci_devices": "Manage CCI inputs (binary sensors)",
                     "manage_keypads": "Manage keypads",
                     "controller_settings": "Controller settings",
                     "import_csv": "Import devices from CSV",
@@ -167,6 +168,53 @@
                 "description": "Select shades to remove.",
                 "data": {
                     "index": "Shades to remove"
+                }
+            },
+            "manage_cci_devices": {
+                "title": "CCI Input Management",
+                "description": "CCI (Contact Closure Input) devices are binary sensors that detect door, window, or occupancy state.",
+                "menu_options": {
+                    "add_cci_device": "Add CCI input",
+                    "select_edit_cci_device": "Edit CCI input",
+                    "remove_cci_device": "Remove CCI input"
+                }
+            },
+            "add_cci_device": {
+                "title": "Add CCI Input",
+                "description": "CCI inputs monitor contact closure state (open/closed).",
+                "data": {
+                    "name": "Input name",
+                    "addr": "CCI address",
+                    "input_number": "Input number",
+                    "device_class": "Device class",
+                    "area": "Area"
+                },
+                "data_description": {
+                    "addr": "Address in format [processor:link:address] (e.g., [01:04:03])",
+                    "input_number": "Input number on the CCI module (1-24)",
+                    "device_class": "Type of sensor (affects icon and state labels)",
+                    "area": "Assign this input to an area in Home Assistant"
+                }
+            },
+            "select_edit_cci_device": {
+                "title": "Select CCI Input to Edit",
+                "data": {
+                    "index": "Input"
+                }
+            },
+            "edit_cci_device": {
+                "title": "Edit CCI Input",
+                "data": {
+                    "name": "Input name",
+                    "device_class": "Device class",
+                    "area": "Area"
+                }
+            },
+            "remove_cci_device": {
+                "title": "Remove CCI Inputs",
+                "description": "Select inputs to remove.",
+                "data": {
+                    "index": "Inputs to remove"
                 }
             },
             "manage_keypads": {
@@ -360,6 +408,7 @@
             "invalid_addr": "Invalid address format. Use [processor:link:address] (e.g., [02:06:03])",
             "duplicated_addr": "This address is already configured",
             "duplicate_cco": "This CCO address and button combination already exists",
+            "duplicate_cci": "This CCI address and input number combination already exists",
             "duplicated_number": "This button number is already used on this keypad",
             "invalid_csv": "Invalid CSV format. Check that all required columns are present.",
             "csv_too_large": "CSV file exceeds maximum size (1MB)",
