@@ -457,14 +457,20 @@
     },
     "entity": {
         "sensor": {
-            "connection_status": {
+            "connection": {
                 "name": "Connection status"
             },
-            "last_message": {
-                "name": "Last message"
+            "last_kls_time": {
+                "name": "Last KLS update"
             },
             "reconnect_count": {
                 "name": "Reconnect count"
+            },
+            "poll_failure_count": {
+                "name": "Poll failures"
+            },
+            "parse_error_count": {
+                "name": "Parse errors"
             }
         },
         "binary_sensor": {

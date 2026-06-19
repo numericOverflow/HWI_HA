@@ -232,7 +232,8 @@ class HomeworksCCIBinarySensor(
         self._unregister_callback: callable[[], None] | None = None
 
         # Set up entity attributes
-        self._entity_name = name
+        self._attr_has_entity_name = True
+        self._attr_name = None
         addr_clean = self._address.replace(":", "_").strip("[]")
         self._attr_unique_id = f"homeworks.{controller_id}.cci.{addr_clean}_{input_number}.v2"
         self._attr_device_class = device_class
@@ -249,11 +250,6 @@ class HomeworksCCIBinarySensor(
             "homeworks_address": self._address,
             "input_number": input_number,
         }
-
-    @property
-    def name(self) -> str:
-        """Return the name of the entity."""
-        return self._entity_name
 
     @property
     def is_on(self) -> bool:
