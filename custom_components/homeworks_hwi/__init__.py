@@ -286,7 +286,7 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
     for command in commands:
         if command.lower().startswith("delay"):
             try:
-                delay = min(int(command.partition(" ")[2]), MAX_COMMAND_DELAY_MS)
+                delay = max(0, min(int(command.partition(" ")[2]), MAX_COMMAND_DELAY_MS))
             except (ValueError, IndexError):
                 _LOGGER.warning("Invalid delay command ignored: %s", command)
                 continue

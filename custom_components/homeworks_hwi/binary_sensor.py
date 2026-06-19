@@ -290,12 +290,12 @@ class HomeworksCCIBinarySensor(
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister when removed from hass."""
-        await super().async_will_remove_from_hass()
-
         if self._unregister_callback:
             self._unregister_callback()
 
         self.coordinator.unregister_cci_device(self._address, self._input_number)
+
+        await super().async_will_remove_from_hass()
 
 
 # Keep old class name for backwards compatibility
