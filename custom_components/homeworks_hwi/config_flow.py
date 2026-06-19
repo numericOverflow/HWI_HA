@@ -1000,6 +1000,7 @@ async def async_parse_csv(
 
     devices = []
     row_count = 0
+    skipped_rows: list[str] = []
     try:
         for row in reader:
             row_count += 1
@@ -1041,7 +1042,11 @@ async def async_parse_csv(
                 continue
 
             if device_type in ("CCO", "SWITCH"):
-                button = int(row.get("relay", row.get("button", 1)))
+                try:
+                    button = int(row.get("relay", row.get("button", 1)))
+                except (ValueError, TypeError):
+                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    continue
                 # Map type column to entity type, default to switch
                 entity_type = cco_type if cco_type in (
                     CCO_TYPE_SWITCH, CCO_TYPE_LIGHT, CCO_TYPE_COVER,
@@ -1069,7 +1074,11 @@ async def async_parse_csv(
                     )
                 )
             elif device_type == "COVER":
-                button = int(row.get("relay", row.get("button", 1)))
+                try:
+                    button = int(row.get("relay", row.get("button", 1)))
+                except (ValueError, TypeError):
+                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    continue
                 devices.append(
                     DeviceImport(
                         "CCO",
@@ -1081,7 +1090,11 @@ async def async_parse_csv(
                     )
                 )
             elif device_type == "LOCK":
-                button = int(row.get("relay", row.get("button", 1)))
+                try:
+                    button = int(row.get("relay", row.get("button", 1)))
+                except (ValueError, TypeError):
+                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    continue
                 devices.append(
                     DeviceImport(
                         "CCO",
@@ -1093,7 +1106,11 @@ async def async_parse_csv(
                     )
                 )
             elif device_type == "CLIMATE":
-                button = int(row.get("relay", row.get("button", 1)))
+                try:
+                    button = int(row.get("relay", row.get("button", 1)))
+                except (ValueError, TypeError):
+                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    continue
                 devices.append(
                     DeviceImport(
                         "CCO",
@@ -1105,7 +1122,11 @@ async def async_parse_csv(
                     )
                 )
             elif device_type == "FAN":
-                button = int(row.get("relay", row.get("button", 1)))
+                try:
+                    button = int(row.get("relay", row.get("button", 1)))
+                except (ValueError, TypeError):
+                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    continue
                 devices.append(
                     DeviceImport(
                         "CCO",
@@ -1118,7 +1139,11 @@ async def async_parse_csv(
                 )
             elif device_type == "CCI":
                 # CCI (Contact Closure Input) - binary sensors
-                input_num = int(row.get("input", row.get("relay", row.get("button", 1))))
+                try:
+                    input_num = int(row.get("input", row.get("relay", row.get("button", 1))))
+                except (ValueError, TypeError):
+                    skipped_rows.append(f"row {row_count}: non-numeric input/relay/button value")
+                    continue
                 device_class = row.get("device_class", row.get("class", "")).strip().lower() or None
                 devices.append(
                     DeviceImport(
@@ -1155,9 +1180,14 @@ async def async_parse_csv(
                         area,
                     )
                 )
+    except SchemaFlowError:
+        raise
     except Exception as err:
-        _LOGGER.exception("Error processing CSV")
+        _LOGGER.exception("Error processing CSV at row %d", row_count)
         raise SchemaFlowError("invalid_csv") from err
+
+    if skipped_rows:
+        _LOGGER.warning("CSV import skipped %d rows: %s", len(skipped_rows), "; ".join(skipped_rows))
 
     if not devices:
         raise SchemaFlowError("no_devices_in_csv")
