@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from .hwi_protocol import (
+    HomeworksAuthenticationException,
     HomeworksClient as PyHomeworksClient,
     KLSMessage,
     DimmerLevelMessage,
@@ -129,7 +130,11 @@ class HomeworksClient:
         self._kls_poll_addresses.discard(normalized)
 
     async def connect(self) -> bool:
-        """Connect to the controller."""
+        """Connect to the controller.
+
+        Raises:
+            HomeworksAuthenticationException: If authentication fails.
+        """
         try:
             success = await self._client.connect()
             if success:
@@ -142,6 +147,8 @@ class HomeworksClient:
                     self._config.port,
                 )
             return success
+        except HomeworksAuthenticationException:
+            raise
         except Exception as err:
             _LOGGER.error("Failed to connect: %s", err)
             self._health.connected = False

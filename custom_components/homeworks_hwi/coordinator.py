@@ -10,6 +10,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
@@ -28,6 +29,7 @@ from .client import (
     HomeworksClientConfig,
 )
 from .const import DEFAULT_KLS_WINDOW_OFFSET
+from .hwi_protocol import HomeworksAuthenticationException
 from .models import (
     CCOAddress,
     CCODevice,
@@ -79,9 +81,14 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self._config = config
         self._controller_id = controller_id
-        self._client: HomeworksClient | None = None
         self._kls_window_offset = kls_window_offset
         self._poll_count: int = 0
+
+        # Create client (no connection yet — lazy connect in _async_update_data)
+        self._client = HomeworksClient(
+            config=config,
+            message_callback=self._handle_message,
+        )
 
         # CCO device registry: unique_key -> CCODevice
         self._cco_devices: dict[tuple[int, int, int, int], CCODevice] = {}
@@ -303,39 +310,43 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return unregister
 
-    async def async_setup(self) -> bool:
-        """Set up the coordinator and connect to the controller."""
-        self._client = HomeworksClient(
-            config=self._config,
-            message_callback=self._handle_message,
-        )
+    async def _connect_and_subscribe(self) -> None:
+        """Connect to the controller and start the message read loop.
 
-        # Register existing KLS addresses
+        Called lazily from _async_update_data on first poll or after
+        connection loss.
+
+        Raises:
+            HomeworksAuthenticationException: If authentication fails.
+            UpdateFailed: If connection fails for other reasons.
+        """
+        # Register any pending KLS addresses
         for addr in self._kls_poll_addresses:
             self._client.register_kls_address(addr)
 
-        # Connect
         if not await self._client.connect():
-            return False
+            raise UpdateFailed("Failed to connect to Homeworks controller")
 
-        # Start the read loop
         await self._client.start()
-
-        # Initial poll
-        await self._poll_all_states()
-
-        return True
 
     async def async_shutdown(self) -> None:
         """Shut down the coordinator."""
+        await super().async_shutdown()
         if self._client:
             await self._client.stop()
             self._client = None
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from controller (called by DataUpdateCoordinator)."""
-        if not self._client or not self._client.connected:
-            raise UpdateFailed("Not connected to controller")
+        if not self._client:
+            raise UpdateFailed("Client not initialized")
+
+        # Connect if not already connected (lazy connect / reconnect)
+        if not self._client.connected:
+            try:
+                await self._connect_and_subscribe()
+            except HomeworksAuthenticationException as err:
+                raise ConfigEntryAuthFailed("Authentication failed") from err
 
         # Poll all KLS addresses
         await self._poll_kls_states()
