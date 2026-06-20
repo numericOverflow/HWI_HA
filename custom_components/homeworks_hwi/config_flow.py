@@ -292,23 +292,50 @@ async def get_remove_cco_device_schema(handler: SchemaCommonFlowHandler) -> vol.
     )
 
 
+# Map CCO entity_type to (HA domain, unique_id type prefix)
+_CCO_TYPE_MAP: dict[str, tuple[str, str]] = {
+    CCO_TYPE_SWITCH: ("switch", "cco"),
+    CCO_TYPE_LIGHT: ("light", "ccolight"),
+    CCO_TYPE_COVER: ("cover", "cover"),
+    CCO_TYPE_LOCK: ("lock", "lock"),
+    CCO_TYPE_CLIMATE: ("climate", "climate"),
+    CCO_TYPE_FAN: ("fan", "fan"),
+}
+
+
+def _remove_cco_entity(
+    registry: er.EntityRegistry,
+    controller_id: str,
+    device: dict[str, Any],
+) -> None:
+    """Remove entity for a CCO device using exact unique_id matching."""
+    addr_parts = device[CONF_ADDR].strip("[]").split(":")
+    btn = device.get(CONF_BUTTON_NUMBER, device.get(CONF_RELAY_NUMBER, 1))
+    device_uid = (
+        f"cco_{int(addr_parts[0])}_{int(addr_parts[1])}_{int(addr_parts[2])}_{btn}"
+    )
+    entity_type = device.get(CONF_ENTITY_TYPE, CCO_TYPE_SWITCH)
+    ha_domain, uid_prefix = _CCO_TYPE_MAP.get(entity_type, ("switch", "cco"))
+    uid = f"homeworks.{controller_id}.{uid_prefix}.{device_uid}.v2"
+    entity_id = registry.async_get_entity_id(ha_domain, DOMAIN, uid)
+    if entity_id:
+        registry.async_remove(entity_id)
+
+
 async def validate_remove_cco_device(
     handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
 ) -> dict[str, Any]:
     """Remove selected CCO devices."""
     removed = set(user_input[CONF_INDEX])
     registry = er.async_get(handler.parent_handler.hass)
+    controller_id = handler.options[CONF_CONTROLLER_ID]
 
     new_devices = []
     for i, device in enumerate(handler.options.get(CONF_CCO_DEVICES, [])):
         if str(i) not in removed:
             new_devices.append(device)
         else:
-            addr = device[CONF_ADDR]
-            for entity_id in list(registry.entities):
-                entity = registry.entities[entity_id]
-                if entity.platform == DOMAIN and addr in (entity.unique_id or ""):
-                    registry.async_remove(entity_id)
+            _remove_cco_entity(registry, controller_id, device)
 
     handler.options[CONF_CCO_DEVICES] = new_devices
     return {}
@@ -399,18 +426,17 @@ async def validate_remove_light(
     """Remove selected lights."""
     removed = set(user_input[CONF_INDEX])
     registry = er.async_get(handler.parent_handler.hass)
+    controller_id = handler.options[CONF_CONTROLLER_ID]
 
     new_items = []
     for i, item in enumerate(handler.options.get(CONF_DIMMERS, [])):
         if str(i) not in removed:
             new_items.append(item)
         else:
-            for entity_id in list(registry.entities):
-                entity = registry.entities[entity_id]
-                if entity.platform == DOMAIN and item[CONF_ADDR] in (
-                    entity.unique_id or ""
-                ):
-                    registry.async_remove(entity_id)
+            uid = f"homeworks.{controller_id}.light.{item[CONF_ADDR]}.v2"
+            entity_id = registry.async_get_entity_id("light", DOMAIN, uid)
+            if entity_id:
+                registry.async_remove(entity_id)
 
     handler.options[CONF_DIMMERS] = new_items
     return {}
@@ -501,18 +527,17 @@ async def validate_remove_rpm_cover(
     """Remove selected RPM covers."""
     removed = set(user_input[CONF_INDEX])
     registry = er.async_get(handler.parent_handler.hass)
+    controller_id = handler.options[CONF_CONTROLLER_ID]
 
     new_items = []
     for i, item in enumerate(handler.options.get(CONF_RPM_COVERS, [])):
         if str(i) not in removed:
             new_items.append(item)
         else:
-            for entity_id in list(registry.entities):
-                entity = registry.entities[entity_id]
-                if entity.platform == DOMAIN and item[CONF_ADDR] in (
-                    entity.unique_id or ""
-                ):
-                    registry.async_remove(entity_id)
+            uid = f"homeworks.{controller_id}.rpm_cover.{item[CONF_ADDR]}.v2"
+            entity_id = registry.async_get_entity_id("cover", DOMAIN, uid)
+            if entity_id:
+                registry.async_remove(entity_id)
 
     handler.options[CONF_RPM_COVERS] = new_items
     return {}
@@ -600,18 +625,17 @@ async def validate_remove_qed_cover(
     """Remove selected QED covers."""
     removed = set(user_input[CONF_INDEX])
     ent_registry = er.async_get(handler.parent_handler.hass)
+    controller_id = handler.options[CONF_CONTROLLER_ID]
 
     new_items = []
     for i, item in enumerate(handler.options.get(CONF_QED_COVERS, [])):
         if str(i) not in removed:
             new_items.append(item)
         else:
-            for entity_id in list(ent_registry.entities):
-                entity = ent_registry.entities[entity_id]
-                if entity.platform == DOMAIN and item[CONF_ADDR] in (
-                    entity.unique_id or ""
-                ):
-                    ent_registry.async_remove(entity_id)
+            uid = f"homeworks.{controller_id}.qed_cover.{item[CONF_ADDR]}.v2"
+            entity_id = ent_registry.async_get_entity_id("cover", DOMAIN, uid)
+            if entity_id:
+                ent_registry.async_remove(entity_id)
 
     handler.options[CONF_QED_COVERS] = new_items
     return {}
@@ -733,17 +757,19 @@ async def validate_remove_cci_device(
     """Remove selected CCI devices."""
     removed = set(user_input[CONF_INDEX])
     registry = er.async_get(handler.parent_handler.hass)
+    controller_id = handler.options[CONF_CONTROLLER_ID]
 
     new_devices = []
     for i, device in enumerate(handler.options.get(CONF_CCI_DEVICES, [])):
         if str(i) not in removed:
             new_devices.append(device)
         else:
-            addr = device[CONF_ADDR]
-            for entity_id in list(registry.entities):
-                entity = registry.entities[entity_id]
-                if entity.platform == DOMAIN and addr in (entity.unique_id or ""):
-                    registry.async_remove(entity_id)
+            addr_clean = device[CONF_ADDR].replace(":", "_").strip("[]")
+            input_num = device.get(CONF_INPUT_NUMBER, 1)
+            uid = f"homeworks.{controller_id}.cci.{addr_clean}_{input_num}.v2"
+            entity_id = registry.async_get_entity_id("binary_sensor", DOMAIN, uid)
+            if entity_id:
+                registry.async_remove(entity_id)
 
     handler.options[CONF_CCI_DEVICES] = new_devices
     return {}
@@ -817,18 +843,28 @@ async def validate_remove_keypad(
     """Remove selected keypads."""
     removed = set(user_input[CONF_INDEX])
     registry = er.async_get(handler.parent_handler.hass)
+    controller_id = handler.options[CONF_CONTROLLER_ID]
 
     new_items = []
     for i, item in enumerate(handler.options.get(CONF_KEYPADS, [])):
         if str(i) not in removed:
             new_items.append(item)
         else:
-            for entity_id in list(registry.entities):
-                entity = registry.entities[entity_id]
-                if entity.platform == DOMAIN and item[CONF_ADDR] in (
-                    entity.unique_id or ""
-                ):
-                    registry.async_remove(entity_id)
+            addr = item[CONF_ADDR]
+            # Remove all button and LED entities for this keypad
+            for button in item.get(CONF_BUTTONS, []):
+                btn_num = button[CONF_NUMBER]
+                btn_uid = f"homeworks.{controller_id}.button.{addr}.{btn_num}.v2"
+                eid = registry.async_get_entity_id("button", DOMAIN, btn_uid)
+                if eid:
+                    registry.async_remove(eid)
+                if button.get(CONF_LED, False):
+                    led_uid = f"homeworks.{controller_id}.led.{addr}.{btn_num}.v2"
+                    eid = registry.async_get_entity_id(
+                        "binary_sensor", DOMAIN, led_uid
+                    )
+                    if eid:
+                        registry.async_remove(eid)
 
     handler.options[CONF_KEYPADS] = new_items
     return {}
