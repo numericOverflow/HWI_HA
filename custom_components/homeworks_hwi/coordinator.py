@@ -41,7 +41,8 @@ _LOGGER = logging.getLogger(__name__)
 DEFAULT_KLS_POLL_INTERVAL = timedelta(seconds=10)
 
 # Default polling interval for dimmer state
-DEFAULT_DIMMER_POLL_INTERVAL = timedelta(seconds=30)
+# Number of KLS poll cycles between dimmer polls
+DIMMER_POLL_EVERY_N_CYCLES = 3
 
 # RPM motor command values (for optimistic state updates)
 RPM_MOTOR_UP = 16
@@ -339,7 +340,12 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Poll all KLS addresses
         await self._poll_kls_states()
 
+        # Poll dimmer states periodically (every Nth cycle) to catch
+        # missed DL monitoring messages after silent subscription drops
         self._poll_count += 1
+        if self._dimmer_addresses and self._poll_count % DIMMER_POLL_EVERY_N_CYCLES == 0:
+            await self._poll_dimmer_states()
+
         return {"connected": True, "poll_count": self._poll_count}
 
     async def _poll_all_states(self) -> None:

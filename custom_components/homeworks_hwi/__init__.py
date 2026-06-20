@@ -213,10 +213,12 @@ def resolve_area_name(hass: HomeAssistant, area_name: str | None) -> str | None:
 
     # No match found - log warning since user expects all areas to exist
     _LOGGER.warning(
-        "Area '%s' (normalized: '%s') NOT FOUND in registry. "
-        "Available areas: %s. HA will create a new area.",
+        "Area '%s' not found in registry. HA will create a new area.",
         area_name,
-        area_name_clean,
+    )
+    _LOGGER.debug(
+        "Available areas for resolution of '%s': %s",
+        area_name,
         [(a.id, a.name) for a in area_registry.areas.values()],
     )
 
@@ -286,7 +288,7 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
     for command in commands:
         if command.lower().startswith("delay"):
             try:
-                delay = min(int(command.partition(" ")[2]), MAX_COMMAND_DELAY_MS)
+                delay = max(0, min(int(command.partition(" ")[2]), MAX_COMMAND_DELAY_MS))
             except (ValueError, IndexError):
                 _LOGGER.warning("Invalid delay command ignored: %s", command)
                 continue
@@ -486,13 +488,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
         kls_window_offset=kls_window_offset,
     )
 
-    # Register CCO devices from options
-    _register_cco_devices_from_options(coordinator, options)
-
-    # Register dimmers
-    for dimmer in options.get(CONF_DIMMERS, []):
-        coordinator.register_dimmer(dimmer[CONF_ADDR])
-
     # Connect and start coordinator
     try:
         if not await coordinator.async_setup():
@@ -526,38 +521,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
     entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, cleanup))
 
     return True
-
-
-def _register_cco_devices_from_options(
-    coordinator: HomeworksCoordinator, options: dict[str, Any]
-) -> None:
-    """Register CCO devices from the config entry options."""
-    for device_config in options.get(CONF_CCO_DEVICES, []):
-        try:
-            entity_type_str = device_config.get(CONF_ENTITY_TYPE, CCO_TYPE_SWITCH)
-            entity_type = _parse_entity_type(entity_type_str)
-
-            addr_str = device_config[CONF_ADDR]
-            button = device_config.get(
-                CONF_BUTTON_NUMBER, device_config.get(CONF_RELAY_NUMBER, 1)
-            )
-
-            if "," not in addr_str:
-                full_addr = f"{addr_str},{button}"
-            else:
-                full_addr = addr_str
-
-            address = CCOAddress.from_string(full_addr)
-
-            device = CCODevice(
-                address=address,
-                name=device_config.get(CONF_NAME, ""),
-                entity_type=entity_type,
-                inverted=device_config.get(CONF_INVERTED, False),
-            )
-            coordinator.register_cco_device(device)
-        except (ValueError, KeyError, TypeError) as err:
-            _LOGGER.error("Failed to register CCO device: %s - %s", device_config, err)
 
 
 def _parse_entity_type(type_str: str) -> CCOEntityType:

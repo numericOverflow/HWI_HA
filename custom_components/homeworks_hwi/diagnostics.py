@@ -11,12 +11,9 @@ from homeassistant.core import HomeAssistant
 from . import HomeworksData, HomeworksHWIConfigEntry
 from .const import (
     CONF_CCO_DEVICES,
-    CONF_CCOS,
     CONF_CONTROLLER_ID,
-    CONF_COVERS,
     CONF_DIMMERS,
     CONF_KEYPADS,
-    CONF_LOCKS,
     DOMAIN,
 )
 
@@ -54,9 +51,6 @@ async def async_get_config_entry_diagnostics(
     # Collect device counts
     device_counts = {
         "cco_devices": len(entry.options.get(CONF_CCO_DEVICES, [])),
-        "legacy_ccos": len(entry.options.get(CONF_CCOS, [])),
-        "legacy_covers": len(entry.options.get(CONF_COVERS, [])),
-        "legacy_locks": len(entry.options.get(CONF_LOCKS, [])),
         "dimmers": len(entry.options.get(CONF_DIMMERS, [])),
         "keypads": len(entry.options.get(CONF_KEYPADS, [])),
     }
