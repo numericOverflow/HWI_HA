@@ -10,10 +10,13 @@ from homeassistant.core import HomeAssistant
 
 from . import HomeworksData, HomeworksHWIConfigEntry
 from .const import (
+    CONF_CCI_DEVICES,
     CONF_CCO_DEVICES,
     CONF_CONTROLLER_ID,
     CONF_DIMMERS,
     CONF_KEYPADS,
+    CONF_QED_COVERS,
+    CONF_RPM_COVERS,
     DOMAIN,
 )
 
@@ -53,6 +56,9 @@ async def async_get_config_entry_diagnostics(
         "cco_devices": len(entry.options.get(CONF_CCO_DEVICES, [])),
         "dimmers": len(entry.options.get(CONF_DIMMERS, [])),
         "keypads": len(entry.options.get(CONF_KEYPADS, [])),
+        "rpm_covers": len(entry.options.get(CONF_RPM_COVERS, [])),
+        "qed_covers": len(entry.options.get(CONF_QED_COVERS, [])),
+        "cci_devices": len(entry.options.get(CONF_CCI_DEVICES, [])),
     }
 
     # Collect registered CCO states (without addresses)
