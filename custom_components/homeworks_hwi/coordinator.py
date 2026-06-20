@@ -206,6 +206,17 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._cco_devices.pop(key, None)
         self._cco_states.pop(key, None)
 
+        # Remove KLS poll address only if no other CCO device shares it
+        kls_addr = address.to_kls_address()
+        still_needed = any(
+            d.address.to_kls_address() == kls_addr
+            for d in self._cco_devices.values()
+        )
+        if not still_needed:
+            self._kls_poll_addresses.discard(kls_addr)
+            if self._client:
+                self._client.unregister_kls_address(kls_addr)
+
     def register_dimmer(self, address: str) -> None:
         """Register a dimmer for state tracking."""
         normalized = normalize_address(address)
