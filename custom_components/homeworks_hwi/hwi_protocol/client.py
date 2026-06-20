@@ -18,6 +18,7 @@ from typing import Callable
 
 from . import commands
 from .exceptions import (
+    HomeworksAuthenticationException,
     HomeworksConnectionLost,
     HomeworksException,
 )
@@ -153,6 +154,9 @@ class HomeworksClient:
 
         Returns:
             True if connected successfully
+
+        Raises:
+            HomeworksAuthenticationException: If authentication fails.
         """
         try:
             await self._transport.connect()
@@ -160,6 +164,8 @@ class HomeworksClient:
             self._connected_at = datetime.now(tz=timezone.utc)
             self._reconnect_delay = RECONNECT_DELAY_MIN
             return True
+        except HomeworksAuthenticationException:
+            raise
         except HomeworksException as err:
             _LOGGER.error("Connection failed: %s", err)
             return False

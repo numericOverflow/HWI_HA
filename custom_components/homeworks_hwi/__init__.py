@@ -29,16 +29,13 @@ from homeassistant.const import (
     Platform,
 )
 from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
-from homeassistant.exceptions import (
-    ConfigEntryAuthFailed,
-    ConfigEntryNotReady,
-    ServiceValidationError,
-)
+from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
+from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import slugify
 
@@ -102,7 +99,7 @@ SERVICE_SEND_COMMAND_SCHEMA = vol.Schema(
 )
 
 
-@dataclass
+@dataclass(slots=True)
 class HomeworksData:
     """Container for config entry data."""
 
@@ -238,7 +235,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
         """Call the service."""
         await async_send_command(hass, service_call.data)
 
-    hass.services.async_register(
+    async_register_admin_service(
+        hass,
         DOMAIN,
         SERVICE_SEND_COMMAND,
         async_call_service,
@@ -478,7 +476,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
     kls_poll_interval = options.get(CONF_KLS_POLL_INTERVAL, DEFAULT_KLS_POLL_INTERVAL)
     kls_window_offset = options.get(CONF_KLS_WINDOW_OFFSET, DEFAULT_KLS_WINDOW_OFFSET)
 
-    # Create coordinator
+    # Create coordinator (client created but not connected — lazy connect on first poll)
     coordinator = HomeworksCoordinator(
         hass=hass,
         config=client_config,
@@ -488,25 +486,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
         kls_window_offset=kls_window_offset,
     )
 
-    # Connect and start coordinator
-    try:
-        if not await coordinator.async_setup():
-            raise ConfigEntryNotReady("Failed to connect to Homeworks controller")
-    except Exception as err:
-        _LOGGER.error("Failed to setup Homeworks: %s", err)
-        # Check if this is an auth failure
-        if "auth" in str(err).lower() or "credential" in str(err).lower():
-            raise ConfigEntryAuthFailed("Authentication failed") from err
-        raise ConfigEntryNotReady(f"Connection failed: {err}") from err
-
     # Store data in entry.runtime_data (auto-cleaned by HA on unload)
     entry.runtime_data = HomeworksData(
         coordinator=coordinator,
         controller_id=controller_id,
     )
 
-    # Start the coordinator's regular updates (must be before platform setup)
-    await coordinator.async_config_entry_first_refresh()
+    # First refresh connects, subscribes, and polls initial state.
+    # On any failure, shut down to avoid leaked connections/tasks.
+    try:
+        await coordinator.async_config_entry_first_refresh()
+    except Exception:
+        await coordinator.async_shutdown()
+        raise
 
     # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -521,19 +513,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
     entry.async_on_unload(hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, cleanup))
 
     return True
-
-
-def _parse_entity_type(type_str: str) -> CCOEntityType:
-    """Parse entity type string to enum."""
-    type_map = {
-        CCO_TYPE_SWITCH: CCOEntityType.SWITCH,
-        CCO_TYPE_LIGHT: CCOEntityType.LIGHT,
-        CCO_TYPE_COVER: CCOEntityType.COVER,
-        CCO_TYPE_LOCK: CCOEntityType.LOCK,
-        CCO_TYPE_CLIMATE: CCOEntityType.CLIMATE,
-        CCO_TYPE_FAN: CCOEntityType.FAN,
-    }
-    return type_map.get(type_str.lower(), CCOEntityType.SWITCH)
 
 
 def parse_cco_device_config(

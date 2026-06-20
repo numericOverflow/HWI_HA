@@ -10,6 +10,7 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
@@ -27,7 +28,8 @@ from .client import (
     HomeworksClient,
     HomeworksClientConfig,
 )
-from .const import DEFAULT_KLS_WINDOW_OFFSET
+from .const import DEFAULT_KLS_WINDOW_OFFSET, RPM_MOTOR_DOWN, RPM_MOTOR_STOP, RPM_MOTOR_UP
+from .hwi_protocol import HomeworksAuthenticationException
 from .models import (
     CCOAddress,
     CCODevice,
@@ -43,11 +45,6 @@ DEFAULT_KLS_POLL_INTERVAL = timedelta(seconds=10)
 # Default polling interval for dimmer state
 # Number of KLS poll cycles between dimmer polls
 DIMMER_POLL_EVERY_N_CYCLES = 3
-
-# RPM motor command values (for optimistic state updates)
-RPM_MOTOR_UP = 16
-RPM_MOTOR_DOWN = 35
-RPM_MOTOR_STOP = 0
 
 
 class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -79,9 +76,14 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self._config = config
         self._controller_id = controller_id
-        self._client: HomeworksClient | None = None
         self._kls_window_offset = kls_window_offset
         self._poll_count: int = 0
+
+        # Create client (no connection yet — lazy connect in _async_update_data)
+        self._client = HomeworksClient(
+            config=config,
+            message_callback=self._handle_message,
+        )
 
         # CCO device registry: unique_key -> CCODevice
         self._cco_devices: dict[tuple[int, int, int, int], CCODevice] = {}
@@ -119,6 +121,13 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._kls_poll_addresses.add(normalized)
         if self._client:
             self._client.register_kls_address(normalized)
+
+    def unregister_kls_poll_address(self, address: str) -> None:
+        """Unregister an address from KLS polling."""
+        normalized = normalize_address(address)
+        self._kls_poll_addresses.discard(normalized)
+        if self._client:
+            self._client.unregister_kls_address(normalized)
 
     @property
     def controller_id(self) -> str:
@@ -303,39 +312,43 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return unregister
 
-    async def async_setup(self) -> bool:
-        """Set up the coordinator and connect to the controller."""
-        self._client = HomeworksClient(
-            config=self._config,
-            message_callback=self._handle_message,
-        )
+    async def _connect_and_subscribe(self) -> None:
+        """Connect to the controller and start the message read loop.
 
-        # Register existing KLS addresses
+        Called lazily from _async_update_data on first poll or after
+        connection loss.
+
+        Raises:
+            HomeworksAuthenticationException: If authentication fails.
+            UpdateFailed: If connection fails for other reasons.
+        """
+        # Register any pending KLS addresses
         for addr in self._kls_poll_addresses:
             self._client.register_kls_address(addr)
 
-        # Connect
         if not await self._client.connect():
-            return False
+            raise UpdateFailed("Failed to connect to Homeworks controller")
 
-        # Start the read loop
         await self._client.start()
-
-        # Initial poll
-        await self._poll_all_states()
-
-        return True
 
     async def async_shutdown(self) -> None:
         """Shut down the coordinator."""
+        await super().async_shutdown()
         if self._client:
             await self._client.stop()
             self._client = None
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from controller (called by DataUpdateCoordinator)."""
-        if not self._client or not self._client.connected:
-            raise UpdateFailed("Not connected to controller")
+        if not self._client:
+            raise UpdateFailed("Client not initialized")
+
+        # Connect if not already connected (lazy connect / reconnect)
+        if not self._client.connected:
+            try:
+                await self._connect_and_subscribe()
+            except HomeworksAuthenticationException as err:
+                raise ConfigEntryAuthFailed("Authentication failed") from err
 
         # Poll all KLS addresses
         await self._poll_kls_states()
@@ -402,7 +415,18 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         elif msg_type == HW_CONNECTION_RESTORED:
             _LOGGER.info("Controller connection restored")
             # Re-poll all states after reconnection
-            self.hass.async_create_task(self._poll_all_states())
+            self.config_entry.async_create_background_task(
+                self.hass,
+                self._safe_poll_all_states(),
+                name=f"homeworks_{self._controller_id}_reconnect_poll",
+            )
+
+    async def _safe_poll_all_states(self) -> None:
+        """Poll all states with error handling for background tasks."""
+        try:
+            await self._poll_all_states()
+        except Exception:
+            _LOGGER.exception("Failed to poll states after reconnection")
 
     def _handle_kls_update(self, address: str, led_states: list[int]) -> None:
         """Handle a KLS (LED state) update.
@@ -609,34 +633,6 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return await self._client.cco_open(
             address.to_command_address(), address.button
         )
-
-    async def async_cco_close(self, address: CCOAddress) -> bool:
-        """Close a CCO relay (turn on)."""
-        if not self._client:
-            return False
-        result = await self._client.cco_close(
-            address.to_command_address(), address.button
-        )
-        if result:
-            self._cco_states[address.unique_key] = True
-            self.async_set_updated_data(
-                {"connected": True, "poll_count": self._poll_count}
-            )
-        return result
-
-    async def async_cco_open(self, address: CCOAddress) -> bool:
-        """Open a CCO relay (turn off)."""
-        if not self._client:
-            return False
-        result = await self._client.cco_open(
-            address.to_command_address(), address.button
-        )
-        if result:
-            self._cco_states[address.unique_key] = False
-            self.async_set_updated_data(
-                {"connected": True, "poll_count": self._poll_count}
-            )
-        return result
 
     async def async_fade_dim(
         self,

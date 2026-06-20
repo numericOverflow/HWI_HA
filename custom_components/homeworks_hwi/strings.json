@@ -241,7 +241,7 @@
                     "addr": "Address in format [processor:link:address] (e.g., [02:06:03])",
                     "button_number": "Relay number 1-8 for CCO modules, 1-24 for keypads",
                     "entity_type": "How this device appears in Home Assistant",
-                    "inverted": "Swap on/off semantics (useful for normally-closed relays)",
+                    "inverted": "Swap on/off semantics (useful for normally-closed relays). For covers where relay ON means 'opening', enable this to match physical behavior.",
                     "area": "Assign this device to an area in Home Assistant"
                 }
             },

@@ -12,6 +12,7 @@ CCI devices emulate keypads. When the physical key is:
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -23,7 +24,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
+from . import HomeworksHWIConfigEntry, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
@@ -203,6 +204,11 @@ class HomeworksLEDBinarySensor(
         # Request initial state
         await self.coordinator.async_request_keypad_led_states(self._keypad_addr)
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister KLS poll address when removed from hass."""
+        self.coordinator.unregister_kls_poll_address(self._keypad_addr)
+        await super().async_will_remove_from_hass()
+
 
 class HomeworksCCIBinarySensor(
     CoordinatorEntity[HomeworksCoordinator], BinarySensorEntity
@@ -229,7 +235,7 @@ class HomeworksCCIBinarySensor(
         self._input_number = input_number
         self._controller_id = controller_id
         self._sensor_name = name
-        self._unregister_callback: callable[[], None] | None = None
+        self._unregister_callback: Callable[[], None] | None = None
 
         # Set up entity attributes
         self._attr_has_entity_name = True
