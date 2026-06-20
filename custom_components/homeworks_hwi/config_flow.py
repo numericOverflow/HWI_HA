@@ -398,6 +398,15 @@ async def validate_light_edit(
 ) -> dict[str, Any]:
     """Update edited light."""
     idx = handler.flow_state["_idx"]
+
+    if CONF_ADDR in user_input:
+        user_input[CONF_ADDR] = _validate_address(user_input[CONF_ADDR])
+        for i, item in enumerate(handler.options.get(CONF_DIMMERS, [])):
+            if i == idx:
+                continue
+            if normalize_address(item[CONF_ADDR]) == user_input[CONF_ADDR]:
+                raise SchemaFlowError("duplicated_addr")
+
     handler.options[CONF_DIMMERS][idx].update(user_input)
     return {}
 
@@ -499,6 +508,15 @@ async def validate_rpm_cover_edit(
 ) -> dict[str, Any]:
     """Update edited RPM cover."""
     idx = handler.flow_state["_rpm_idx"]
+
+    if CONF_ADDR in user_input:
+        user_input[CONF_ADDR] = _validate_address(user_input[CONF_ADDR])
+        for i, item in enumerate(handler.options.get(CONF_RPM_COVERS, [])):
+            if i == idx:
+                continue
+            if normalize_address(item[CONF_ADDR]) == user_input[CONF_ADDR]:
+                raise SchemaFlowError("duplicated_addr")
+
     handler.options[CONF_RPM_COVERS][idx].update(user_input)
     return {}
 
@@ -598,6 +616,15 @@ async def validate_qed_cover_edit(
 ) -> dict[str, Any]:
     """Update edited QED cover."""
     idx = handler.flow_state["_qed_idx"]
+
+    if CONF_ADDR in user_input:
+        user_input[CONF_ADDR] = _validate_address(user_input[CONF_ADDR])
+        for i, item in enumerate(handler.options.get(CONF_QED_COVERS, [])):
+            if i == idx:
+                continue
+            if normalize_address(item[CONF_ADDR]) == user_input[CONF_ADDR]:
+                raise SchemaFlowError("duplicated_addr")
+
     handler.options[CONF_QED_COVERS][idx].update(user_input)
     return {}
 
@@ -714,20 +741,26 @@ async def validate_cci_device_edit(
 ) -> dict[str, Any]:
     """Update edited CCI device."""
     idx = handler.flow_state["_cci_idx"]
+    current = handler.options[CONF_CCI_DEVICES][idx]
 
+    addr = user_input.get(CONF_ADDR, current[CONF_ADDR])
     if CONF_ADDR in user_input:
-        user_input[CONF_ADDR] = _validate_address(user_input[CONF_ADDR])
-        input_number = int(user_input.get(CONF_INPUT_NUMBER, 1))
+        addr = _validate_address(addr)
+        user_input[CONF_ADDR] = addr
 
-        # Check for duplicates (excluding current)
-        for i, device in enumerate(handler.options.get(CONF_CCI_DEVICES, [])):
-            if i == idx:
-                continue
-            if (
-                normalize_address(device[CONF_ADDR]) == user_input[CONF_ADDR]
-                and device.get(CONF_INPUT_NUMBER, 1) == input_number
-            ):
-                raise SchemaFlowError("duplicate_cci")
+    input_number = int(
+        user_input.get(CONF_INPUT_NUMBER, current.get(CONF_INPUT_NUMBER, 1))
+    )
+
+    # Always check for duplicates regardless of which fields changed
+    for i, device in enumerate(handler.options.get(CONF_CCI_DEVICES, [])):
+        if i == idx:
+            continue
+        if (
+            normalize_address(device[CONF_ADDR]) == normalize_address(addr)
+            and device.get(CONF_INPUT_NUMBER, 1) == input_number
+        ):
+            raise SchemaFlowError("duplicate_cci")
 
     handler.options[CONF_CCI_DEVICES][idx].update(user_input)
     return {}
@@ -964,13 +997,30 @@ async def validate_remove_button(
     """Remove selected buttons."""
     removed = set(user_input[CONF_INDEX])
     keypad_idx = handler.flow_state["_idx"]
+    keypad = handler.options[CONF_KEYPADS][keypad_idx]
+    addr = keypad[CONF_ADDR]
+    registry = er.async_get(handler.parent_handler.hass)
+    controller_id = handler.options[CONF_CONTROLLER_ID]
 
     new_buttons = []
-    for i, button in enumerate(handler.options[CONF_KEYPADS][keypad_idx][CONF_BUTTONS]):
+    for i, button in enumerate(keypad[CONF_BUTTONS]):
         if str(i) not in removed:
             new_buttons.append(button)
+        else:
+            btn_num = button[CONF_NUMBER]
+            btn_uid = f"homeworks.{controller_id}.button.{addr}.{btn_num}.v2"
+            eid = registry.async_get_entity_id("button", DOMAIN, btn_uid)
+            if eid:
+                registry.async_remove(eid)
+            if button.get(CONF_LED, False):
+                led_uid = f"homeworks.{controller_id}.led.{addr}.{btn_num}.v2"
+                eid = registry.async_get_entity_id(
+                    "binary_sensor", DOMAIN, led_uid
+                )
+                if eid:
+                    registry.async_remove(eid)
 
-    handler.options[CONF_KEYPADS][keypad_idx][CONF_BUTTONS] = new_buttons
+    keypad[CONF_BUTTONS] = new_buttons
     return {}
 
 
