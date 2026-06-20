@@ -28,7 +28,7 @@ from .client import (
     HomeworksClient,
     HomeworksClientConfig,
 )
-from .const import DEFAULT_KLS_WINDOW_OFFSET
+from .const import DEFAULT_KLS_WINDOW_OFFSET, RPM_MOTOR_DOWN, RPM_MOTOR_STOP, RPM_MOTOR_UP
 from .hwi_protocol import HomeworksAuthenticationException
 from .models import (
     CCOAddress,
@@ -45,11 +45,6 @@ DEFAULT_KLS_POLL_INTERVAL = timedelta(seconds=10)
 # Default polling interval for dimmer state
 # Number of KLS poll cycles between dimmer polls
 DIMMER_POLL_EVERY_N_CYCLES = 3
-
-# RPM motor command values (for optimistic state updates)
-RPM_MOTOR_UP = 16
-RPM_MOTOR_DOWN = 35
-RPM_MOTOR_STOP = 0
 
 
 class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -638,34 +633,6 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return await self._client.cco_open(
             address.to_command_address(), address.button
         )
-
-    async def async_cco_close(self, address: CCOAddress) -> bool:
-        """Close a CCO relay (turn on)."""
-        if not self._client:
-            return False
-        result = await self._client.cco_close(
-            address.to_command_address(), address.button
-        )
-        if result:
-            self._cco_states[address.unique_key] = True
-            self.async_set_updated_data(
-                {"connected": True, "poll_count": self._poll_count}
-            )
-        return result
-
-    async def async_cco_open(self, address: CCOAddress) -> bool:
-        """Open a CCO relay (turn off)."""
-        if not self._client:
-            return False
-        result = await self._client.cco_open(
-            address.to_command_address(), address.button
-        )
-        if result:
-            self._cco_states[address.unique_key] = False
-            self.async_set_updated_data(
-                {"connected": True, "poll_count": self._poll_count}
-            )
-        return result
 
     async def async_fade_dim(
         self,

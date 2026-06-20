@@ -70,7 +70,10 @@ DEFAULT_CCI_NAME: Final = "Homeworks Input"
 # Polling intervals (in seconds)
 DEFAULT_KLS_POLL_INTERVAL: Final = 10
 DEFAULT_DIMMER_POLL_INTERVAL: Final = 30
-
+# RPM motor command values (FADEDIM levels for HW-RPM-4M-230 modules)
+RPM_MOTOR_UP: Final = 16
+RPM_MOTOR_DOWN: Final = 35
+RPM_MOTOR_STOP: Final = 0
 # Maximum delay allowed in send_command service (milliseconds)
 MAX_COMMAND_DELAY_MS: Final = 60000
 

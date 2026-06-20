@@ -513,19 +513,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
     return True
 
 
-def _parse_entity_type(type_str: str) -> CCOEntityType:
-    """Parse entity type string to enum."""
-    type_map = {
-        CCO_TYPE_SWITCH: CCOEntityType.SWITCH,
-        CCO_TYPE_LIGHT: CCOEntityType.LIGHT,
-        CCO_TYPE_COVER: CCOEntityType.COVER,
-        CCO_TYPE_LOCK: CCOEntityType.LOCK,
-        CCO_TYPE_CLIMATE: CCOEntityType.CLIMATE,
-        CCO_TYPE_FAN: CCOEntityType.FAN,
-    }
-    return type_map.get(type_str.lower(), CCOEntityType.SWITCH)
-
-
 def parse_cco_device_config(
     hass: HomeAssistant,
     device_config: dict[str, Any],

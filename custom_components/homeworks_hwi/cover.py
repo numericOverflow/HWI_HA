@@ -30,6 +30,9 @@ from .const import (
     DEFAULT_QED_COVER_NAME,
     DEFAULT_RPM_COVER_NAME,
     DOMAIN,
+    RPM_MOTOR_DOWN,
+    RPM_MOTOR_STOP,
+    RPM_MOTOR_UP,
 )
 from .coordinator import HomeworksCoordinator
 from .models import CCODevice, CCOEntityType, normalize_address
@@ -202,11 +205,6 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         self.coordinator.unregister_cco_device(self._device.address)
         await super().async_will_remove_from_hass()
 
-
-# RPM motor command values (from FADEDIM)
-RPM_MOTOR_UP = 16
-RPM_MOTOR_DOWN = 35
-RPM_MOTOR_STOP = 0
 
 # Attribute key for storing last known position
 ATTR_LAST_KNOWN_POSITION = "last_known_position"
