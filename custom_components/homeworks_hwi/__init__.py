@@ -35,6 +35,7 @@ from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
+from homeassistant.helpers.service import async_register_admin_service
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import slugify
 
@@ -234,7 +235,8 @@ def async_setup_services(hass: HomeAssistant) -> None:
         """Call the service."""
         await async_send_command(hass, service_call.data)
 
-    hass.services.async_register(
+    async_register_admin_service(
+        hass,
         DOMAIN,
         SERVICE_SEND_COMMAND,
         async_call_service,
