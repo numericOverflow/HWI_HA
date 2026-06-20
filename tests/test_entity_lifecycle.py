@@ -4,25 +4,22 @@ Verifies that:
 - Creating an entity fully populates all coordinator registries
 - Removing an entity leaves NO leftovers in any registry
 - Each entity type (CCO, dimmer, CCI, keypad/button) is covered
-
-These tests use the coordinator directly (requires HA marker) via
-_make_bare_coordinator() helper from test_coordinator.py pattern.
 """
 
 import pytest
 from unittest.mock import MagicMock, patch
 
-from models import CCOAddress, CCODevice, CCOEntityType, normalize_address
-
-pytestmark = pytest.mark.requires_ha
+from custom_components.homeworks_hwi.models import (
+    CCOAddress,
+    CCODevice,
+    CCOEntityType,
+    normalize_address,
+)
+from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
 
 
 def _make_bare_coordinator():
     """Create a coordinator instance bypassing __init__."""
-    try:
-        from coordinator import HomeworksCoordinator
-    except ImportError:
-        pytest.skip("Home Assistant not installed")
 
     with patch.object(HomeworksCoordinator, "__init__", lambda self, *a, **kw: None):
         coord = HomeworksCoordinator.__new__(HomeworksCoordinator)
