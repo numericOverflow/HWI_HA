@@ -413,7 +413,18 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         elif msg_type == HW_CONNECTION_RESTORED:
             _LOGGER.info("Controller connection restored")
             # Re-poll all states after reconnection
-            self.hass.async_create_task(self._poll_all_states())
+            self.config_entry.async_create_background_task(
+                self.hass,
+                self._safe_poll_all_states(),
+                name=f"homeworks_{self._controller_id}_reconnect_poll",
+            )
+
+    async def _safe_poll_all_states(self) -> None:
+        """Poll all states with error handling for background tasks."""
+        try:
+            await self._poll_all_states()
+        except Exception:
+            _LOGGER.exception("Failed to poll states after reconnection")
 
     def _handle_kls_update(self, address: str, led_states: list[int]) -> None:
         """Handle a KLS (LED state) update.
