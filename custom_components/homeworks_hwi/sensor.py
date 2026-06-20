@@ -16,7 +16,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, HomeworksHWIConfigEntry
+from . import HomeworksHWIConfigEntry
 from .const import CONF_CONTROLLER_ID, DOMAIN
 from .coordinator import HomeworksCoordinator
 

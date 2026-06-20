@@ -488,6 +488,7 @@ class HomeworksQEDCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
         """Stop the cover mid-travel."""
         self._is_opening = False
         self._is_closing = False
+        self.async_write_ha_state()
         await self.coordinator.async_stop_dim(self._address)
         # Request updated position after stop
         await self.coordinator.async_request_dimmer_level(self._address)

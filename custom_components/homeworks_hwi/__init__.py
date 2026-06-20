@@ -98,7 +98,7 @@ SERVICE_SEND_COMMAND_SCHEMA = vol.Schema(
 )
 
 
-@dataclass
+@dataclass(slots=True)
 class HomeworksData:
     """Container for config entry data."""
 

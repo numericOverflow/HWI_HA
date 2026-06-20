@@ -12,6 +12,7 @@ CCI devices emulate keypads. When the physical key is:
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -23,7 +24,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, HomeworksHWIConfigEntry, resolve_area_name
+from . import HomeworksHWIConfigEntry, resolve_area_name
 from .const import (
     CONF_ADDR,
     CONF_AREA,
@@ -234,7 +235,7 @@ class HomeworksCCIBinarySensor(
         self._input_number = input_number
         self._controller_id = controller_id
         self._sensor_name = name
-        self._unregister_callback: callable[[], None] | None = None
+        self._unregister_callback: Callable[[], None] | None = None
 
         # Set up entity attributes
         self._attr_has_entity_name = True
