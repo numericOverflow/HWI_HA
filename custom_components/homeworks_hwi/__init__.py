@@ -428,6 +428,9 @@ async def async_migrate_entry(
             len(new_options.get(CONF_CCO_DEVICES, [])),
         )
 
+        # Clean up old entities with legacy unique_id format (pre-v2 suffix)
+        _cleanup_old_entities(hass, config_entry)
+
     if config_entry.version == 2:
         _LOGGER.warning(
             "Migrating config entry %s from v2 to v3: "
@@ -441,9 +444,6 @@ async def async_migrate_entry(
         hass.config_entries.async_update_entry(
             config_entry, options=new_options, version=3
         )
-
-    # Clean up old entities with legacy unique_id format (pre-v2 suffix)
-    _cleanup_old_entities(hass, config_entry)
 
     return True
 
