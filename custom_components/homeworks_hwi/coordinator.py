@@ -127,6 +127,13 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self._client:
             self._client.register_kls_address(normalized)
 
+    def unregister_kls_poll_address(self, address: str) -> None:
+        """Unregister an address from KLS polling."""
+        normalized = normalize_address(address)
+        self._kls_poll_addresses.discard(normalized)
+        if self._client:
+            self._client.unregister_kls_address(normalized)
+
     @property
     def controller_id(self) -> str:
         """Return the controller ID."""

@@ -7,11 +7,12 @@ import logging
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.const import CONF_NAME
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksData, HomeworksHWIConfigEntry
+from . import HomeworksHWIConfigEntry
 from .const import (
     CONF_ADDR,
     CONF_BUTTONS,
@@ -59,7 +60,7 @@ async def async_setup_entry(
         async_add_entities(entities)
 
 
-class HomeworksButton(ButtonEntity):
+class HomeworksButton(CoordinatorEntity[HomeworksCoordinator], ButtonEntity):
     """Homeworks Button - simulates keypad button press."""
 
     _attr_has_entity_name = True
@@ -75,7 +76,7 @@ class HomeworksButton(ButtonEntity):
         release_delay: float,
     ) -> None:
         """Initialize the button."""
-        self._coordinator = coordinator
+        super().__init__(coordinator)
         self._controller_id = controller_id
         self._keypad_addr = keypad_addr
         self._button_number = button_number
@@ -96,10 +97,10 @@ class HomeworksButton(ButtonEntity):
             "button_number": button_number,
         }
 
-    @property
-    def available(self) -> bool:
-        """Return True if the coordinator is connected."""
-        return self._coordinator.connected
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Handle updated data from the coordinator."""
+        self.async_write_ha_state()
 
     async def async_press(self) -> None:
         """Press the button."""
@@ -109,7 +110,7 @@ class HomeworksButton(ButtonEntity):
             self._keypad_addr,
         )
 
-        await self._coordinator.async_keypad_button_press(
+        await self.coordinator.async_keypad_button_press(
             self._keypad_addr, self._button_number
         )
 
@@ -119,6 +120,6 @@ class HomeworksButton(ButtonEntity):
     async def _delayed_release(self) -> None:
         """Release the button after delay."""
         await asyncio.sleep(self._release_delay)
-        await self._coordinator.async_keypad_button_release(
+        await self.coordinator.async_keypad_button_release(
             self._keypad_addr, self._button_number
         )

@@ -203,6 +203,11 @@ class HomeworksLEDBinarySensor(
         # Request initial state
         await self.coordinator.async_request_keypad_led_states(self._keypad_addr)
 
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister KLS poll address when removed from hass."""
+        self.coordinator.unregister_kls_poll_address(self._keypad_addr)
+        await super().async_will_remove_from_hass()
+
 
 class HomeworksCCIBinarySensor(
     CoordinatorEntity[HomeworksCoordinator], BinarySensorEntity
