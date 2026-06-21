@@ -67,6 +67,7 @@
                     "manage_keypads": "Manage keypads",
                     "controller_settings": "Controller settings",
                     "import_csv": "Import devices from CSV",
+                    "import_xml": "Import devices from XML (Lutron Designer export)",
                     "review_config": "Review configuration"
                 }
             },
@@ -241,7 +242,7 @@
                     "addr": "Address in format [processor:link:address] (e.g., [02:06:03])",
                     "button_number": "Relay number 1-8 for CCO modules, 1-24 for keypads",
                     "entity_type": "How this device appears in Home Assistant",
-                    "inverted": "Swap on/off semantics (useful for normally-closed relays)",
+                    "inverted": "Swap on/off semantics (useful for normally-closed relays). For covers where relay ON means 'opening', enable this to match physical behavior.",
                     "area": "Assign this device to an area in Home Assistant"
                 }
             },
@@ -402,6 +403,32 @@
             "review_config": {
                 "title": "Current Configuration",
                 "description": "Review your current device configuration. Use the other menu options to make changes."
+            },
+            "import_xml": {
+                "title": "Import Devices from XML",
+                "description": "Paste the content of a Lutron HomeWorks Designer **Maximum** XML export file.\n\nThis will auto-discover all dimmers, shades, motor covers, CCO relays, keypads, and CCI inputs from the project file.",
+                "data": {
+                    "xml_file": "XML content"
+                }
+            },
+            "xml_area_mapping": {
+                "title": "Map Rooms to Areas",
+                "description": "For each Lutron room, select an existing Home Assistant area or create a new one."
+            },
+            "xml_device_selection": {
+                "title": "Select Devices to Import",
+                "description": "Choose which discovered devices to import. Devices already in your configuration are marked [ALREADY EXISTS].",
+                "data": {
+                    "devices": "Devices to import"
+                }
+            },
+            "xml_classify_cco": {
+                "title": "Classify CCO Relay Devices",
+                "description": "Each CCO relay controls a physical device. Choose what type of entity to create in Home Assistant for each one."
+            },
+            "xml_confirm_import": {
+                "title": "Confirm Import",
+                "description": "Ready to import the selected devices. Press Submit to commit changes."
             }
         },
         "error": {
@@ -414,6 +441,10 @@
             "csv_too_large": "CSV file exceeds maximum size (1MB)",
             "csv_too_many_rows": "CSV file exceeds maximum row count (5000)",
             "no_devices_in_csv": "No valid devices found in CSV",
+            "no_devices_in_xml": "No importable devices found in the XML file",
+            "invalid_xml": "Invalid XML format. Ensure you are pasting a valid Lutron Designer export.",
+            "not_maximum_export": "This is not a Maximum export. Please export from Lutron Designer using File > Export > Maximum.",
+            "xml_too_large": "XML file exceeds maximum size (25MB)",
             "no_devices": "No devices configured. Add devices first.",
             "no_buttons": "No buttons configured on this keypad. Add buttons first.",
             "connection_error": "Failed to connect to controller"
@@ -457,14 +488,20 @@
     },
     "entity": {
         "sensor": {
-            "connection_status": {
+            "connection": {
                 "name": "Connection status"
             },
-            "last_message": {
-                "name": "Last message"
+            "last_kls_time": {
+                "name": "Last KLS update"
             },
             "reconnect_count": {
                 "name": "Reconnect count"
+            },
+            "poll_failure_count": {
+                "name": "Poll failures"
+            },
+            "parse_error_count": {
+                "name": "Parse errors"
             }
         },
         "binary_sensor": {
