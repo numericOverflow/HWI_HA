@@ -38,7 +38,6 @@ from custom_components.homeworks_hwi.const import (
     CONF_INPUT_NUMBER,
     CONF_KEYPADS,
     CONF_LED,
-    CONF_NAME,
     CONF_NUMBER,
     CONF_QED_COVERS,
     CONF_RPM_COVERS,
@@ -47,6 +46,7 @@ from custom_components.homeworks_hwi.const import (
     CONF_DEVICE_CLASS,
     CONF_RELEASE_DELAY,
 )
+from homeassistant.const import CONF_NAME
 from custom_components.homeworks_hwi.xml_import import (
     XMLImportError,
     parse_homeworks_xml,
