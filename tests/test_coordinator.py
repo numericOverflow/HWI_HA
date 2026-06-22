@@ -17,24 +17,12 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch, call
 from datetime import timedelta
 
-from models import CCOAddress, CCODevice, CCOEntityType, normalize_address
-
-# All coordinator tests require HA since coordinator.py imports homeassistant
-pytestmark = pytest.mark.requires_ha
-
-
-def _import_coordinator():
-    """Import coordinator, skip if HA not available."""
-    try:
-        from coordinator import HomeworksCoordinator
-        return HomeworksCoordinator
-    except ImportError:
-        pytest.skip("Home Assistant not installed")
+from custom_components.homeworks_hwi.models import CCOAddress, CCODevice, CCOEntityType, normalize_address
+from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
 
 
 def _make_bare_coordinator():
     """Create a coordinator instance bypassing __init__."""
-    HomeworksCoordinator = _import_coordinator()
     with patch.object(HomeworksCoordinator, "__init__", lambda self, *a, **kw: None):
         coord = HomeworksCoordinator.__new__(HomeworksCoordinator)
         coord._cco_devices = {}
@@ -422,26 +410,26 @@ class TestOptimisticUpdates:
         return coord
 
     @pytest.mark.asyncio
-    async def test_cco_close_optimistic_on(self, cco_device_factory):
-        """async_cco_close sets optimistic state to True."""
+    async def test_cco_turn_on_optimistic(self, cco_device_factory):
+        """async_cco_turn_on sets optimistic state to True."""
         coord = self._make_coordinator_with_client()
         device = cco_device_factory(button=6)
         coord.register_cco_device(device)
 
-        result = await coord.async_cco_close(device.address)
+        result = await coord.async_cco_turn_on(device)
 
         assert result is True
         assert coord._cco_states[device.address.unique_key] is True
 
     @pytest.mark.asyncio
-    async def test_cco_open_optimistic_off(self, cco_device_factory):
-        """async_cco_open sets optimistic state to False."""
+    async def test_cco_turn_off_optimistic(self, cco_device_factory):
+        """async_cco_turn_off sets optimistic state to False."""
         coord = self._make_coordinator_with_client()
         device = cco_device_factory(button=6)
         coord.register_cco_device(device)
         coord._cco_states[device.address.unique_key] = True
 
-        result = await coord.async_cco_open(device.address)
+        result = await coord.async_cco_turn_off(device)
 
         assert result is True
         assert coord._cco_states[device.address.unique_key] is False
@@ -481,7 +469,7 @@ class TestOptimisticUpdates:
         coord._client = None
 
         device = cco_device_factory(button=6)
-        result = await coord.async_cco_close(device.address)
+        result = await coord.async_cco_turn_on(device)
 
         assert result is False
 

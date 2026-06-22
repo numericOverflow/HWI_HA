@@ -8,6 +8,7 @@ HA 2026.1 compliant:
 from __future__ import annotations
 
 import csv
+from collections import Counter
 from io import StringIO
 import logging
 from typing import Any, NamedTuple
@@ -91,6 +92,13 @@ from .const import (
     MAX_CSV_SIZE,
 )
 from .models import CCOAddress, normalize_address
+from .xml_import import (
+    MAX_XML_SIZE,
+    ParsedProject,
+    XMLImportError,
+    get_cco_address_parts,
+    parse_homeworks_xml,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1303,18 +1311,32 @@ def _find_existing_cco(handler: SchemaCommonFlowHandler, address: str, button: i
     return None
 
 
+def _find_existing_by_address(
+    handler: SchemaCommonFlowHandler, config_key: str, address: str
+) -> int | None:
+    """Find existing device index by normalized address, or None if not found."""
+    normalized = normalize_address(address)
+    for i, item in enumerate(handler.options.get(config_key, [])):
+        if normalize_address(item[CONF_ADDR]) == normalized:
+            return i
+    return None
+
+
+def _is_duplicate_by_address(
+    handler: SchemaCommonFlowHandler, config_key: str, address: str
+) -> bool:
+    """Check if a device with this address already exists."""
+    return _find_existing_by_address(handler, config_key, address) is not None
+
+
 def _is_duplicate_dimmer(handler: SchemaCommonFlowHandler, address: str) -> bool:
     """Check if a dimmer already exists."""
-    return _find_existing_dimmer(handler, address) is not None
+    return _is_duplicate_by_address(handler, CONF_DIMMERS, address)
 
 
 def _find_existing_dimmer(handler: SchemaCommonFlowHandler, address: str) -> int | None:
     """Find existing dimmer index, or None if not found."""
-    normalized = normalize_address(address)
-    for i, dimmer in enumerate(handler.options.get(CONF_DIMMERS, [])):
-        if normalize_address(dimmer[CONF_ADDR]) == normalized:
-            return i
-    return None
+    return _find_existing_by_address(handler, CONF_DIMMERS, address)
 
 
 def _is_duplicate_cci(handler: SchemaCommonFlowHandler, address: str, input_number: int) -> bool:
@@ -1336,30 +1358,22 @@ def _find_existing_cci(handler: SchemaCommonFlowHandler, address: str, input_num
 
 def _is_duplicate_rpm_cover(handler: SchemaCommonFlowHandler, address: str) -> bool:
     """Check if an RPM cover already exists."""
-    return _find_existing_rpm_cover(handler, address) is not None
+    return _is_duplicate_by_address(handler, CONF_RPM_COVERS, address)
 
 
 def _find_existing_rpm_cover(handler: SchemaCommonFlowHandler, address: str) -> int | None:
     """Find existing RPM cover index, or None if not found."""
-    normalized = normalize_address(address)
-    for i, cover in enumerate(handler.options.get(CONF_RPM_COVERS, [])):
-        if normalize_address(cover[CONF_ADDR]) == normalized:
-            return i
-    return None
+    return _find_existing_by_address(handler, CONF_RPM_COVERS, address)
 
 
 def _is_duplicate_qed_cover(handler: SchemaCommonFlowHandler, address: str) -> bool:
     """Check if a QED cover already exists."""
-    return _find_existing_qed_cover(handler, address) is not None
+    return _is_duplicate_by_address(handler, CONF_QED_COVERS, address)
 
 
 def _find_existing_qed_cover(handler: SchemaCommonFlowHandler, address: str) -> int | None:
     """Find existing QED cover index, or None if not found."""
-    normalized = normalize_address(address)
-    for i, cover in enumerate(handler.options.get(CONF_QED_COVERS, [])):
-        if normalize_address(cover[CONF_ADDR]) == normalized:
-            return i
-    return None
+    return _find_existing_by_address(handler, CONF_QED_COVERS, address)
 
 
 async def get_confirm_import_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
@@ -1598,6 +1612,548 @@ async def validate_review_config(
     handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
 ) -> dict[str, Any]:
     """No-op for review."""
+    return {}
+
+
+# === XML Import ===
+
+
+def _is_duplicate_keypad(handler: SchemaCommonFlowHandler, address: str) -> bool:
+    """Check if a keypad already exists."""
+    return _is_duplicate_by_address(handler, CONF_KEYPADS, address)
+
+
+async def async_parse_xml(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Parse XML content and store parsed project in flow_state."""
+    content = user_input["xml_file"]
+
+    try:
+        parsed = parse_homeworks_xml(content)
+    except XMLImportError as err:
+        raise SchemaFlowError(err.error_key) from err
+
+    handler.flow_state["xml_parsed"] = parsed
+    return {}
+
+
+async def get_xml_area_mapping_schema(
+    handler: SchemaCommonFlowHandler,
+) -> vol.Schema:
+    """Build dynamic schema for mapping XML rooms to HA areas.
+
+    Each room with importable devices gets a SelectSelector dropdown
+    with options: existing HA areas + "Create: {RoomName}" sentinel.
+    """
+    hass = handler.parent_handler.hass
+    from homeassistant.helpers import area_registry as ar
+
+    area_registry = ar.async_get(hass)
+    existing_areas = sorted(
+        [
+            selector.SelectOptionDict(value=a.id, label=a.name)
+            for a in area_registry.areas.values()
+        ],
+        key=lambda x: x["label"],
+    )
+
+    parsed: ParsedProject = handler.flow_state["xml_parsed"]
+    schema_dict: VolDictType = {}
+
+    for lutron_area in parsed.areas:
+        for room in lutron_area.rooms:
+            if room.importable_device_count == 0:
+                continue
+            key = f"room_{lutron_area.area_id}_{room.room_id}"
+            room_title = room.name.title()
+            create_option = selector.SelectOptionDict(
+                value=f"__create__{room_title}",
+                label=f"\u2795 Create: {room_title}",
+            )
+            options = [create_option] + existing_areas
+
+            # Auto-match: check if an existing HA area matches room name
+            default = create_option["value"]
+            room_name_lower = room_title.lower().replace("_", " ")
+            for area_opt in existing_areas:
+                if area_opt["label"].lower().replace("_", " ") == room_name_lower:
+                    default = area_opt["value"]
+                    break
+
+            schema_dict[vol.Required(key, default=default)] = (
+                selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=options,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                )
+            )
+
+    if not schema_dict:
+        raise SchemaFlowError("no_devices_in_xml")
+
+    return vol.Schema(schema_dict)
+
+
+async def validate_xml_area_mapping(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Store room-to-area mapping in flow_state."""
+    handler.flow_state["xml_area_mapping"] = user_input
+    return {}
+
+
+async def get_xml_device_selection_schema(
+    handler: SchemaCommonFlowHandler,
+) -> vol.Schema:
+    """Build device selection schema from parsed XML + area mappings.
+
+    Shows all discovered devices grouped by type with multi-select checkboxes.
+    Marks duplicates as [ALREADY EXISTS].
+    """
+    parsed: ParsedProject = handler.flow_state["xml_parsed"]
+    area_mapping: dict[str, str] = handler.flow_state["xml_area_mapping"]
+
+    selections: dict[str, str] = {}
+    default_selected: list[str] = []
+    device_list: list[dict[str, Any]] = []
+
+    for lutron_area in parsed.areas:
+        for room in lutron_area.rooms:
+            room_key = f"room_{lutron_area.area_id}_{room.room_id}"
+            area_value = area_mapping.get(room_key, "")
+            # Resolve area name for display
+            area_display = room.name.title()
+            if area_value and not area_value.startswith("__create__"):
+                # It's an existing area ID, try to get name
+                hass = handler.parent_handler.hass
+                from homeassistant.helpers import area_registry as ar
+                reg = ar.async_get(hass)
+                area_entry = reg.async_get_area(area_value)
+                if area_entry:
+                    area_display = area_entry.name
+
+            for output in room.outputs:
+                idx = str(len(device_list))
+                if output.output_type == "DIMMER":
+                    addr = normalize_address(output.address)
+                    is_dup = _is_duplicate_dimmer(handler, addr)
+                    label = f"Light: {output.name} ({area_display}) [{addr}]"
+                    if is_dup:
+                        label += " [ALREADY EXISTS]"
+                    else:
+                        default_selected.append(idx)
+                elif output.output_type == "QED SHADE":
+                    addr = normalize_address(output.address)
+                    is_dup = _is_duplicate_qed_cover(handler, addr)
+                    label = f"QED Shade: {output.name} ({area_display}) [{addr}]"
+                    if is_dup:
+                        label += " [ALREADY EXISTS]"
+                    else:
+                        default_selected.append(idx)
+                elif output.output_type == "MOTOR":
+                    addr = normalize_address(output.address)
+                    is_dup = _is_duplicate_rpm_cover(handler, addr)
+                    label = f"Motor Cover: {output.name} ({area_display}) [{addr}]"
+                    if is_dup:
+                        label += " [ALREADY EXISTS]"
+                    else:
+                        default_selected.append(idx)
+                elif output.output_type == "MAINTAINED OUTPUT":
+                    try:
+                        cco_addr, relay = get_cco_address_parts(output.address)
+                        addr = normalize_address(cco_addr)
+                        is_dup = _is_duplicate_cco(handler, addr, relay)
+                    except ValueError:
+                        addr = normalize_address(output.address)
+                        relay = 1
+                        is_dup = False
+                    label = f"CCO: {output.name} ({area_display}) [{addr}]:{relay}"
+                    if is_dup:
+                        label += " [ALREADY EXISTS]"
+                    else:
+                        default_selected.append(idx)
+                else:
+                    continue
+
+                device_list.append(
+                    {
+                        "type": output.output_type,
+                        "address": output.address,
+                        "name": output.name,
+                        "room_key": room_key,
+                        "area_display": area_display,
+                    }
+                )
+                selections[idx] = label
+
+            for keypad in room.keypads:
+                idx = str(len(device_list))
+                addr = normalize_address(keypad.address)
+                is_dup = _is_duplicate_keypad(handler, addr)
+                btn_count = len(keypad.buttons)
+                label = f"Keypad: {keypad.name} ({area_display}) [{addr}] ({btn_count} buttons)"
+                if is_dup:
+                    label += " [ALREADY EXISTS]"
+                else:
+                    default_selected.append(idx)
+
+                device_list.append(
+                    {
+                        "type": "KEYPAD",
+                        "address": keypad.address,
+                        "name": keypad.name,
+                        "room_key": room_key,
+                        "area_display": area_display,
+                        "buttons": [
+                            {
+                                "number": b.number,
+                                "name": b.name,
+                                "has_led": b.has_led,
+                                "release_delay": b.release_delay,
+                            }
+                            for b in keypad.buttons
+                        ],
+                    }
+                )
+                selections[idx] = label
+
+            for cci in room.cci_inputs:
+                idx = str(len(device_list))
+                addr = normalize_address(cci.address)
+                is_dup = _is_duplicate_cci(handler, addr, cci.input_number)
+                label = f"CCI Input {cci.input_number} ({area_display}) [{addr}]"
+                if is_dup:
+                    label += " [ALREADY EXISTS]"
+                else:
+                    default_selected.append(idx)
+
+                device_list.append(
+                    {
+                        "type": "CCI",
+                        "address": cci.address,
+                        "name": cci.name,
+                        "room_key": room_key,
+                        "area_display": area_display,
+                        "input_number": cci.input_number,
+                    }
+                )
+                selections[idx] = label
+
+    handler.flow_state["xml_device_list"] = device_list
+
+    if not selections:
+        raise SchemaFlowError("no_devices_in_xml")
+
+    return vol.Schema(
+        {
+            vol.Optional(
+                "devices", default=default_selected
+            ): cv.multi_select(selections)
+        }
+    )
+
+
+async def validate_xml_device_selection(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Store selected device indices and determine next step."""
+    selected = user_input.get("devices", [])
+    handler.flow_state["xml_selected_devices"] = selected
+
+    # Determine which CCO devices were selected (need classification)
+    device_list = handler.flow_state["xml_device_list"]
+    cco_devices = []
+    cci_devices = []
+    for idx_str in selected:
+        idx = int(idx_str)
+        device = device_list[idx]
+        if device["type"] == "MAINTAINED OUTPUT":
+            cco_devices.append({"idx": idx, **device})
+        elif device["type"] == "CCI":
+            cci_devices.append({"idx": idx, **device})
+
+    handler.flow_state["xml_cco_to_classify"] = cco_devices
+    handler.flow_state["xml_cci_to_classify"] = cci_devices
+    return {}
+
+
+async def get_xml_cco_classify_schema(
+    handler: SchemaCommonFlowHandler,
+) -> vol.Schema | None:
+    """Build schema for classifying CCO devices.
+
+    Returns None if no CCO devices need classification (auto-skips step).
+    Each selected CCO/MAINTAINED OUTPUT device gets a SelectSelector
+    for choosing entity type (switch/light/lock/cover/climate/fan).
+    """
+    cco_devices = handler.flow_state.get("xml_cco_to_classify", [])
+    if not cco_devices:
+        return None
+
+    schema_dict: VolDictType = {}
+
+    for i, dev in enumerate(cco_devices):
+        key = f"cco_{i}"
+        schema_dict[
+            vol.Required(key, default=CCO_TYPE_SWITCH)
+        ] = selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=CCO_ENTITY_TYPES,
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        )
+
+    return vol.Schema(schema_dict)
+
+
+async def validate_xml_cco_classify(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Store CCO classifications."""
+    cco_devices = handler.flow_state.get("xml_cco_to_classify", [])
+    for i, dev in enumerate(cco_devices):
+        key = f"cco_{i}"
+        dev["entity_type"] = user_input.get(key, CCO_TYPE_SWITCH)
+    return {}
+
+
+async def get_xml_cci_classify_schema(
+    handler: SchemaCommonFlowHandler,
+) -> vol.Schema | None:
+    """Build schema for classifying CCI devices.
+
+    Returns None if no CCI devices need classification (auto-skips step).
+    Each selected CCI input gets a TextSelector for name and a SelectSelector
+    for device_class.
+    """
+    cci_devices = handler.flow_state.get("xml_cci_to_classify", [])
+    if not cci_devices:
+        return None
+
+    schema_dict: VolDictType = {}
+
+    for i, dev in enumerate(cci_devices):
+        name_key = f"cci_name_{i}"
+        class_key = f"cci_class_{i}"
+        default_name = dev.get("name", f"CCI Input {dev.get('input_number', i + 1)}")
+        schema_dict[vol.Required(name_key, default=default_name)] = (
+            selector.TextSelector()
+        )
+        schema_dict[vol.Optional(class_key)] = selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(value="door", label="Door"),
+                    selector.SelectOptionDict(value="window", label="Window"),
+                    selector.SelectOptionDict(value="motion", label="Motion"),
+                    selector.SelectOptionDict(value="opening", label="Opening"),
+                    selector.SelectOptionDict(value="occupancy", label="Occupancy"),
+                ],
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        )
+
+    return vol.Schema(schema_dict)
+
+
+async def validate_xml_cci_classify(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Store CCI classifications (name + device_class)."""
+    cci_devices = handler.flow_state.get("xml_cci_to_classify", [])
+    for i, dev in enumerate(cci_devices):
+        name_key = f"cci_name_{i}"
+        class_key = f"cci_class_{i}"
+        dev["name"] = user_input.get(name_key, dev.get("name", ""))
+        dev["device_class"] = user_input.get(class_key)
+    return {}
+
+
+async def get_xml_confirm_schema(
+    handler: SchemaCommonFlowHandler,
+) -> vol.Schema:
+    """Build confirmation summary schema (empty — just displays description)."""
+    return vol.Schema({})
+
+
+async def get_xml_confirm_description_placeholders(
+    handler: SchemaCommonFlowHandler,
+) -> dict[str, str]:
+    """Compute summary counts for the confirm step description."""
+    device_list = handler.flow_state.get("xml_device_list", [])
+    selected = handler.flow_state.get("xml_selected_devices", [])
+    counts: Counter[str] = Counter()
+    total_buttons = 0
+    for idx_str in selected:
+        idx = int(idx_str)
+        device = device_list[idx]
+        counts[device["type"]] += 1
+        if device["type"] == "KEYPAD":
+            total_buttons += len(device.get("buttons", []))
+
+    return {
+        "lights": str(counts.get("DIMMER", 0)),
+        "qed_shades": str(counts.get("QED SHADE", 0)),
+        "motor_covers": str(counts.get("MOTOR", 0)),
+        "cco_devices": str(counts.get("MAINTAINED OUTPUT", 0)),
+        "keypads": str(counts.get("KEYPAD", 0)),
+        "total_buttons": str(total_buttons),
+        "cci_inputs": str(counts.get("CCI", 0)),
+    }
+
+
+async def validate_xml_confirm_import(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Commit all selected XML devices to config entry options."""
+    device_list = handler.flow_state["xml_device_list"]
+    selected = handler.flow_state.get("xml_selected_devices", [])
+    area_mapping: dict[str, str] = handler.flow_state["xml_area_mapping"]
+    cco_devices = handler.flow_state.get("xml_cco_to_classify", [])
+    cci_devices = handler.flow_state.get("xml_cci_to_classify", [])
+
+    # Build CCO entity_type lookup by device_list index
+    cco_type_map: dict[int, str] = {}
+    for dev in cco_devices:
+        cco_type_map[dev["idx"]] = dev.get("entity_type", CCO_TYPE_SWITCH)
+
+    # Build CCI data lookup by device_list index (name + device_class from
+    # classification step are on the copies, not the originals in device_list)
+    cci_data_map: dict[int, dict[str, Any]] = {}
+    for dev in cci_devices:
+        cci_data_map[dev["idx"]] = dev
+
+    for idx_str in selected:
+        idx = int(idx_str)
+        device = device_list[idx]
+        device_type = device["type"]
+        room_key = device["room_key"]
+
+        # Resolve area — store the human-readable NAME (not ID) so
+        # suggested_area works correctly with HA's async_get_or_create.
+        area_value = area_mapping.get(room_key, "")
+        area: str | None = None
+        if area_value.startswith("__create__"):
+            # Use the room name as the area (suggested_area mechanism)
+            area = area_value.replace("__create__", "")
+        elif area_value:
+            # area_value is an area ID from SelectSelector — look up the name
+            from homeassistant.helpers import area_registry as ar
+            hass = handler.parent_handler.hass
+            area_reg = ar.async_get(hass)
+            area_entry = area_reg.async_get_area(area_value)
+            if area_entry:
+                area = area_entry.name
+            else:
+                area = area_value
+
+        if device_type == "DIMMER":
+            addr = normalize_address(device["address"])
+            if _is_duplicate_dimmer(handler, addr):
+                continue
+            items = handler.options.setdefault(CONF_DIMMERS, [])
+            dimmer_config: dict[str, Any] = {
+                CONF_ADDR: addr,
+                CONF_NAME: device["name"] or DEFAULT_LIGHT_NAME,
+                CONF_RATE: DEFAULT_FADE_RATE,
+            }
+            if area:
+                dimmer_config[CONF_AREA] = area
+            items.append(dimmer_config)
+
+        elif device_type == "QED SHADE":
+            addr = normalize_address(device["address"])
+            if _is_duplicate_qed_cover(handler, addr):
+                continue
+            items = handler.options.setdefault(CONF_QED_COVERS, [])
+            qed_config: dict[str, Any] = {
+                CONF_ADDR: addr,
+                CONF_NAME: device["name"] or DEFAULT_QED_COVER_NAME,
+            }
+            if area:
+                qed_config[CONF_AREA] = area
+            items.append(qed_config)
+
+        elif device_type == "MOTOR":
+            addr = normalize_address(device["address"])
+            if _is_duplicate_rpm_cover(handler, addr):
+                continue
+            items = handler.options.setdefault(CONF_RPM_COVERS, [])
+            rpm_config: dict[str, Any] = {
+                CONF_ADDR: addr,
+                CONF_NAME: device["name"] or DEFAULT_RPM_COVER_NAME,
+            }
+            if area:
+                rpm_config[CONF_AREA] = area
+            items.append(rpm_config)
+
+        elif device_type == "MAINTAINED OUTPUT":
+            try:
+                cco_addr, relay = get_cco_address_parts(device["address"])
+                addr = normalize_address(cco_addr)
+            except ValueError:
+                continue
+            if _is_duplicate_cco(handler, addr, relay):
+                continue
+            entity_type = cco_type_map.get(idx, CCO_TYPE_SWITCH)
+            items = handler.options.setdefault(CONF_CCO_DEVICES, [])
+            cco_config: dict[str, Any] = {
+                CONF_ADDR: addr,
+                CONF_BUTTON_NUMBER: relay,
+                CONF_NAME: device["name"] or DEFAULT_CCO_NAME,
+                CONF_ENTITY_TYPE: entity_type,
+                CONF_INVERTED: False,
+            }
+            if area:
+                cco_config[CONF_AREA] = area
+            items.append(cco_config)
+
+        elif device_type == "KEYPAD":
+            addr = normalize_address(device["address"])
+            if _is_duplicate_keypad(handler, addr):
+                continue
+            items = handler.options.setdefault(CONF_KEYPADS, [])
+            buttons_config = []
+            for btn in device.get("buttons", []):
+                buttons_config.append(
+                    {
+                        CONF_NUMBER: btn["number"],
+                        CONF_NAME: btn["name"],
+                        CONF_LED: btn["has_led"],
+                        CONF_RELEASE_DELAY: btn["release_delay"],
+                    }
+                )
+            keypad_config: dict[str, Any] = {
+                CONF_ADDR: addr,
+                CONF_NAME: device["name"] or DEFAULT_KEYPAD_NAME,
+                CONF_BUTTONS: buttons_config,
+            }
+            if area:
+                keypad_config[CONF_AREA] = area
+            items.append(keypad_config)
+
+        elif device_type == "CCI":
+            addr = normalize_address(device["address"])
+            input_number = device.get("input_number", 1)
+            if _is_duplicate_cci(handler, addr, input_number):
+                continue
+            # Use classified data (name + device_class) from the CCI
+            # classification step if available, otherwise fall back to
+            # the original device_list entry.
+            cci_data = cci_data_map.get(idx, device)
+            items = handler.options.setdefault(CONF_CCI_DEVICES, [])
+            cci_config: dict[str, Any] = {
+                CONF_ADDR: addr,
+                CONF_INPUT_NUMBER: input_number,
+                CONF_NAME: cci_data.get("name") or DEFAULT_CCI_NAME,
+            }
+            if cci_data.get("device_class"):
+                cci_config[CONF_DEVICE_CLASS] = cci_data["device_class"]
+            if area:
+                cci_config[CONF_AREA] = area
+            items.append(cci_config)
+
     return {}
 
 
@@ -1858,6 +2414,7 @@ OPTIONS_FLOW = {
             "manage_keypads",
             "controller_settings",
             "import_csv",
+            "import_xml",
             "review_config",
         ]
     ),
@@ -2010,6 +2567,42 @@ OPTIONS_FLOW = {
     ),
     "review_config": SchemaFlowFormStep(
         get_review_config_schema, validate_user_input=validate_review_config
+    ),
+    "import_xml": SchemaFlowFormStep(
+        vol.Schema(
+            {
+                vol.Required("xml_file"): selector.TextSelector(
+                    selector.TextSelectorConfig(multiline=True)
+                )
+            }
+        ),
+        validate_user_input=async_parse_xml,
+        next_step="xml_area_mapping",
+    ),
+    "xml_area_mapping": SchemaFlowFormStep(
+        get_xml_area_mapping_schema,
+        validate_user_input=validate_xml_area_mapping,
+        next_step="xml_device_selection",
+    ),
+    "xml_device_selection": SchemaFlowFormStep(
+        get_xml_device_selection_schema,
+        validate_user_input=validate_xml_device_selection,
+        next_step="xml_classify_cco",
+    ),
+    "xml_classify_cco": SchemaFlowFormStep(
+        get_xml_cco_classify_schema,
+        validate_user_input=validate_xml_cco_classify,
+        next_step="xml_classify_cci",
+    ),
+    "xml_classify_cci": SchemaFlowFormStep(
+        get_xml_cci_classify_schema,
+        validate_user_input=validate_xml_cci_classify,
+        next_step="xml_confirm_import",
+    ),
+    "xml_confirm_import": SchemaFlowFormStep(
+        get_xml_confirm_schema,
+        validate_user_input=validate_xml_confirm_import,
+        description_placeholders=get_xml_confirm_description_placeholders,
     ),
 }
 

@@ -80,6 +80,7 @@ async def async_setup_entry(
     for keypad in entry.options.get(CONF_KEYPADS, []):
         keypad_addr = normalize_address(keypad[CONF_ADDR])
         keypad_name = keypad.get(CONF_NAME, "Keypad")
+        keypad_area = resolve_area_name(hass, keypad.get(CONF_AREA))
 
         # Register keypad address for KLS polling
         coordinator.register_kls_poll_address(keypad_addr)
@@ -95,6 +96,7 @@ async def async_setup_entry(
                 keypad_name=keypad_name,
                 button_name=button.get(CONF_NAME, "Button"),
                 led_number=button[CONF_NUMBER],
+                area=keypad_area,
             )
             entities.append(entity)
 
@@ -155,6 +157,7 @@ class HomeworksLEDBinarySensor(
         keypad_name: str,
         button_name: str,
         led_number: int,
+        area: str | None = None,
     ) -> None:
         """Initialize the binary sensor."""
         super().__init__(coordinator)
@@ -166,12 +169,15 @@ class HomeworksLEDBinarySensor(
             f"homeworks.{controller_id}.led.{keypad_addr}.{led_number}.v2"
         )
         self._attr_name = button_name
-        self._attr_device_info = DeviceInfo(
+        device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.{keypad_addr}.v2")},
             name=keypad_name,
             manufacturer="Lutron",
             model="HomeWorks Keypad",
         )
+        if area:
+            device_info["suggested_area"] = area
+        self._attr_device_info = device_info
         self._attr_extra_state_attributes = {
             "homeworks_address": keypad_addr,
             "led_number": led_number,

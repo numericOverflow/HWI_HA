@@ -70,6 +70,12 @@ DEFAULT_CCI_NAME: Final = "Homeworks Input"
 # Polling intervals (in seconds)
 DEFAULT_KLS_POLL_INTERVAL: Final = 10
 DEFAULT_DIMMER_POLL_INTERVAL: Final = 30
+
+# Default release delay for Master Raise/Lower buttons (seconds).
+# These buttons require a KBR (release) command to stop dimmer ramping.
+# Without a non-zero delay, KBP fires but KBR never follows, causing
+# the dimmer to ramp to min/max uncontrollably.
+DEFAULT_RAISE_LOWER_RELEASE_DELAY: Final = 0.5
 # RPM motor command values (FADEDIM levels for HW-RPM-4M-230 modules)
 RPM_MOTOR_UP: Final = 16
 RPM_MOTOR_DOWN: Final = 35

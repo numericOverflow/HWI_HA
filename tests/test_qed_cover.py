@@ -243,11 +243,17 @@ class TestHomeworksQEDCover:
     def test_qed_cover_is_closed_when_zero(self, qed_cover, mock_coordinator):
         """Verify is_closed returns True when level < 1."""
         mock_coordinator.get_dimmer_level.return_value = 0
+        # Trigger coordinator update so entity receives initial state
+        qed_cover.async_write_ha_state = MagicMock()
+        qed_cover._handle_coordinator_update()
         assert qed_cover.is_closed is True
 
     def test_qed_cover_is_not_closed_when_nonzero(self, qed_cover, mock_coordinator):
         """Verify is_closed returns False when level >= 1."""
         mock_coordinator.get_dimmer_level.return_value = 1
+        # Trigger coordinator update so entity receives initial state
+        qed_cover.async_write_ha_state = MagicMock()
+        qed_cover._handle_coordinator_update()
         assert qed_cover.is_closed is False
 
     @pytest.mark.asyncio
