@@ -9,6 +9,7 @@ from custom_components.homeworks_hwi.xml_import import (
     get_cco_address_parts,
     parse_homeworks_xml,
 )
+from custom_components.homeworks_hwi.const import DEFAULT_RAISE_LOWER_RELEASE_DELAY
 
 
 # === Minimal valid XML for testing ===
@@ -401,6 +402,19 @@ class TestXMLParserKeypads:
         assert btn1.has_led is True
         # Button 23 has "LOWER BUTTON" → False
         assert btn23.has_led is False
+
+    def test_raise_lower_release_delay(self) -> None:
+        """Test that Master Raise/Lower buttons get non-zero release_delay."""
+        result = parse_homeworks_xml(FULL_DEVICE_TYPES_XML)
+        kp = result.areas[0].rooms[0].keypads[0]
+        btn1 = next(b for b in kp.buttons if b.number == 1)
+        btn23 = next(b for b in kp.buttons if b.number == 23)
+        btn24 = next(b for b in kp.buttons if b.number == 24)
+        # Scene button → 0.0
+        assert btn1.release_delay == 0.0
+        # Master Raise/Lower → DEFAULT_RAISE_LOWER_RELEASE_DELAY
+        assert btn23.release_delay == DEFAULT_RAISE_LOWER_RELEASE_DELAY
+        assert btn24.release_delay == DEFAULT_RAISE_LOWER_RELEASE_DELAY
 
     def test_total_buttons(self) -> None:
         """Test total button count across all keypads."""

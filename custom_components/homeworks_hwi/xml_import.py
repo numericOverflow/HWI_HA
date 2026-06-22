@@ -14,6 +14,8 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Final
 
+from .const import DEFAULT_RAISE_LOWER_RELEASE_DELAY
+
 # XML size limit (25MB — large installations produce big exports)
 MAX_XML_SIZE: Final = 25_000_000
 
@@ -392,7 +394,7 @@ def _parse_button(button_el: ET.Element) -> ParsedButton | None:
     has_led = _detect_has_led(button_el)
 
     # Detect release_delay for Master Raise/Lower buttons
-    release_delay = _detect_release_delay(button_el, button_type)
+    release_delay = _detect_release_delay(button_type)
 
     return ParsedButton(
         number=number,
@@ -423,23 +425,15 @@ def _detect_has_led(button_el: ET.Element) -> bool:
     return "WITH LED" in display_type
 
 
-def _detect_release_delay(button_el: ET.Element, button_type: str) -> float:
-    """Detect if a button needs release_delay.
+def _detect_release_delay(button_type: str) -> float:
+    """Return appropriate release_delay for a button based on its type.
 
-    Master Raise/Lower buttons that have Release=True in their Actions
-    need release_delay set. Import with default 0.0.
+    Master Raise/Lower buttons require a non-zero release_delay so that
+    KBR (release) fires after KBP (press), stopping the dimmer ramp.
+    All other button types are press-only (scenes, toggles) and need 0.0.
     """
-    if not button_type.startswith("Master Raise/Lower"):
-        return 0.0
-
-    actions_el = button_el.find("Actions")
-    if actions_el is None:
-        return 0.0
-
-    release_el = actions_el.find("Release")
-    if release_el is not None and release_el.text and release_el.text.strip() == "True":
-        return 0.0
-
+    if button_type.startswith("Master Raise/Lower"):
+        return DEFAULT_RAISE_LOWER_RELEASE_DELAY
     return 0.0
 
 
