@@ -500,21 +500,50 @@ class TestValidateConfirmImport:
         assert qeds[0][CONF_ADDR] == "[01:06:01:05]"
 
     async def test_cci_committed_with_device_class(self) -> None:
-        """Test CCI devices committed with classification data."""
+        """Test CCI devices committed with classification data from classify step.
+
+        The real flow stores classification data (name, device_class) on
+        copies in xml_cci_to_classify, NOT on the originals in xml_device_list.
+        This test verifies the cci_data_map bridge works correctly.
+        """
         handler = _make_handler()
+        # Original in device_list has raw XML name, NO device_class
         handler.flow_state["xml_device_list"] = [
-            {"type": "CCI", "address": "1", "name": "Front Door", "room_key": "room_2_10",
-             "input_number": 1, "device_class": "door"},
+            {"type": "CCI", "address": "1", "name": "Button 1", "room_key": "room_2_10",
+             "input_number": 1},
         ]
         handler.flow_state["xml_selected_devices"] = ["0"]
         handler.flow_state["xml_area_mapping"] = {"room_2_10": "__create__Mech"}
         handler.flow_state["xml_cco_to_classify"] = []
+        # Classification step wrote to the COPY in xml_cci_to_classify
+        handler.flow_state["xml_cci_to_classify"] = [
+            {"idx": 0, "address": "1", "name": "Front Door", "input_number": 1,
+             "device_class": "door"},
+        ]
 
         await validate_xml_confirm_import(handler, {})
         ccis = handler.options[CONF_CCI_DEVICES]
         assert len(ccis) == 1
         assert ccis[0][CONF_NAME] == "Front Door"
         assert ccis[0][CONF_DEVICE_CLASS] == "door"
+
+    async def test_cci_committed_without_classification(self) -> None:
+        """Test CCI devices committed when no classification step ran."""
+        handler = _make_handler()
+        handler.flow_state["xml_device_list"] = [
+            {"type": "CCI", "address": "1", "name": "Button 1", "room_key": "room_2_10",
+             "input_number": 1},
+        ]
+        handler.flow_state["xml_selected_devices"] = ["0"]
+        handler.flow_state["xml_area_mapping"] = {"room_2_10": "__create__Mech"}
+        handler.flow_state["xml_cco_to_classify"] = []
+        handler.flow_state["xml_cci_to_classify"] = []
+
+        await validate_xml_confirm_import(handler, {})
+        ccis = handler.options[CONF_CCI_DEVICES]
+        assert len(ccis) == 1
+        assert ccis[0][CONF_NAME] == "Button 1"
+        assert CONF_DEVICE_CLASS not in ccis[0]
 
     async def test_duplicate_dimmer_skipped(self) -> None:
         """Test that duplicate dimmers are not re-imported."""

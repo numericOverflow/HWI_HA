@@ -2011,11 +2011,18 @@ async def validate_xml_confirm_import(
     selected = handler.flow_state.get("xml_selected_devices", [])
     area_mapping: dict[str, str] = handler.flow_state["xml_area_mapping"]
     cco_devices = handler.flow_state.get("xml_cco_to_classify", [])
+    cci_devices = handler.flow_state.get("xml_cci_to_classify", [])
 
     # Build CCO entity_type lookup by device_list index
     cco_type_map: dict[int, str] = {}
     for dev in cco_devices:
         cco_type_map[dev["idx"]] = dev.get("entity_type", CCO_TYPE_SWITCH)
+
+    # Build CCI data lookup by device_list index (name + device_class from
+    # classification step are on the copies, not the originals in device_list)
+    cci_data_map: dict[int, dict[str, Any]] = {}
+    for dev in cci_devices:
+        cci_data_map[dev["idx"]] = dev
 
     for idx_str in selected:
         idx = int(idx_str)
@@ -2131,14 +2138,18 @@ async def validate_xml_confirm_import(
             input_number = device.get("input_number", 1)
             if _is_duplicate_cci(handler, addr, input_number):
                 continue
+            # Use classified data (name + device_class) from the CCI
+            # classification step if available, otherwise fall back to
+            # the original device_list entry.
+            cci_data = cci_data_map.get(idx, device)
             items = handler.options.setdefault(CONF_CCI_DEVICES, [])
             cci_config: dict[str, Any] = {
                 CONF_ADDR: addr,
                 CONF_INPUT_NUMBER: input_number,
-                CONF_NAME: device["name"] or DEFAULT_CCI_NAME,
+                CONF_NAME: cci_data.get("name") or DEFAULT_CCI_NAME,
             }
-            if device.get("device_class"):
-                cci_config[CONF_DEVICE_CLASS] = device["device_class"]
+            if cci_data.get("device_class"):
+                cci_config[CONF_DEVICE_CLASS] = cci_data["device_class"]
             if area:
                 cci_config[CONF_AREA] = area
             items.append(cci_config)
