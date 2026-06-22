@@ -12,9 +12,10 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksHWIConfigEntry
+from . import HomeworksHWIConfigEntry, resolve_area_name
 from .const import (
     CONF_ADDR,
+    CONF_AREA,
     CONF_BUTTONS,
     CONF_CONTROLLER_ID,
     CONF_KEYPADS,
@@ -42,6 +43,7 @@ async def async_setup_entry(
     for keypad in entry.options.get(CONF_KEYPADS, []):
         keypad_addr = normalize_address(keypad[CONF_ADDR])
         keypad_name = keypad.get(CONF_NAME, "Keypad")
+        keypad_area = resolve_area_name(hass, keypad.get(CONF_AREA))
 
         for button in keypad.get(CONF_BUTTONS, []):
             entity = HomeworksButton(
@@ -52,6 +54,7 @@ async def async_setup_entry(
                 button_name=button.get(CONF_NAME, "Button"),
                 button_number=button[CONF_NUMBER],
                 release_delay=button.get(CONF_RELEASE_DELAY, 0),
+                area=keypad_area,
             )
             entities.append(entity)
 
@@ -74,6 +77,7 @@ class HomeworksButton(CoordinatorEntity[HomeworksCoordinator], ButtonEntity):
         button_name: str,
         button_number: int,
         release_delay: float,
+        area: str | None = None,
     ) -> None:
         """Initialize the button."""
         super().__init__(coordinator)
@@ -86,12 +90,15 @@ class HomeworksButton(CoordinatorEntity[HomeworksCoordinator], ButtonEntity):
             f"homeworks.{controller_id}.button.{keypad_addr}.{button_number}.v2"
         )
         self._attr_name = button_name
-        self._attr_device_info = DeviceInfo(
+        device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.{keypad_addr}.v2")},
             name=keypad_name,
             manufacturer="Lutron",
             model="HomeWorks Keypad",
         )
+        if area:
+            device_info["suggested_area"] = area
+        self._attr_device_info = device_info
         self._attr_extra_state_attributes = {
             "homeworks_address": keypad_addr,
             "button_number": button_number,
