@@ -1643,8 +1643,9 @@ async def get_xml_area_mapping_schema(
 ) -> vol.Schema:
     """Build dynamic schema for mapping XML rooms to HA areas.
 
-    Each room with importable devices gets a SelectSelector dropdown
-    with options: existing HA areas + "Create: {RoomName}" sentinel.
+    Each room with importable devices gets a SelectSelector dropdown.
+    The schema key IS the room name (shown as the field label by HA).
+    Options: existing HA areas + "Create: {RoomName}" + custom text input.
     """
     hass = handler.parent_handler.hass
     from homeassistant.helpers import area_registry as ar
@@ -1652,7 +1653,7 @@ async def get_xml_area_mapping_schema(
     area_registry = ar.async_get(hass)
     existing_areas = sorted(
         [
-            selector.SelectOptionDict(value=a.id, label=a.name)
+            selector.SelectOptionDict(value=a.name, label=a.name)
             for a in area_registry.areas.values()
         ],
         key=lambda x: x["label"],
@@ -1660,16 +1661,27 @@ async def get_xml_area_mapping_schema(
 
     parsed: ParsedProject = handler.flow_state["xml_parsed"]
     schema_dict: VolDictType = {}
+    # Map pretty key → internal key for downstream lookups
+    key_map: dict[str, str] = {}
+    used_keys: set[str] = set()
 
     for lutron_area in parsed.areas:
         for room in lutron_area.rooms:
             if room.importable_device_count == 0:
                 continue
-            key = f"room_{lutron_area.area_id}_{room.room_id}"
+            internal_key = f"room_{lutron_area.area_id}_{room.room_id}"
             room_title = room.name.title()
+
+            # Build unique display key (used as field label by HA frontend)
+            display_key = room_title
+            if display_key in used_keys:
+                display_key = f"{lutron_area.name.title()} / {room_title}"
+            used_keys.add(display_key)
+            key_map[display_key] = internal_key
+
             create_option = selector.SelectOptionDict(
                 value=f"__create__{room_title}",
-                label=f"\u2795 Create: {room_title}",
+                label=f"\u2795 Create new: {room_title}",
             )
             options = [create_option] + existing_areas
 
@@ -1681,7 +1693,7 @@ async def get_xml_area_mapping_schema(
                     default = area_opt["value"]
                     break
 
-            schema_dict[vol.Required(key, default=default)] = (
+            schema_dict[vol.Required(display_key, default=default)] = (
                 selector.SelectSelector(
                     selector.SelectSelectorConfig(
                         options=options,
@@ -1694,14 +1706,23 @@ async def get_xml_area_mapping_schema(
     if not schema_dict:
         raise SchemaFlowError("no_devices_in_xml")
 
+    handler.flow_state["_xml_key_map"] = key_map
     return vol.Schema(schema_dict)
 
 
 async def validate_xml_area_mapping(
     handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
 ) -> dict[str, Any]:
-    """Store room-to-area mapping in flow_state."""
-    handler.flow_state["xml_area_mapping"] = user_input
+    """Store room-to-area mapping in flow_state.
+
+    Converts display keys back to internal keys for downstream use.
+    """
+    key_map = handler.flow_state.get("_xml_key_map", {})
+    internal_mapping: dict[str, str] = {}
+    for display_key, value in user_input.items():
+        internal_key = key_map.get(display_key, display_key)
+        internal_mapping[internal_key] = value
+    handler.flow_state["xml_area_mapping"] = internal_mapping
     return {}
 
 
@@ -1725,15 +1746,12 @@ async def get_xml_device_selection_schema(
             room_key = f"room_{lutron_area.area_id}_{room.room_id}"
             area_value = area_mapping.get(room_key, "")
             # Resolve area name for display
-            area_display = room.name.title()
-            if area_value and not area_value.startswith("__create__"):
-                # It's an existing area ID, try to get name
-                hass = handler.parent_handler.hass
-                from homeassistant.helpers import area_registry as ar
-                reg = ar.async_get(hass)
-                area_entry = reg.async_get_area(area_value)
-                if area_entry:
-                    area_display = area_entry.name
+            if area_value.startswith("__create__"):
+                area_display = area_value.replace("__create__", "")
+            elif area_value:
+                area_display = area_value
+            else:
+                area_display = room.name.title()
 
             for output in room.outputs:
                 idx = str(len(device_list))
@@ -2031,23 +2049,14 @@ async def validate_xml_confirm_import(
         device_type = device["type"]
         room_key = device["room_key"]
 
-        # Resolve area — store the human-readable NAME (not ID) so
-        # suggested_area works correctly with HA's async_get_or_create.
+        # Resolve area — value is always a human-readable name
+        # (either "__create__Name", existing area name, or custom typed name).
         area_value = area_mapping.get(room_key, "")
         area: str | None = None
         if area_value.startswith("__create__"):
-            # Use the room name as the area (suggested_area mechanism)
             area = area_value.replace("__create__", "")
         elif area_value:
-            # area_value is an area ID from SelectSelector — look up the name
-            from homeassistant.helpers import area_registry as ar
-            hass = handler.parent_handler.hass
-            area_reg = ar.async_get(hass)
-            area_entry = area_reg.async_get_area(area_value)
-            if area_entry:
-                area = area_entry.name
-            else:
-                area = area_value
+            area = area_value
 
         if device_type == "DIMMER":
             addr = normalize_address(device["address"])
