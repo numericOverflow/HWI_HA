@@ -432,7 +432,7 @@
             },
             "xml_confirm_import": {
                 "title": "Confirm Import",
-                "description": "Ready to import the selected devices. Press Submit to commit changes."
+                "description": "Ready to import:\n\n\u2022 {lights} lights\n\u2022 {qed_shades} QED shades\n\u2022 {motor_covers} motor covers\n\u2022 {cco_devices} CCO devices\n\u2022 {keypads} keypads ({total_buttons} buttons)\n\u2022 {cci_inputs} CCI inputs\n\nPress Submit to commit changes."
             }
         },
         "error": {

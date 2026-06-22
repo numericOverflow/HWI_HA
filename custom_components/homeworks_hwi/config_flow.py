@@ -8,6 +8,7 @@ HA 2026.1 compliant:
 from __future__ import annotations
 
 import csv
+from collections import Counter
 from io import StringIO
 import logging
 from typing import Any, NamedTuple
@@ -1310,18 +1311,32 @@ def _find_existing_cco(handler: SchemaCommonFlowHandler, address: str, button: i
     return None
 
 
+def _find_existing_by_address(
+    handler: SchemaCommonFlowHandler, config_key: str, address: str
+) -> int | None:
+    """Find existing device index by normalized address, or None if not found."""
+    normalized = normalize_address(address)
+    for i, item in enumerate(handler.options.get(config_key, [])):
+        if normalize_address(item[CONF_ADDR]) == normalized:
+            return i
+    return None
+
+
+def _is_duplicate_by_address(
+    handler: SchemaCommonFlowHandler, config_key: str, address: str
+) -> bool:
+    """Check if a device with this address already exists."""
+    return _find_existing_by_address(handler, config_key, address) is not None
+
+
 def _is_duplicate_dimmer(handler: SchemaCommonFlowHandler, address: str) -> bool:
     """Check if a dimmer already exists."""
-    return _find_existing_dimmer(handler, address) is not None
+    return _is_duplicate_by_address(handler, CONF_DIMMERS, address)
 
 
 def _find_existing_dimmer(handler: SchemaCommonFlowHandler, address: str) -> int | None:
     """Find existing dimmer index, or None if not found."""
-    normalized = normalize_address(address)
-    for i, dimmer in enumerate(handler.options.get(CONF_DIMMERS, [])):
-        if normalize_address(dimmer[CONF_ADDR]) == normalized:
-            return i
-    return None
+    return _find_existing_by_address(handler, CONF_DIMMERS, address)
 
 
 def _is_duplicate_cci(handler: SchemaCommonFlowHandler, address: str, input_number: int) -> bool:
@@ -1343,30 +1358,22 @@ def _find_existing_cci(handler: SchemaCommonFlowHandler, address: str, input_num
 
 def _is_duplicate_rpm_cover(handler: SchemaCommonFlowHandler, address: str) -> bool:
     """Check if an RPM cover already exists."""
-    return _find_existing_rpm_cover(handler, address) is not None
+    return _is_duplicate_by_address(handler, CONF_RPM_COVERS, address)
 
 
 def _find_existing_rpm_cover(handler: SchemaCommonFlowHandler, address: str) -> int | None:
     """Find existing RPM cover index, or None if not found."""
-    normalized = normalize_address(address)
-    for i, cover in enumerate(handler.options.get(CONF_RPM_COVERS, [])):
-        if normalize_address(cover[CONF_ADDR]) == normalized:
-            return i
-    return None
+    return _find_existing_by_address(handler, CONF_RPM_COVERS, address)
 
 
 def _is_duplicate_qed_cover(handler: SchemaCommonFlowHandler, address: str) -> bool:
     """Check if a QED cover already exists."""
-    return _find_existing_qed_cover(handler, address) is not None
+    return _is_duplicate_by_address(handler, CONF_QED_COVERS, address)
 
 
 def _find_existing_qed_cover(handler: SchemaCommonFlowHandler, address: str) -> int | None:
     """Find existing QED cover index, or None if not found."""
-    normalized = normalize_address(address)
-    for i, cover in enumerate(handler.options.get(CONF_QED_COVERS, [])):
-        if normalize_address(cover[CONF_ADDR]) == normalized:
-            return i
-    return None
+    return _find_existing_by_address(handler, CONF_QED_COVERS, address)
 
 
 async def get_confirm_import_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
@@ -1613,11 +1620,7 @@ async def validate_review_config(
 
 def _is_duplicate_keypad(handler: SchemaCommonFlowHandler, address: str) -> bool:
     """Check if a keypad already exists."""
-    normalized = normalize_address(address)
-    for keypad in handler.options.get(CONF_KEYPADS, []):
-        if normalize_address(keypad[CONF_ADDR]) == normalized:
-            return True
-    return False
+    return _is_duplicate_by_address(handler, CONF_KEYPADS, address)
 
 
 async def async_parse_xml(
@@ -1972,6 +1975,32 @@ async def get_xml_confirm_schema(
 ) -> vol.Schema:
     """Build confirmation summary schema (empty — just displays description)."""
     return vol.Schema({})
+
+
+async def get_xml_confirm_description_placeholders(
+    handler: SchemaCommonFlowHandler,
+) -> dict[str, str]:
+    """Compute summary counts for the confirm step description."""
+    device_list = handler.flow_state.get("xml_device_list", [])
+    selected = handler.flow_state.get("xml_selected_devices", [])
+    counts: Counter[str] = Counter()
+    total_buttons = 0
+    for idx_str in selected:
+        idx = int(idx_str)
+        device = device_list[idx]
+        counts[device["type"]] += 1
+        if device["type"] == "KEYPAD":
+            total_buttons += len(device.get("buttons", []))
+
+    return {
+        "lights": str(counts.get("DIMMER", 0)),
+        "qed_shades": str(counts.get("QED SHADE", 0)),
+        "motor_covers": str(counts.get("MOTOR", 0)),
+        "cco_devices": str(counts.get("MAINTAINED OUTPUT", 0)),
+        "keypads": str(counts.get("KEYPAD", 0)),
+        "total_buttons": str(total_buttons),
+        "cci_inputs": str(counts.get("CCI", 0)),
+    }
 
 
 async def validate_xml_confirm_import(
@@ -2562,6 +2591,7 @@ OPTIONS_FLOW = {
     "xml_confirm_import": SchemaFlowFormStep(
         get_xml_confirm_schema,
         validate_user_input=validate_xml_confirm_import,
+        description_placeholders=get_xml_confirm_description_placeholders,
     ),
 }
 
