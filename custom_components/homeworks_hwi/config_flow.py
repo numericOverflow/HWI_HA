@@ -1686,6 +1686,7 @@ async def get_xml_area_mapping_schema(
                     selector.SelectSelectorConfig(
                         options=options,
                         mode=selector.SelectSelectorMode.DROPDOWN,
+                        custom_value=True,
                     )
                 )
             )
