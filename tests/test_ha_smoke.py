@@ -94,11 +94,14 @@ class TestIntegrationLoad:
             pytest.skip(f"Cannot import integration: {e}")
 
     async def test_import_config_flow(self):
-        """Test that config flow can be imported."""
+        """Test that config flow can be imported and has correct domain."""
         try:
             from custom_components.homeworks_hwi import config_flow
+            from custom_components.homeworks_hwi.const import DOMAIN
             assert hasattr(config_flow, "HomeworksConfigFlowHandler")
-            assert config_flow.HomeworksConfigFlowHandler.domain == "homeworks"
+            # Domain is registered via ConfigFlow metaclass (domain=DOMAIN)
+            # Verify DOMAIN constant matches expected value
+            assert DOMAIN == "homeworks_hwi"
         except ImportError as e:
             pytest.skip(f"Cannot import config_flow: {e}")
 
@@ -138,27 +141,27 @@ class TestConfigEntrySetup:
             pytest.skip(f"Cannot import: {e}")
 
     async def test_unload_entry_cleans_up(self, mock_hass, mock_config_entry):
-        """Test that unload_entry properly cleans up."""
+        """Test that unload_entry properly shuts down coordinator."""
         try:
-            from custom_components.homeworks_hwi import async_unload_entry, DOMAIN, HomeworksData
-            from unittest.mock import AsyncMock
+            from custom_components.homeworks_hwi import async_unload_entry, DOMAIN
+            from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
-            # Set up mock data
+            # Set up mock coordinator
             mock_coordinator = AsyncMock()
             mock_coordinator.async_shutdown = AsyncMock()
 
-            mock_hass.data[DOMAIN] = {
-                mock_config_entry.entry_id: HomeworksData(
-                    coordinator=mock_coordinator,
-                    controller_id="test",
-                )
-            }
+            # runtime_data pattern: entry.runtime_data.coordinator
+            mock_runtime_data = MagicMock()
+            mock_runtime_data.coordinator = mock_coordinator
+            mock_config_entry.runtime_data = mock_runtime_data
+
+            # async_unload_platforms must succeed
+            mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
             result = await async_unload_entry(mock_hass, mock_config_entry)
 
             assert result is True
             mock_coordinator.async_shutdown.assert_called_once()
-            assert mock_config_entry.entry_id not in mock_hass.data[DOMAIN]
 
         except ImportError as e:
             pytest.skip(f"Cannot import: {e}")
@@ -171,28 +174,22 @@ class TestCoordinatorKLSProcessing:
         """Test that KLS updates trigger state changes."""
         try:
             from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
-            from custom_components.homeworks_hwi.client import HomeworksClientConfig
             from custom_components.homeworks_hwi.models import CCOAddress, CCODevice, CCOEntityType
-            from unittest.mock import MagicMock, AsyncMock, patch
-
-            # Create a mock hass
-            mock_hass = MagicMock()
-            mock_hass.async_create_task = lambda x: None
-
-            # Create coordinator with mock config
-            config = HomeworksClientConfig(host="127.0.0.1", port=23)
+            from unittest.mock import MagicMock, patch
 
             with patch.object(HomeworksCoordinator, "__init__", lambda self, **kwargs: None):
                 coordinator = HomeworksCoordinator.__new__(HomeworksCoordinator)
-                coordinator.hass = mock_hass
+                coordinator.hass = MagicMock()
                 coordinator._cco_devices = {}
                 coordinator._cco_states = {}
                 coordinator._keypad_led_states = {}
                 coordinator._kls_window_offset = 9
+                coordinator._kls_poll_addresses = set()
+                coordinator._poll_count = 0
                 coordinator._client = None
                 coordinator.async_set_updated_data = MagicMock()
 
-                # Register a CCO device
+                # Register a CCO device at button 6 (index 14)
                 address = CCOAddress(processor=2, link=6, address=3, button=6)
                 device = CCODevice(
                     address=address,
@@ -200,23 +197,16 @@ class TestCoordinatorKLSProcessing:
                     entity_type=CCOEntityType.SWITCH,
                     inverted=False,
                 )
-                coordinator._cco_devices[address.unique_key] = device
-                coordinator._cco_states[address.unique_key] = False
+                coordinator.register_cco_device(device)
 
-                # Simulate KLS update with button 6 ON
-                # Button 6 is at index 9 + 5 = 14
-                # String: 000000000222111110000000
+                # KLS with button 6 ON (LED=1 at index 14)
                 led_states = [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
                 coordinator._handle_kls_update("[02:06:03]", led_states)
-
-                # Button 6 should now be ON (index 14 = 1)
                 assert coordinator._cco_states[address.unique_key] is True
 
-                # Simulate KLS update with button 6 OFF
+                # KLS with button 6 OFF (LED=2 at index 14)
                 led_states = [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0]
                 coordinator._handle_kls_update("[02:06:03]", led_states)
-
-                # Button 6 should now be OFF (index 14 = 2)
                 assert coordinator._cco_states[address.unique_key] is False
 
         except ImportError as e:
@@ -229,20 +219,19 @@ class TestCoordinatorKLSProcessing:
             from custom_components.homeworks_hwi.models import CCOAddress, CCODevice, CCOEntityType
             from unittest.mock import MagicMock, patch
 
-            mock_hass = MagicMock()
-            mock_hass.async_create_task = lambda x: None
-
             with patch.object(HomeworksCoordinator, "__init__", lambda self, **kwargs: None):
                 coordinator = HomeworksCoordinator.__new__(HomeworksCoordinator)
-                coordinator.hass = mock_hass
+                coordinator.hass = MagicMock()
                 coordinator._cco_devices = {}
                 coordinator._cco_states = {}
                 coordinator._keypad_led_states = {}
-                coordinator._kls_window_offset = 8  # Different offset
+                coordinator._kls_window_offset = 8  # Non-default offset
+                coordinator._kls_poll_addresses = set()
+                coordinator._poll_count = 0
                 coordinator._client = None
                 coordinator.async_set_updated_data = MagicMock()
 
-                # Register a CCO device
+                # Register device at button 1
                 address = CCOAddress(processor=2, link=6, address=3, button=1)
                 device = CCODevice(
                     address=address,
@@ -250,11 +239,9 @@ class TestCoordinatorKLSProcessing:
                     entity_type=CCOEntityType.SWITCH,
                     inverted=False,
                 )
-                coordinator._cco_devices[address.unique_key] = device
-                coordinator._cco_states[address.unique_key] = False
+                coordinator.register_cco_device(device)
 
                 # With offset 8, button 1 is at index 8
-                # Set index 8 to 1 (ON)
                 led_states = [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0]
                 coordinator._handle_kls_update("[02:06:03]", led_states)
 
@@ -297,10 +284,9 @@ class TestNoDuplicatePolling:
     """Test that reload doesn't create duplicate polling tasks."""
 
     async def test_shutdown_cancels_polling(self):
-        """Test that shutdown properly stops polling."""
+        """Test that async_shutdown stops the client and clears the reference."""
         try:
             from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
-            from custom_components.homeworks_hwi.client import HomeworksClient
             from unittest.mock import MagicMock, AsyncMock, patch
 
             with patch.object(HomeworksCoordinator, "__init__", lambda self, **kwargs: None):
@@ -309,6 +295,13 @@ class TestNoDuplicatePolling:
                 mock_client = AsyncMock()
                 mock_client.stop = AsyncMock()
                 coordinator._client = mock_client
+
+                # Parent class async_shutdown() needs these attributes
+                coordinator._shutdown_requested = False
+                coordinator._unsub_refresh = None
+                coordinator._unsub_shutdown = None
+                coordinator._debounced_refresh = MagicMock()
+                coordinator._debounced_refresh.async_shutdown = AsyncMock()
 
                 await coordinator.async_shutdown()
 

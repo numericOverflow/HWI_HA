@@ -57,10 +57,10 @@ class TestConfigFlowUserStep:
             handler.async_create_entry = MagicMock(return_value={"type": "create_entry"})
             handler.async_set_unique_id = AsyncMock()
 
+            # Patch the module-level _try_connection function
             with patch(
-                "custom_components.homeworks_hwi.config_flow.HomeworksConfigFlowHandler._try_connection",
+                "custom_components.homeworks_hwi.config_flow._try_connection",
                 new_callable=AsyncMock,
-                return_value=True,
             ):
                 result = await handler.async_step_user(
                     user_input={
@@ -72,26 +72,34 @@ class TestConfigFlowUserStep:
                     }
                 )
 
-            # Should proceed (either create_entry or next step)
-            assert result is not None
+            # Should call async_create_entry on success
+            handler.async_create_entry.assert_called_once()
+            call_kwargs = handler.async_create_entry.call_args[1]
+            assert call_kwargs["title"] == "Test Controller"
+            assert call_kwargs["data"]["host"] == "192.168.1.100"
+            assert call_kwargs["data"]["port"] == 23
+            assert "controller_id" in call_kwargs["options"]
         except ImportError:
             pytest.skip("Home Assistant not available")
 
     async def test_user_flow_connection_error(self):
-        """Test connection failure shows error."""
+        """Test connection failure shows error form."""
         try:
             from custom_components.homeworks_hwi.config_flow import (
                 HomeworksConfigFlowHandler,
+                SchemaFlowError,
             )
 
             handler = HomeworksConfigFlowHandler()
             handler.hass = MagicMock()
             handler._async_current_entries = MagicMock(return_value=[])
+            handler.async_show_form = MagicMock(return_value={"type": "form", "errors": {"base": "connection_error"}})
 
+            # _try_connection raises SchemaFlowError on failure
             with patch(
-                "custom_components.homeworks_hwi.config_flow.HomeworksConfigFlowHandler._try_connection",
+                "custom_components.homeworks_hwi.config_flow._try_connection",
                 new_callable=AsyncMock,
-                side_effect=Exception("Connection refused"),
+                side_effect=SchemaFlowError("connection_error"),
             ):
                 result = await handler.async_step_user(
                     user_input={
@@ -103,9 +111,9 @@ class TestConfigFlowUserStep:
                     }
                 )
 
-            # Should show error or form with errors
-            if result.get("type") == "form":
-                assert "errors" in result or "base" in result.get("errors", {})
+            # Should show form with connection_error
+            assert result["type"] == "form"
+            assert result["errors"]["base"] == "connection_error"
         except ImportError:
             pytest.skip("Home Assistant not available")
 
@@ -123,24 +131,23 @@ class TestConfigFlowUserStep:
             handler = HomeworksConfigFlowHandler()
             handler.hass = MagicMock()
             handler._async_current_entries = MagicMock(return_value=[existing_entry])
+            handler.async_abort = MagicMock(return_value={"type": "abort", "reason": "already_configured"})
 
-            with patch(
-                "custom_components.homeworks_hwi.config_flow.HomeworksConfigFlowHandler._try_connection",
-                new_callable=AsyncMock,
-                return_value=True,
-            ):
-                result = await handler.async_step_user(
-                    user_input={
-                        "name": "Duplicate",
-                        "host": "192.168.1.100",
-                        "port": 23,
-                        "username": "",
-                        "password": "",
-                    }
-                )
+            # No need to patch _try_connection — duplicate check happens before it
+            result = await handler.async_step_user(
+                user_input={
+                    "name": "Duplicate",
+                    "host": "192.168.1.100",
+                    "port": 23,
+                    "username": "",
+                    "password": "",
+                }
+            )
 
-            # Should abort or show error about duplicate
-            assert result.get("type") in ("abort", "form")
+            # Should abort with already_configured
+            handler.async_abort.assert_called_once_with(reason="already_configured")
+            assert result["type"] == "abort"
+            assert result["reason"] == "already_configured"
         except ImportError:
             pytest.skip("Home Assistant not available")
 
