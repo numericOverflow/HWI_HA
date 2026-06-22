@@ -426,6 +426,10 @@
                 "title": "Classify CCO Relay Devices",
                 "description": "Each CCO relay controls a physical device. Choose what type of entity to create in Home Assistant for each one."
             },
+            "xml_classify_cci": {
+                "title": "Classify CCI Input Devices",
+                "description": "CCI inputs are contact closure inputs on the processor. Provide a name and device class for each."
+            },
             "xml_confirm_import": {
                 "title": "Confirm Import",
                 "description": "Ready to import the selected devices. Press Submit to commit changes."

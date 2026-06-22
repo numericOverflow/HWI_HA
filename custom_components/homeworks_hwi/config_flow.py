@@ -1626,9 +1626,6 @@ async def async_parse_xml(
     """Parse XML content and store parsed project in flow_state."""
     content = user_input["xml_file"]
 
-    if len(content.encode("utf-8")) > MAX_XML_SIZE:
-        raise SchemaFlowError("xml_too_large")
-
     try:
         parsed = parse_homeworks_xml(content)
     except XMLImportError as err:
@@ -1865,56 +1862,45 @@ async def validate_xml_device_selection(
     # Determine which CCO devices were selected (need classification)
     device_list = handler.flow_state["xml_device_list"]
     cco_devices = []
+    cci_devices = []
     for idx_str in selected:
         idx = int(idx_str)
         device = device_list[idx]
         if device["type"] == "MAINTAINED OUTPUT":
             cco_devices.append({"idx": idx, **device})
+        elif device["type"] == "CCI":
+            cci_devices.append({"idx": idx, **device})
 
     handler.flow_state["xml_cco_to_classify"] = cco_devices
+    handler.flow_state["xml_cci_to_classify"] = cci_devices
     return {}
-
-
-def _get_xml_next_step_after_devices(
-    handler: SchemaCommonFlowHandler,
-) -> str:
-    """Determine next step after device selection."""
-    if handler.flow_state.get("xml_cco_to_classify"):
-        return "xml_classify_cco"
-    return "xml_confirm_import"
 
 
 async def get_xml_cco_classify_schema(
     handler: SchemaCommonFlowHandler,
-) -> vol.Schema:
+) -> vol.Schema | None:
     """Build schema for classifying CCO devices.
 
+    Returns None if no CCO devices need classification (auto-skips step).
     Each selected CCO/MAINTAINED OUTPUT device gets a SelectSelector
     for choosing entity type (switch/light/lock/cover/climate/fan).
     """
     cco_devices = handler.flow_state.get("xml_cco_to_classify", [])
+    if not cco_devices:
+        return None
+
     schema_dict: VolDictType = {}
 
     for i, dev in enumerate(cco_devices):
         key = f"cco_{i}"
-        try:
-            cco_addr, relay = get_cco_address_parts(dev["address"])
-            display_addr = normalize_address(cco_addr)
-        except ValueError:
-            display_addr = dev["address"]
-            relay = "?"
-        # Use description placeholder to show device info
         schema_dict[
-            vol.Required(key, default=CCO_TYPE_SWITCH, description={"suggested_value": CCO_TYPE_SWITCH})
+            vol.Required(key, default=CCO_TYPE_SWITCH)
         ] = selector.SelectSelector(
             selector.SelectSelectorConfig(
                 options=CCO_ENTITY_TYPES,
                 mode=selector.SelectSelectorMode.DROPDOWN,
             )
         )
-
-    if not schema_dict:
-        raise SchemaFlowError("no_devices")
 
     return vol.Schema(schema_dict)
 
@@ -1927,6 +1913,57 @@ async def validate_xml_cco_classify(
     for i, dev in enumerate(cco_devices):
         key = f"cco_{i}"
         dev["entity_type"] = user_input.get(key, CCO_TYPE_SWITCH)
+    return {}
+
+
+async def get_xml_cci_classify_schema(
+    handler: SchemaCommonFlowHandler,
+) -> vol.Schema | None:
+    """Build schema for classifying CCI devices.
+
+    Returns None if no CCI devices need classification (auto-skips step).
+    Each selected CCI input gets a TextSelector for name and a SelectSelector
+    for device_class.
+    """
+    cci_devices = handler.flow_state.get("xml_cci_to_classify", [])
+    if not cci_devices:
+        return None
+
+    schema_dict: VolDictType = {}
+
+    for i, dev in enumerate(cci_devices):
+        name_key = f"cci_name_{i}"
+        class_key = f"cci_class_{i}"
+        default_name = dev.get("name", f"CCI Input {dev.get('input_number', i + 1)}")
+        schema_dict[vol.Required(name_key, default=default_name)] = (
+            selector.TextSelector()
+        )
+        schema_dict[vol.Optional(class_key)] = selector.SelectSelector(
+            selector.SelectSelectorConfig(
+                options=[
+                    selector.SelectOptionDict(value="door", label="Door"),
+                    selector.SelectOptionDict(value="window", label="Window"),
+                    selector.SelectOptionDict(value="motion", label="Motion"),
+                    selector.SelectOptionDict(value="opening", label="Opening"),
+                    selector.SelectOptionDict(value="occupancy", label="Occupancy"),
+                ],
+                mode=selector.SelectSelectorMode.DROPDOWN,
+            )
+        )
+
+    return vol.Schema(schema_dict)
+
+
+async def validate_xml_cci_classify(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Store CCI classifications (name + device_class)."""
+    cci_devices = handler.flow_state.get("xml_cci_to_classify", [])
+    for i, dev in enumerate(cci_devices):
+        name_key = f"cci_name_{i}"
+        class_key = f"cci_class_{i}"
+        dev["name"] = user_input.get(name_key, dev.get("name", ""))
+        dev["device_class"] = user_input.get(class_key)
     return {}
 
 
@@ -1957,15 +1994,23 @@ async def validate_xml_confirm_import(
         device_type = device["type"]
         room_key = device["room_key"]
 
-        # Resolve area
+        # Resolve area — store the human-readable NAME (not ID) so
+        # suggested_area works correctly with HA's async_get_or_create.
         area_value = area_mapping.get(room_key, "")
         area: str | None = None
         if area_value.startswith("__create__"):
             # Use the room name as the area (suggested_area mechanism)
             area = area_value.replace("__create__", "")
         elif area_value:
-            # Existing HA area ID
-            area = area_value
+            # area_value is an area ID from SelectSelector — look up the name
+            from homeassistant.helpers import area_registry as ar
+            hass = handler.parent_handler.hass
+            area_reg = ar.async_get(hass)
+            area_entry = area_reg.async_get_area(area_value)
+            if area_entry:
+                area = area_entry.name
+            else:
+                area = area_value
 
         if device_type == "DIMMER":
             addr = normalize_address(device["address"])
@@ -2063,6 +2108,8 @@ async def validate_xml_confirm_import(
                 CONF_INPUT_NUMBER: input_number,
                 CONF_NAME: device["name"] or DEFAULT_CCI_NAME,
             }
+            if device.get("device_class"):
+                cci_config[CONF_DEVICE_CLASS] = device["device_class"]
             if area:
                 cci_config[CONF_AREA] = area
             items.append(cci_config)
@@ -2500,11 +2547,16 @@ OPTIONS_FLOW = {
     "xml_device_selection": SchemaFlowFormStep(
         get_xml_device_selection_schema,
         validate_user_input=validate_xml_device_selection,
-        next_step=_get_xml_next_step_after_devices,
+        next_step="xml_classify_cco",
     ),
     "xml_classify_cco": SchemaFlowFormStep(
         get_xml_cco_classify_schema,
         validate_user_input=validate_xml_cco_classify,
+        next_step="xml_classify_cci",
+    ),
+    "xml_classify_cci": SchemaFlowFormStep(
+        get_xml_cci_classify_schema,
+        validate_user_input=validate_xml_cci_classify,
         next_step="xml_confirm_import",
     ),
     "xml_confirm_import": SchemaFlowFormStep(
