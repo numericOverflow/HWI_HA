@@ -85,13 +85,11 @@ class TestIntegrationLoad:
 
     async def test_import_integration(self):
         """Test that the integration module can be imported."""
-        try:
-            from custom_components import homeworks
-            assert homeworks.DOMAIN == "homeworks"
-            assert hasattr(homeworks, "async_setup_entry")
-            assert hasattr(homeworks, "async_unload_entry")
-        except ImportError as e:
-            pytest.skip(f"Cannot import integration: {e}")
+        from custom_components.homeworks_hwi import DOMAIN
+        from custom_components import homeworks_hwi
+        assert DOMAIN == "homeworks_hwi"
+        assert hasattr(homeworks_hwi, "async_setup_entry")
+        assert hasattr(homeworks_hwi, "async_unload_entry")
 
     async def test_import_config_flow(self):
         """Test that config flow can be imported and has correct domain."""
@@ -118,27 +116,37 @@ class TestConfigEntrySetup:
     """Test config entry setup and unload."""
 
     async def test_setup_entry_creates_data(self, mock_hass, mock_config_entry):
-        """Test that setup_entry creates the expected data structure."""
-        try:
-            from custom_components.homeworks_hwi import async_setup_entry, DOMAIN
-            from unittest.mock import AsyncMock, patch
+        """Test that async_setup_entry creates coordinator, stores runtime_data, and forwards platforms."""
+        from custom_components.homeworks_hwi import async_setup_entry, DOMAIN
+        from unittest.mock import AsyncMock, MagicMock, patch
 
-            # Mock the coordinator setup to avoid actual network calls
-            with patch("custom_components.homeworks_hwi.HomeworksCoordinator") as mock_coord_class:
-                mock_coordinator = AsyncMock()
-                mock_coordinator.async_setup = AsyncMock(return_value=True)
-                mock_coordinator.async_config_entry_first_refresh = AsyncMock()
-                mock_coordinator.async_shutdown = AsyncMock()
-                mock_coordinator.register_cco_device = lambda x: None
-                mock_coordinator.register_dimmer = lambda x: None
-                mock_coord_class.return_value = mock_coordinator
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.register_cco_device = MagicMock()
+        mock_coordinator.register_dimmer = MagicMock()
+        mock_coordinator.register_cci_device = MagicMock()
+        mock_coordinator.register_kls_poll_address = MagicMock()
+        mock_coordinator.async_shutdown = AsyncMock()
 
-                # This will fail without full HA but validates structure
-                # In a real HA environment, this would succeed
-                pytest.skip("Full setup requires HA environment")
+        with patch(
+            "custom_components.homeworks_hwi.HomeworksCoordinator",
+            return_value=mock_coordinator,
+        ), patch(
+            "custom_components.homeworks_hwi._cleanup_orphaned_devices",
+        ), patch(
+            "custom_components.homeworks_hwi._cleanup_old_entities",
+        ):
+            result = await async_setup_entry(mock_hass, mock_config_entry)
 
-        except ImportError as e:
-            pytest.skip(f"Cannot import: {e}")
+        # Setup should succeed
+        assert result is True
+        # Coordinator first refresh called (connects to controller)
+        mock_coordinator.async_config_entry_first_refresh.assert_called_once()
+        # Platforms forwarded
+        mock_hass.config_entries.async_forward_entry_setups.assert_called_once()
+        # runtime_data set on entry
+        assert mock_config_entry.runtime_data is not None
+        assert mock_config_entry.runtime_data.coordinator is mock_coordinator
 
     async def test_unload_entry_cleans_up(self, mock_hass, mock_config_entry):
         """Test that unload_entry properly shuts down coordinator."""
