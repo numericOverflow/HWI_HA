@@ -51,7 +51,6 @@ CONF_DEVICE_CLASS: Final = "device_class"
 # Controller settings
 CONF_KLS_POLL_INTERVAL: Final = "kls_poll_interval"
 CONF_KLS_WINDOW_OFFSET: Final = "kls_window_offset"
-CONF_CCO_COMMAND_GRACE_PERIOD: Final = "cco_command_grace_period"
 
 # Default values
 DEFAULT_FADE_RATE: Final = 0.01
@@ -71,12 +70,6 @@ DEFAULT_CCI_NAME: Final = "Homeworks Input"
 # Polling intervals (in seconds)
 DEFAULT_KLS_POLL_INTERVAL: Final = 10
 DEFAULT_DIMMER_POLL_INTERVAL: Final = 30
-
-# Grace period (seconds) after a CCO command during which incoming
-# KLS poll responses are suppressed to prevent stale state overwriting
-# the optimistic state.  Increase if the processor is slow to propagate
-# relay changes back to KLS feedback.
-DEFAULT_CCO_COMMAND_GRACE_PERIOD: Final = 3.0
 
 # Default release delay for Master Raise/Lower buttons (seconds).
 # These buttons require a KBR (release) command to stop dimmer ramping.
