@@ -5,8 +5,8 @@ These tests run WITHOUT Home Assistant dependencies.
 
 import pytest
 
-# Direct imports from pyhomeworks package (no HA deps)
-from pyhomeworks import (
+# Direct imports from hwi_protocol package (no HA deps)
+from hwi_protocol import (
     MessageParser,
     normalize_address,
     parse_address,
@@ -19,7 +19,7 @@ from pyhomeworks import (
     SivoiaSceneMessage,
     UnknownMessage,
 )
-from pyhomeworks import commands
+from hwi_protocol import commands
 
 
 class TestNormalizeAddress:

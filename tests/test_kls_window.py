@@ -22,7 +22,7 @@ from models import (
     CCOEntityType,
     CCO_BUTTON_WINDOW_OFFSET,
 )
-from pyhomeworks import KLSMessage, MessageParser
+from hwi_protocol import KLSMessage, MessageParser
 
 
 class TestButtonWindowExtraction:

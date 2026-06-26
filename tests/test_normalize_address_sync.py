@@ -10,13 +10,13 @@ See: improvements_spec.md Part 6 (normalize_address Triplication)
 import pytest
 
 from models import normalize_address as models_normalize
-from pyhomeworks.protocol import normalize_address as proto_normalize
+from hwi_protocol.protocol import normalize_address as proto_normalize
 
 
 def _get_commands_normalize():
     """Try to import commands.normalize_address if it exists separately."""
     try:
-        from pyhomeworks.commands import normalize_address as cmd_normalize
+        from hwi_protocol.commands import normalize_address as cmd_normalize
         return cmd_normalize
     except ImportError:
         # commands.py may import from protocol.py — that's fine
