@@ -10,7 +10,7 @@ Covers:
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from models import normalize_address
+from custom_components.homeworks_hwi.models import normalize_address
 
 
 # =============================================================================

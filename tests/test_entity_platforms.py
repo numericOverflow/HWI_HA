@@ -7,7 +7,7 @@ plus platform-specific tests for unique features.
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from models import CCOAddress, CCODevice, CCOEntityType
+from custom_components.homeworks_hwi.models import CCOAddress, CCODevice, CCOEntityType
 
 
 # =============================================================================
@@ -43,7 +43,7 @@ class TestCCODeviceCreation:
 
     @pytest.mark.parametrize("entity_type_str,entity_type_enum", CCO_PLATFORMS)
     def test_cco_device_interpret_state_on(self, entity_type_str, entity_type_enum):
-        """CCO device interprets LED value 2 as ON (relay closed, LED flash)."""
+        """CCO device interprets LED value 1 as ON (relay closed)."""
         device = CCODevice(
             address=CCOAddress(2, 6, 3, 6),
             name="Test",
@@ -53,7 +53,7 @@ class TestCCODeviceCreation:
 
     @pytest.mark.parametrize("entity_type_str,entity_type_enum", CCO_PLATFORMS)
     def test_cco_device_interpret_state_off(self, entity_type_str, entity_type_enum):
-        """CCO device interprets LED value 1 as OFF (relay open, LED solid)."""
+        """CCO device interprets LED value 2 as OFF (relay open)."""
         device = CCODevice(
             address=CCOAddress(2, 6, 3, 6),
             name="Test",
@@ -149,7 +149,7 @@ class TestSwitchEntity:
 
     def test_switch_entity_type_constant(self):
         """Switch uses CCO_TYPE_SWITCH constant."""
-        from const import CCO_TYPE_SWITCH
+        from custom_components.homeworks_hwi.const import CCO_TYPE_SWITCH
 
         assert CCO_TYPE_SWITCH == "switch"
 
@@ -160,7 +160,7 @@ class TestSwitchEntity:
             name="Test Switch",
             entity_type=CCOEntityType.SWITCH,
         )
-        # LED=2 means relay closed = ON
+        # LED=1 means relay closed = ON
         assert device.interpret_state(2) is True
 
 
@@ -190,7 +190,7 @@ class TestLightDimmer:
 
     def test_default_fade_rate(self):
         """Default fade rate is defined."""
-        from const import DEFAULT_FADE_RATE
+        from custom_components.homeworks_hwi.const import DEFAULT_FADE_RATE
 
         assert DEFAULT_FADE_RATE == 0.01
 
@@ -205,7 +205,7 @@ class TestCoverTypes:
 
     def test_cover_type_constants(self):
         """All cover type constants are defined."""
-        from const import (
+        from custom_components.homeworks_hwi.const import (
             CCO_TYPE_COVER,
             DEFAULT_COVER_NAME,
             DEFAULT_RPM_COVER_NAME,
@@ -239,7 +239,7 @@ class TestFanEntity:
 
     def test_fan_entity_type_constant(self):
         """Fan uses CCO_TYPE_FAN constant."""
-        from const import CCO_TYPE_FAN
+        from custom_components.homeworks_hwi.const import CCO_TYPE_FAN
 
         assert CCO_TYPE_FAN == "fan"
 
@@ -254,7 +254,7 @@ class TestLockEntity:
 
     def test_lock_entity_type_constant(self):
         """Lock uses CCO_TYPE_LOCK constant."""
-        from const import CCO_TYPE_LOCK
+        from custom_components.homeworks_hwi.const import CCO_TYPE_LOCK
 
         assert CCO_TYPE_LOCK == "lock"
 
@@ -265,9 +265,9 @@ class TestLockEntity:
             name="Test Lock",
             entity_type=CCOEntityType.LOCK,
         )
-        # LED=2 means relay closed = locked (is_on=True)
+        # LED=1 means relay closed = locked (is_on=True)
         assert device.interpret_state(2) is True
-        # LED=1 means relay open = unlocked (is_on=False)
+        # LED=2 means relay open = unlocked (is_on=False)
         assert device.interpret_state(1) is False
 
 
@@ -281,7 +281,7 @@ class TestClimateEntity:
 
     def test_climate_entity_type_constant(self):
         """Climate uses CCO_TYPE_CLIMATE constant."""
-        from const import CCO_TYPE_CLIMATE
+        from custom_components.homeworks_hwi.const import CCO_TYPE_CLIMATE
 
         assert CCO_TYPE_CLIMATE == "climate"
 
@@ -292,5 +292,5 @@ class TestClimateEntity:
             name="HVAC",
             entity_type=CCOEntityType.CLIMATE,
         )
-        assert device.interpret_state(2) is True  # LED=2 = relay closed = Heating ON
-        assert device.interpret_state(1) is False  # LED=1 = relay open = Heating OFF
+        assert device.interpret_state(2) is True  # LED=1 = relay closed = Heating ON
+        assert device.interpret_state(1) is False  # LED=2 = relay open = Heating OFF

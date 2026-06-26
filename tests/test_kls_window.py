@@ -15,14 +15,14 @@ Digit semantics (verified via telnet to Lutron processor):
 import pytest
 from datetime import datetime, timedelta
 
-from models import (
+from custom_components.homeworks_hwi.models import (
     KLSState,
     CCOAddress,
     CCODevice,
     CCOEntityType,
     CCO_BUTTON_WINDOW_OFFSET,
 )
-from hwi_protocol import KLSMessage, MessageParser
+from custom_components.homeworks_hwi.hwi_protocol import KLSMessage, MessageParser
 
 
 class TestButtonWindowExtraction:

@@ -98,3 +98,4 @@ secrets.yaml
 *.pem
 *.key
 test_rdl.py
+/.ai_collaboration

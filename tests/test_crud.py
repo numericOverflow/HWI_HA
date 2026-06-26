@@ -8,7 +8,7 @@ import pytest
 from copy import deepcopy
 
 # Import models and constants (no HA deps)
-from hwi_protocol import normalize_address
+from custom_components.homeworks_hwi.hwi_protocol import normalize_address
 
 
 # Simulate the options dictionary structure used by config_flow

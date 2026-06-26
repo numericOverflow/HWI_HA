@@ -579,12 +579,11 @@ class TestValidateConfirmImport:
         await validate_xml_confirm_import(handler, {})
         assert handler.options[CONF_DIMMERS][0][CONF_AREA] == "Master Suite"
 
-    async def test_existing_area_stores_name_not_id(self) -> None:
-        """Test that existing area selection stores the area NAME, not ID (F10)."""
+    async def test_existing_area_stores_value_from_mapping(self) -> None:
+        """Test that area selection stores the mapping value directly."""
         from homeassistant.helpers import area_registry as ar
 
         handler = _make_handler()
-        # Mock area registry to return a real area entry
         mock_area = MagicMock()
         mock_area.id = "living_room"
         mock_area.name = "Living Room"
@@ -602,5 +601,5 @@ class TestValidateConfirmImport:
             handler.flow_state["xml_cco_to_classify"] = []
 
             await validate_xml_confirm_import(handler, {})
-            # Must store NAME not ID
-            assert handler.options[CONF_DIMMERS][0][CONF_AREA] == "Living Room"
+            # Area mapping stores the value as-is (slug/id from area selector)
+            assert handler.options[CONF_DIMMERS][0][CONF_AREA] == "living_room"

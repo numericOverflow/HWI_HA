@@ -207,13 +207,13 @@ class TestCoordinatorKLSProcessing:
                 )
                 coordinator.register_cco_device(device)
 
-                # KLS with button 6 ON (LED=1 at index 14)
-                led_states = [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+                # KLS with button 6 ON (LED=2 at index 14)
+                led_states = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0]
                 coordinator._handle_kls_update("[02:06:03]", led_states)
                 assert coordinator._cco_states[address.unique_key] is True
 
-                # KLS with button 6 OFF (LED=2 at index 14)
-                led_states = [0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 1, 1, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+                # KLS with button 6 OFF (LED=1 at index 14)
+                led_states = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0]
                 coordinator._handle_kls_update("[02:06:03]", led_states)
                 assert coordinator._cco_states[address.unique_key] is False
 
@@ -250,7 +250,7 @@ class TestCoordinatorKLSProcessing:
                 coordinator.register_cco_device(device)
 
                 # With offset 8, button 1 is at index 8
-                led_states = [0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0]
+                led_states = [0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
                 coordinator._handle_kls_update("[02:06:03]", led_states)
 
                 assert coordinator._cco_states[address.unique_key] is True
