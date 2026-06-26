@@ -28,7 +28,12 @@ from homeassistant.const import (
     EVENT_HOMEASSISTANT_STOP,
     Platform,
 )
-from homeassistant.core import Event, HomeAssistant, ServiceCall, callback
+from homeassistant.core import (
+    Event,
+    HomeAssistant,
+    ServiceCall,
+    callback,
+)
 from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import area_registry as ar
@@ -71,7 +76,11 @@ from .const import (
     SERVICE_SEND_COMMAND,
 )
 from .coordinator import HomeworksCoordinator
-from .models import CCOAddress, CCODevice, CCOEntityType
+from .models import (
+    CCOAddress,
+    CCODevice,
+    CCOEntityType,
+)
 
 _LOGGER = logging.getLogger(__name__)
 

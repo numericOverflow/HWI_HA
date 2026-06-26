@@ -7,7 +7,7 @@ import pytest
 from datetime import datetime, timedelta
 
 # Direct import from models.py (no HA deps)
-from models import (
+from custom_components.homeworks_hwi.models import (
     CCOAddress,
     CCODevice,
     CCOEntityType,

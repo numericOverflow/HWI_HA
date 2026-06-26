@@ -1,12 +1,8 @@
-"""Tests for the pyhomeworks protocol layer.
-
-These tests run WITHOUT Home Assistant dependencies.
-"""
+"""Tests for the pyhomeworks protocol layer."""
 
 import pytest
 
-# Direct imports from pyhomeworks package (no HA deps)
-from pyhomeworks import (
+from custom_components.homeworks_hwi.hwi_protocol import (
     MessageParser,
     normalize_address,
     parse_address,
@@ -19,7 +15,7 @@ from pyhomeworks import (
     SivoiaSceneMessage,
     UnknownMessage,
 )
-from pyhomeworks import commands
+from custom_components.homeworks_hwi.hwi_protocol import commands
 
 
 class TestNormalizeAddress:

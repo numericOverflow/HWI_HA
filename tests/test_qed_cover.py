@@ -8,9 +8,17 @@ Tests are split into:
 
 import pytest
 from copy import deepcopy
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+    patch,
+)
 
-from pyhomeworks import MessageParser, DimmerLevelMessage, normalize_address
+from custom_components.homeworks_hwi.hwi_protocol import (
+    MessageParser,
+    DimmerLevelMessage,
+    normalize_address,
+)
 
 
 # =============================================================================

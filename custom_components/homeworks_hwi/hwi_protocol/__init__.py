@@ -43,7 +43,11 @@ from .messages import (
     SivoiaSceneMessage,
     UnknownMessage,
 )
-from .protocol import MessageParser, normalize_address, parse_address
+from .protocol import (
+    MessageParser,
+    normalize_address,
+    parse_address,
+)
 
 __all__ = [
     # Client

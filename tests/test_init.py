@@ -8,11 +8,19 @@ Covers:
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+    patch,
+)
 from copy import deepcopy
 
-from models import CCOAddress, CCODevice, CCOEntityType
-from const import (
+from custom_components.homeworks_hwi.models import (
+    CCOAddress,
+    CCODevice,
+    CCOEntityType,
+)
+from custom_components.homeworks_hwi.const import (
     CONF_CCO_DEVICES,
     CONF_CONTROLLER_ID,
     CCO_TYPE_SWITCH,
@@ -166,7 +174,7 @@ class TestDiagnostics:
 
     def test_redacted_keys_defined(self):
         """Sensitive keys are in the redaction set."""
-        from const import DOMAIN
+        from custom_components.homeworks_hwi.const import DOMAIN
 
         # These should be redacted in diagnostics
         sensitive_keys = {"password", "username", "host"}

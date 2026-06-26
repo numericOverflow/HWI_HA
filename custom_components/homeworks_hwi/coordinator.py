@@ -28,7 +28,12 @@ from .client import (
     HomeworksClient,
     HomeworksClientConfig,
 )
-from .const import DEFAULT_KLS_WINDOW_OFFSET, RPM_MOTOR_DOWN, RPM_MOTOR_STOP, RPM_MOTOR_UP
+from .const import (
+    DEFAULT_KLS_WINDOW_OFFSET,
+    RPM_MOTOR_DOWN,
+    RPM_MOTOR_STOP,
+    RPM_MOTOR_UP,
+)
 from .hwi_protocol import HomeworksAuthenticationException
 from .models import (
     CCOAddress,

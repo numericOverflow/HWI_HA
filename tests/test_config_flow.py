@@ -8,7 +8,11 @@ Covers:
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+    patch,
+)
 from copy import deepcopy
 
 pytestmark = [
@@ -183,13 +187,13 @@ class TestCSVImportLimits:
 
     def test_csv_size_limit_constant_defined(self):
         """Verify MAX_CSV_SIZE is defined and reasonable."""
-        from const import MAX_CSV_SIZE
+        from custom_components.homeworks_hwi.const import MAX_CSV_SIZE
 
         assert MAX_CSV_SIZE == 1_000_000
 
     def test_csv_row_limit_constant_defined(self):
         """Verify MAX_CSV_ROWS is defined and reasonable."""
-        from const import MAX_CSV_ROWS
+        from custom_components.homeworks_hwi.const import MAX_CSV_ROWS
 
         assert MAX_CSV_ROWS == 5000
 
@@ -201,7 +205,7 @@ class TestCSVImportLimits:
 
     def test_csv_exceeding_size_would_be_rejected(self):
         """CSV content exceeding 1MB should be rejected."""
-        from const import MAX_CSV_SIZE
+        from custom_components.homeworks_hwi.const import MAX_CSV_SIZE
 
         oversized = "x" * (MAX_CSV_SIZE + 1)
         assert len(oversized) > MAX_CSV_SIZE

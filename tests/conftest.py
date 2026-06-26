@@ -1,24 +1,17 @@
 """Pytest configuration for Homeworks HWI integration tests.
 
-Two execution modes:
-1. Protocol-only (no HA): `pytest tests/ -m "not requires_ha"`
-2. Full integration (with HA): `pytest tests/ -v`
-
-Fixtures are split into:
-- Protocol fixtures: Always available (FakeController, model factories)
-- HA fixtures: Only available when homeassistant is importable
+All imports use the full package path: custom_components.homeworks_hwi.xxx
+The repo root is on sys.path (via pyproject.toml pythonpath = ["."]) so
+the package is importable as 'custom_components.homeworks_hwi'.
 """
 
-import sys
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+    patch,
+)
 
 import pytest
-
-# Add custom_components/homeworks_hwi to path so tests can import models directly
-_repo_root = Path(__file__).parent.parent
-sys.path.insert(0, str(_repo_root / "custom_components" / "homeworks_hwi"))
-sys.path.insert(0, str(_repo_root))
 
 
 def pytest_configure(config):
@@ -69,7 +62,7 @@ def sample_kls_all_off():
 @pytest.fixture
 def cco_address_factory():
     """Factory for creating CCOAddress instances."""
-    from models import CCOAddress
+    from custom_components.homeworks_hwi.models import CCOAddress
 
     def _make(processor=2, link=6, address=3, button=6):
         return CCOAddress(processor=processor, link=link, address=address, button=button)
@@ -80,7 +73,7 @@ def cco_address_factory():
 @pytest.fixture
 def cco_device_factory(cco_address_factory):
     """Factory for creating CCODevice instances."""
-    from models import CCODevice, CCOEntityType
+    from custom_components.homeworks_hwi.models import CCODevice, CCOEntityType
 
     def _make(
         processor=2,

@@ -1,0 +1,22 @@
+[project]
+name = "homeworks-hwi"
+version = "1.5.14"
+description = "Lutron Homeworks HWI integration for Home Assistant"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "homeassistant>=2024.4",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+norecursedirs = [".git", "__pycache__"]
+asyncio_mode = "auto"
+markers = [
+    "requires_ha: mark test as requiring Home Assistant",
+]

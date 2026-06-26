@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum, auto
 
-from pyhomeworks.messages import (
+from .hwi_protocol.messages import (
     CCO_BUTTON_WINDOW_LENGTH,
     CCO_BUTTON_WINDOW_OFFSET,
     CCO_RELAY_CLOSED_DIGIT,
