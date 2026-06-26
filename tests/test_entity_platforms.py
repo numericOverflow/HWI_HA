@@ -5,9 +5,17 @@ plus platform-specific tests for unique features.
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+    patch,
+)
 
-from custom_components.homeworks_hwi.models import CCOAddress, CCODevice, CCOEntityType
+from custom_components.homeworks_hwi.models import (
+    CCOAddress,
+    CCODevice,
+    CCOEntityType,
+)
 
 
 # =============================================================================

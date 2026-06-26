@@ -8,10 +8,18 @@ Covers:
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+    patch,
+)
 from copy import deepcopy
 
-from custom_components.homeworks_hwi.models import CCOAddress, CCODevice, CCOEntityType
+from custom_components.homeworks_hwi.models import (
+    CCOAddress,
+    CCODevice,
+    CCOEntityType,
+)
 from custom_components.homeworks_hwi.const import (
     CONF_CCO_DEVICES,
     CONF_CONTROLLER_ID,

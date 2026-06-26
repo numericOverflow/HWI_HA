@@ -8,7 +8,11 @@ Covers:
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+    patch,
+)
 from copy import deepcopy
 
 pytestmark = [

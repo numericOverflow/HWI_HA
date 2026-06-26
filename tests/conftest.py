@@ -5,7 +5,11 @@ The repo root is on sys.path (via pyproject.toml pythonpath = ["."]) so
 the package is importable as 'custom_components.homeworks_hwi'.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+    patch,
+)
 
 import pytest
 

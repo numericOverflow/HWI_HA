@@ -14,10 +14,24 @@ imports from homeassistant.helpers.update_coordinator.
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, call
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+    patch,
+    call,
+)
 from datetime import timedelta
 
-from custom_components.homeworks_hwi.models import CCOAddress, CCODevice, CCOEntityType, normalize_address
+from custom_components.homeworks_hwi.models import (
+    CCOAddress,
+    CCODevice,
+    CCOEntityType,
+    normalize_address,
+)
+from custom_components.homeworks_hwi.hwi_protocol.messages import CCO_RELAY_CLOSED_DIGIT
+
+# The opposite digit (relay open = device OFF)
+CCO_RELAY_OPEN_DIGIT = 1 if CCO_RELAY_CLOSED_DIGIT == 2 else 2
 from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
 
 
@@ -151,13 +165,12 @@ class TestKLSStateEngine:
         return coord, device
 
     def test_kls_update_turns_device_on(self):
-        """KLS with LED=2 at correct index sets device ON."""
+        """KLS with CLOSED digit at correct index sets device ON."""
         coord, device = self._make_coordinator_with_device(button=6)
 
         # Button 6 at index 14 (offset 9 + button 6 - 1 = 14)
-        # LED=2 means relay closed = ON
         led_states = [0] * 24
-        led_states[14] = 2  # Button 6 = ON
+        led_states[14] = CCO_RELAY_CLOSED_DIGIT  # Button 6 = ON
 
         coord._handle_kls_update("[02:06:03]", led_states)
 
@@ -165,28 +178,28 @@ class TestKLSStateEngine:
         coord.async_set_updated_data.assert_called_once()
 
     def test_kls_update_turns_device_off(self):
-        """KLS with LED=1 at correct index sets device OFF."""
+        """KLS with OPEN digit at correct index sets device OFF."""
         coord, device = self._make_coordinator_with_device(button=6)
 
         # First turn on
         led_states_on = [0] * 24
-        led_states_on[14] = 2
+        led_states_on[14] = CCO_RELAY_CLOSED_DIGIT
         coord._handle_kls_update("[02:06:03]", led_states_on)
 
-        # Then turn off (LED=1 = relay open)
+        # Then turn off
         coord.async_set_updated_data.reset_mock()
         led_states_off = [0] * 24
-        led_states_off[14] = 1
+        led_states_off[14] = CCO_RELAY_OPEN_DIGIT
         coord._handle_kls_update("[02:06:03]", led_states_off)
 
         assert coord._cco_states[device.address.unique_key] is False
 
     def test_kls_update_inverted_device(self):
-        """Inverted device interprets LED=2 as OFF and LED=1 as ON."""
+        """Inverted device interprets CLOSED digit as OFF."""
         coord, device = self._make_coordinator_with_device(button=6, inverted=True)
 
         led_states = [0] * 24
-        led_states[14] = 2  # Normally ON, but inverted = OFF
+        led_states[14] = CCO_RELAY_CLOSED_DIGIT  # Normally ON, but inverted = OFF
 
         coord._handle_kls_update("[02:06:03]", led_states)
 
@@ -196,9 +209,9 @@ class TestKLSStateEngine:
         """No state change → no notification to listeners."""
         coord, device = self._make_coordinator_with_device(button=6)
 
-        # Both updates have same state (OFF by default, OFF via digit 1)
+        # Default state is False (OFF). Sending OPEN digit keeps it OFF = no change.
         led_states = [0] * 24
-        led_states[14] = 1  # OFF (relay open)
+        led_states[14] = CCO_RELAY_OPEN_DIGIT
         coord._handle_kls_update("[02:06:03]", led_states)
 
         # State was already False (default), so no change notification
@@ -209,7 +222,7 @@ class TestKLSStateEngine:
         coord, device = self._make_coordinator_with_device(button=6)
 
         led_states = [0] * 24
-        led_states[14] = 2  # ON
+        led_states[14] = CCO_RELAY_CLOSED_DIGIT
 
         # Different address
         coord._handle_kls_update("[02:06:99]", led_states)
@@ -229,10 +242,10 @@ class TestKLSStateEngine:
         coord.register_cco_device(dev1)
         coord.register_cco_device(dev2)
 
-        # Button 4 at index 12 = ON (LED=2), Button 6 at index 14 = OFF (LED=1)
+        # Button 4 at index 12 = ON, Button 6 at index 14 = OFF
         led_states = [0] * 24
-        led_states[12] = 2  # Button 4 ON
-        led_states[14] = 1  # Button 6 OFF
+        led_states[12] = CCO_RELAY_CLOSED_DIGIT  # Button 4 ON
+        led_states[14] = CCO_RELAY_OPEN_DIGIT  # Button 6 OFF
 
         coord._handle_kls_update("[02:06:03]", led_states)
 
