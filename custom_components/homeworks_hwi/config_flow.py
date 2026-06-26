@@ -1600,21 +1600,6 @@ async def validate_confirm_import(
     return {}
 
 
-# === Review Configuration ===
-
-
-async def get_review_config_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
-    """Return empty schema for review."""
-    return vol.Schema({})
-
-
-async def validate_review_config(
-    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
-) -> dict[str, Any]:
-    """No-op for review."""
-    return {}
-
-
 # === XML Import ===
 
 
@@ -2425,7 +2410,6 @@ OPTIONS_FLOW = {
             "controller_settings",
             "import_csv",
             "import_xml",
-            "review_config",
         ]
     ),
     "manage_cco_devices": SchemaFlowMenuStep(
@@ -2574,9 +2558,6 @@ OPTIONS_FLOW = {
     ),
     "confirm_import": SchemaFlowFormStep(
         get_confirm_import_schema, validate_user_input=validate_confirm_import
-    ),
-    "review_config": SchemaFlowFormStep(
-        get_review_config_schema, validate_user_input=validate_review_config
     ),
     "import_xml": SchemaFlowFormStep(
         vol.Schema(

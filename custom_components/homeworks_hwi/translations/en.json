@@ -67,8 +67,7 @@
                     "manage_keypads": "Manage keypads",
                     "controller_settings": "Controller settings",
                     "import_csv": "Import devices from CSV",
-                    "import_xml": "Import devices from XML (Lutron Designer export)",
-                    "review_config": "Review configuration"
+                    "import_xml": "Import devices from XML (Lutron Designer export)"
                 }
             },
             "manage_cco_devices": {
@@ -399,10 +398,6 @@
                 "data": {
                     "devices": "Devices to import"
                 }
-            },
-            "review_config": {
-                "title": "Current Configuration",
-                "description": "Review your current device configuration. Use the other menu options to make changes."
             },
             "import_xml": {
                 "title": "Import Devices from XML",
