@@ -151,13 +151,13 @@ class TestKLSStateEngine:
         return coord, device
 
     def test_kls_update_turns_device_on(self):
-        """KLS with LED=1 at correct index sets device ON."""
+        """KLS with LED=2 at correct index sets device ON."""
         coord, device = self._make_coordinator_with_device(button=6)
 
         # Button 6 at index 14 (offset 9 + button 6 - 1 = 14)
-        # LED=1 means relay closed = ON
+        # LED=2 means relay closed = ON
         led_states = [0] * 24
-        led_states[14] = 1  # Button 6 = ON
+        led_states[14] = 2  # Button 6 = ON
 
         coord._handle_kls_update("[02:06:03]", led_states)
 
@@ -165,28 +165,28 @@ class TestKLSStateEngine:
         coord.async_set_updated_data.assert_called_once()
 
     def test_kls_update_turns_device_off(self):
-        """KLS with LED=2 at correct index sets device OFF."""
+        """KLS with LED=1 at correct index sets device OFF."""
         coord, device = self._make_coordinator_with_device(button=6)
 
         # First turn on
         led_states_on = [0] * 24
-        led_states_on[14] = 1
+        led_states_on[14] = 2
         coord._handle_kls_update("[02:06:03]", led_states_on)
 
-        # Then turn off (LED=2 = relay open)
+        # Then turn off (LED=1 = relay open)
         coord.async_set_updated_data.reset_mock()
         led_states_off = [0] * 24
-        led_states_off[14] = 2
+        led_states_off[14] = 1
         coord._handle_kls_update("[02:06:03]", led_states_off)
 
         assert coord._cco_states[device.address.unique_key] is False
 
     def test_kls_update_inverted_device(self):
-        """Inverted device interprets LED=1 as OFF and LED=2 as ON."""
+        """Inverted device interprets LED=2 as OFF and LED=1 as ON."""
         coord, device = self._make_coordinator_with_device(button=6, inverted=True)
 
         led_states = [0] * 24
-        led_states[14] = 1  # Normally ON, but inverted = OFF
+        led_states[14] = 2  # Normally ON, but inverted = OFF
 
         coord._handle_kls_update("[02:06:03]", led_states)
 
@@ -196,9 +196,9 @@ class TestKLSStateEngine:
         """No state change → no notification to listeners."""
         coord, device = self._make_coordinator_with_device(button=6)
 
-        # Both updates have same state (OFF by default, OFF via digit 2)
+        # Both updates have same state (OFF by default, OFF via digit 1)
         led_states = [0] * 24
-        led_states[14] = 2  # OFF (relay open)
+        led_states[14] = 1  # OFF (relay open)
         coord._handle_kls_update("[02:06:03]", led_states)
 
         # State was already False (default), so no change notification
@@ -209,7 +209,7 @@ class TestKLSStateEngine:
         coord, device = self._make_coordinator_with_device(button=6)
 
         led_states = [0] * 24
-        led_states[14] = 1  # ON
+        led_states[14] = 2  # ON
 
         # Different address
         coord._handle_kls_update("[02:06:99]", led_states)
@@ -229,10 +229,10 @@ class TestKLSStateEngine:
         coord.register_cco_device(dev1)
         coord.register_cco_device(dev2)
 
-        # Button 4 at index 12 = ON (LED=1), Button 6 at index 14 = OFF (LED=2)
+        # Button 4 at index 12 = ON (LED=2), Button 6 at index 14 = OFF (LED=1)
         led_states = [0] * 24
-        led_states[12] = 1  # Button 4 ON
-        led_states[14] = 2  # Button 6 OFF
+        led_states[12] = 2  # Button 4 ON
+        led_states[14] = 1  # Button 6 OFF
 
         coord._handle_kls_update("[02:06:03]", led_states)
 

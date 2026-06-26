@@ -94,7 +94,7 @@ class TestCCODevice:
             name="Test",
             entity_type=CCOEntityType.SWITCH,
         )
-        assert device.interpret_state(1) is True
+        assert device.interpret_state(2) is True
 
     def test_interpret_state_off(self):
         device = CCODevice(
@@ -102,7 +102,7 @@ class TestCCODevice:
             name="Test",
             entity_type=CCOEntityType.SWITCH,
         )
-        assert device.interpret_state(2) is False
+        assert device.interpret_state(1) is False
 
     def test_interpret_state_zero(self):
         device = CCODevice(
@@ -119,9 +119,9 @@ class TestCCODevice:
             entity_type=CCOEntityType.SWITCH,
             inverted=True,
         )
-        # Inverted: digit 1 = OFF, digit 2 = ON
-        assert device.interpret_state(1) is False
-        assert device.interpret_state(2) is True
+        # Inverted: digit 2 (normally ON) = OFF, digit 1 (normally OFF) = ON
+        assert device.interpret_state(2) is False
+        assert device.interpret_state(1) is True
 
     def test_unique_id(self):
         device = CCODevice(
@@ -139,24 +139,24 @@ class TestKLSState:
         assert CCO_BUTTON_WINDOW_OFFSET == 9
 
     def test_get_cco_state_sample_1(self):
-        """Button 6 should be OFF in sample 1."""
+        """Button 6 should be ON in sample 1 (digit 2 = relay closed)."""
         led_states = [int(c) for c in "000000000222112110000000"]
         kls = KLSState(address="[02:06:03]", led_states=led_states)
-        assert kls.get_cco_state(6) is False
+        assert kls.get_cco_state(6) is True
 
     def test_get_cco_state_sample_2(self):
-        """Button 6 should be ON in sample 2."""
+        """Button 6 should be OFF in sample 2 (digit 1 = relay open)."""
         led_states = [int(c) for c in "000000000222111110000000"]
         kls = KLSState(address="[02:06:03]", led_states=led_states)
-        assert kls.get_cco_state(6) is True
+        assert kls.get_cco_state(6) is False
 
     def test_all_buttons_sample_1(self):
         """Test all 8 buttons with sample 1."""
         led_states = [int(c) for c in "000000000222112110000000"]
         kls = KLSState(address="[02:06:03]", led_states=led_states)
 
-        expected = {1: False, 2: False, 3: False, 4: True,
-                    5: True, 6: False, 7: True, 8: True}
+        expected = {1: True, 2: True, 3: True, 4: False,
+                    5: False, 6: True, 7: False, 8: False}
 
         for button, expected_state in expected.items():
             assert kls.get_cco_state(button) == expected_state

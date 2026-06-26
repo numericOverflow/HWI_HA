@@ -66,6 +66,15 @@ class HomeworksMessage:
 CCO_BUTTON_WINDOW_OFFSET = 9  # 0-indexed start of 8-button window
 CCO_BUTTON_WINDOW_LENGTH = 8  # Number of buttons in window
 
+# KLS digit that indicates a CCO relay is CLOSED (device ON).
+# WARNING: This is counter-intuitive. The L232 protocol docs define
+# digit 1="On" and digit 2="Flash", which suggests 1=ON. But for CCO
+# modules specifically, Lutron uses FLASHING LED (digit 2) to indicate
+# the relay is CLOSED/energized, and SOLID LED (digit 1) to indicate
+# the relay is OPEN/de-energized. This was verified empirically via
+# telnet to a live HWI processor (2026-06-26). DO NOT "fix" this to 1.
+CCO_RELAY_CLOSED_DIGIT = 2
+
 
 @dataclass(frozen=True)
 class KLSMessage(HomeworksMessage):
@@ -75,8 +84,8 @@ class KLSMessage(HomeworksMessage):
 
     Each digit represents an LED state:
     - 0 = Off/Unknown
-    - 1 = On (for CCO: relay closed)
-    - 2 = Flash1 (for CCO: relay open/OFF)
+    - 1 = On (solid LED; for CCO: relay OPEN/OFF)
+    - 2 = Flash1 (for CCO: relay CLOSED/ON)
     - 3 = Flash2
 
     For CCO devices, the 8 relay states are in a specific window within
@@ -84,19 +93,19 @@ class KLSMessage(HomeworksMessage):
     which corresponds to 0-indexed positions 9-16.
 
     Example:
-        KLS, [02:06:03], 000000000222112110000000
+        KLS, [01:05:03], 000000000121111110000000
                          ^^^^^^^^^        ^^^^^^^^
-                         ignored   22211211  ignored
+                         ignored   12111111  ignored
                                    └─ 8-button window (indices 9-16)
 
-        Button 1 = index 9  = 2 (OFF)
-        Button 2 = index 10 = 2 (OFF)
-        Button 3 = index 11 = 2 (OFF)
-        Button 4 = index 12 = 1 (ON)
-        Button 5 = index 13 = 1 (ON)
-        Button 6 = index 14 = 2 (OFF)
-        Button 7 = index 15 = 1 (ON)
-        Button 8 = index 16 = 1 (ON)
+        Button 1 = index 9  = 1 (OFF, solid LED)
+        Button 2 = index 10 = 2 (ON, relay closed)
+        Button 3 = index 11 = 1 (OFF)
+        Button 4 = index 12 = 1 (OFF)
+        Button 5 = index 13 = 1 (OFF)
+        Button 6 = index 14 = 1 (OFF)
+        Button 7 = index 15 = 1 (OFF)
+        Button 8 = index 16 = 1 (OFF)
     """
 
     address: str  # Normalized [pp:ll:aa] format
@@ -128,29 +137,25 @@ class KLSMessage(HomeworksMessage):
             window_offset: 0-indexed start of the 8-button window (default: 9)
 
         Returns:
-            True if relay is closed/ON (digit value is 1)
-            False if relay is open/OFF (digit value is 2, or any other value)
+            True if relay is closed/ON (digit == CCO_RELAY_CLOSED_DIGIT)
+            False otherwise
 
         Example:
-            For KLS string "000000000222112110000000":
-            - Relay 6 → index = 9 + (6-1) = 14 → digit '2' → False (OFF)
+            For KLS string "000000000121111110000000":
+            - Relay 2 → index = 9 + (2-1) = 10 → digit '2' → True (ON)
 
-            For KLS string "000000000222111110000000":
-            - Relay 6 → index = 9 + (6-1) = 14 → digit '1' → True (ON)
+            For KLS string "000000000111111110000000":
+            - Relay 2 → index = 9 + (2-1) = 10 → digit '1' → False (OFF)
         """
         if not (1 <= relay <= CCO_BUTTON_WINDOW_LENGTH):
             return False
 
-        # Calculate index: window_offset + (relay - 1)
-        # For relay 1: index = 9 + 0 = 9
-        # For relay 6: index = 9 + 5 = 14
         index = window_offset + (relay - 1)
 
         if index >= len(self.led_states):
             return False
 
-        # 1 = ON (relay closed), anything else = OFF
-        return self.led_states[index] == 1
+        return self.led_states[index] == CCO_RELAY_CLOSED_DIGIT
 
 
 @dataclass(frozen=True)
