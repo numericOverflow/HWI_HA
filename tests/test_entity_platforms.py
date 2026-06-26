@@ -43,23 +43,23 @@ class TestCCODeviceCreation:
 
     @pytest.mark.parametrize("entity_type_str,entity_type_enum", CCO_PLATFORMS)
     def test_cco_device_interpret_state_on(self, entity_type_str, entity_type_enum):
-        """CCO device interprets LED value 1 as ON (relay closed)."""
+        """CCO device interprets LED value 2 as ON (relay closed, LED flash)."""
         device = CCODevice(
             address=CCOAddress(2, 6, 3, 6),
             name="Test",
             entity_type=entity_type_enum,
         )
-        assert device.interpret_state(1) is True
+        assert device.interpret_state(2) is True
 
     @pytest.mark.parametrize("entity_type_str,entity_type_enum", CCO_PLATFORMS)
     def test_cco_device_interpret_state_off(self, entity_type_str, entity_type_enum):
-        """CCO device interprets LED value 2 as OFF (relay open)."""
+        """CCO device interprets LED value 1 as OFF (relay open, LED solid)."""
         device = CCODevice(
             address=CCOAddress(2, 6, 3, 6),
             name="Test",
             entity_type=entity_type_enum,
         )
-        assert device.interpret_state(2) is False
+        assert device.interpret_state(1) is False
 
     @pytest.mark.parametrize("entity_type_str,entity_type_enum", CCO_PLATFORMS)
     def test_cco_device_interpret_state_zero(self, entity_type_str, entity_type_enum):
@@ -80,8 +80,8 @@ class TestCCODeviceCreation:
             entity_type=entity_type_enum,
             inverted=True,
         )
-        assert device.interpret_state(1) is False  # Normally ON → OFF (inverted)
-        assert device.interpret_state(2) is True  # Normally OFF → ON (inverted)
+        assert device.interpret_state(2) is False  # Normally ON → OFF (inverted)
+        assert device.interpret_state(1) is True  # Normally OFF → ON (inverted)
 
 
 class TestCCOAddressGeneration:
@@ -160,8 +160,8 @@ class TestSwitchEntity:
             name="Test Switch",
             entity_type=CCOEntityType.SWITCH,
         )
-        # LED=1 means relay closed = ON
-        assert device.interpret_state(1) is True
+        # LED=2 means relay closed = ON
+        assert device.interpret_state(2) is True
 
 
 # =============================================================================
@@ -265,10 +265,10 @@ class TestLockEntity:
             name="Test Lock",
             entity_type=CCOEntityType.LOCK,
         )
-        # LED=1 means relay closed = locked (is_on=True)
-        assert device.interpret_state(1) is True
-        # LED=2 means relay open = unlocked (is_on=False)
-        assert device.interpret_state(2) is False
+        # LED=2 means relay closed = locked (is_on=True)
+        assert device.interpret_state(2) is True
+        # LED=1 means relay open = unlocked (is_on=False)
+        assert device.interpret_state(1) is False
 
 
 # =============================================================================
@@ -292,5 +292,5 @@ class TestClimateEntity:
             name="HVAC",
             entity_type=CCOEntityType.CLIMATE,
         )
-        assert device.interpret_state(1) is True  # LED=1 = relay closed = Heating ON
-        assert device.interpret_state(2) is False  # LED=2 = relay open = Heating OFF
+        assert device.interpret_state(2) is True  # LED=2 = relay closed = Heating ON
+        assert device.interpret_state(1) is False  # LED=1 = relay open = Heating OFF

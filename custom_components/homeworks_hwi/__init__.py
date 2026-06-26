@@ -47,7 +47,6 @@ from .const import (
     CONF_CCI_DEVICES,
     CONF_CCO_DEVICES,
     CONF_CCOS,
-    CONF_CCO_COMMAND_GRACE_PERIOD,
     CONF_CONTROLLER_ID,
     CONF_COVERS,
     CONF_DIMMERS,
@@ -65,7 +64,6 @@ from .const import (
     CCO_TYPE_LIGHT,
     CCO_TYPE_LOCK,
     CCO_TYPE_SWITCH,
-    DEFAULT_CCO_COMMAND_GRACE_PERIOD,
     DEFAULT_KLS_POLL_INTERVAL,
     DEFAULT_KLS_WINDOW_OFFSET,
     DOMAIN,
@@ -477,9 +475,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
     # Get poll interval and window offset from options
     kls_poll_interval = options.get(CONF_KLS_POLL_INTERVAL, DEFAULT_KLS_POLL_INTERVAL)
     kls_window_offset = options.get(CONF_KLS_WINDOW_OFFSET, DEFAULT_KLS_WINDOW_OFFSET)
-    cco_grace = options.get(
-        CONF_CCO_COMMAND_GRACE_PERIOD, DEFAULT_CCO_COMMAND_GRACE_PERIOD
-    )
 
     # Create coordinator (client created but not connected — lazy connect on first poll)
     coordinator = HomeworksCoordinator(
@@ -489,7 +484,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry)
         config_entry=entry,
         kls_poll_interval=timedelta(seconds=kls_poll_interval),
         kls_window_offset=kls_window_offset,
-        cco_command_grace_period=float(cco_grace),
     )
 
     # Store data in entry.runtime_data (auto-cleaned by HA on unload)

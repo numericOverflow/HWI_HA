@@ -6,6 +6,12 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum, auto
 
+from pyhomeworks.messages import (
+    CCO_BUTTON_WINDOW_LENGTH,
+    CCO_BUTTON_WINDOW_OFFSET,
+    CCO_RELAY_CLOSED_DIGIT,
+)
+
 
 class CCOEntityType(Enum):
     """Semantic type for CCO-controlled endpoints."""
@@ -134,17 +140,15 @@ class CCODevice:
     def interpret_state(self, kls_digit: int) -> bool:
         """Interpret KLS digit as ON/OFF state.
 
-        KLS LED values for CCO feedback:
+        KLS LED values for CCO feedback (verified via telnet to processor):
         - 0 = not used/not applicable
-        - 1 = relay is CLOSED (device ON) - LED ON
-        - 2 = relay is OPEN (device OFF) - LED flashing
+        - 1 = relay is OPEN (device OFF) - LED solid
+        - 2 = relay is CLOSED (device ON) - LED flashing
         - 3 = fast flash (not typically used for CCO)
 
         With inversion support for devices wired in reverse.
         """
-        # LED=1 means relay is closed (device ON)
-        # LED=2 means relay is open (device OFF)
-        is_on = kls_digit == 1
+        is_on = kls_digit == CCO_RELAY_CLOSED_DIGIT
 
         if self.inverted:
             is_on = not is_on
@@ -192,13 +196,6 @@ class KeypadButton:
     release_delay: float = 0.0
 
 
-# CCO button window configuration
-# The 8 CCO relay states are embedded within the 24-digit KLS string.
-# Default: positions 10-17 (1-indexed) = indices 9-16 (0-indexed)
-CCO_BUTTON_WINDOW_OFFSET = 9  # 0-indexed start of 8-button window (kept for test compat)
-CCO_BUTTON_WINDOW_LENGTH = 8  # Number of buttons in window
-
-
 @dataclass
 class KLSState:
     """Represents the LED state of a keypad/CCO.
@@ -208,12 +205,13 @@ class KLSState:
     starts at 0-indexed position 9 (1-indexed position 10) by default.
 
     Example:
-        KLS string: 000000000222112110000000
+        KLS string: 000000000121111110000000
                     ^^^^^^^^^        ^^^^^^^^
-                    ignored   22211211  ignored
+                    ignored   12111111  ignored
                               └─ 8-button window (indices 9-16)
 
-        Button 6 → index 9 + 5 = 14 → digit '2' → OFF
+        Button 1 → index 9 + 0 = 9 → digit '1' → OFF (solid LED)
+        Button 2 → index 9 + 1 = 10 → digit '2' → ON (flashing LED)
     """
 
     address: str  # Normalized [pp:ll:aa] format
@@ -233,40 +231,26 @@ class KLSState:
     def get_cco_state(
         self,
         button: int,
-        window_offset: int = 9,
+        window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
     ) -> bool:
         """Get CCO relay state from the button window.
-
-        The CCO relay states are embedded in a specific 8-digit window
-        within the 24-digit KLS string. By default, this window starts
-        at 0-indexed position 9 (1-indexed position 10).
 
         Args:
             button: Button/relay number (1-8)
             window_offset: 0-indexed start of the 8-button window (default: 9)
 
         Returns:
-            True if relay is closed/ON (digit value is 1)
-            False if relay is open/OFF (digit value is 2 or other)
-
-        Example:
-            For "000000000112222220000000":
-            - Button 4 → index = 9 + 3 = 12 → digit '2' → False (OFF)
-
-            For "000000000112122220000000":
-            - Button 4 → index = 9 + 3 = 12 → digit '1' → True (ON)
+            True if relay is closed/ON, False otherwise.
         """
         if not (1 <= button <= CCO_BUTTON_WINDOW_LENGTH):
             return False
 
-        # Calculate index: window_offset + (button - 1)
         index = window_offset + (button - 1)
 
         if index >= len(self.led_states):
             return False
 
-        # 1 = ON (relay closed), 2 = OFF (relay open)
-        return self.led_states[index] == 1
+        return self.led_states[index] == CCO_RELAY_CLOSED_DIGIT
 
 
 @dataclass
