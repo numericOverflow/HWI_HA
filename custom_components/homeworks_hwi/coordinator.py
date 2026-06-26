@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Callable
 from datetime import timedelta
 import logging
+import time
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -28,7 +29,13 @@ from .client import (
     HomeworksClient,
     HomeworksClientConfig,
 )
-from .const import DEFAULT_KLS_WINDOW_OFFSET, RPM_MOTOR_DOWN, RPM_MOTOR_STOP, RPM_MOTOR_UP
+from .const import (
+    DEFAULT_CCO_COMMAND_GRACE_PERIOD,
+    DEFAULT_KLS_WINDOW_OFFSET,
+    RPM_MOTOR_DOWN,
+    RPM_MOTOR_STOP,
+    RPM_MOTOR_UP,
+)
 from .hwi_protocol import HomeworksAuthenticationException
 from .models import (
     CCOAddress,
@@ -65,6 +72,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         config_entry: ConfigEntry,
         kls_poll_interval: timedelta = DEFAULT_KLS_POLL_INTERVAL,
         kls_window_offset: int = DEFAULT_KLS_WINDOW_OFFSET,
+        cco_command_grace_period: float = DEFAULT_CCO_COMMAND_GRACE_PERIOD,
     ) -> None:
         """Initialize the coordinator."""
         super().__init__(
@@ -77,6 +85,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._config = config
         self._controller_id = controller_id
         self._kls_window_offset = kls_window_offset
+        self._cco_command_grace_period = cco_command_grace_period
         self._poll_count: int = 0
 
         # Create client (no connection yet — lazy connect in _async_update_data)
@@ -90,6 +99,9 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         # CCO state cache: unique_key -> bool (is_on)
         self._cco_states: dict[tuple[int, int, int, int], bool] = {}
+
+        # Per-CCO timestamp of last command, for grace-period suppression
+        self._cco_command_times: dict[tuple[int, int, int, int], float] = {}
 
         # Dimmer state cache: address -> level (0-100)
         self._dimmer_states: dict[str, int] = {}
@@ -496,6 +508,17 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         )
 
                         if old_state != new_state:
+                            last_cmd = self._cco_command_times.get(key, 0.0)
+                            elapsed = time.monotonic() - last_cmd
+                            if elapsed < self._cco_command_grace_period:
+                                _LOGGER.debug(
+                                    "CCO %s: suppressing KLS state change "
+                                    "(grace period %.1fs, elapsed %.2fs)",
+                                    device.name,
+                                    self._cco_command_grace_period,
+                                    elapsed,
+                                )
+                                continue
                             self._cco_states[key] = new_state
                             state_changed = True
 
@@ -607,6 +630,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result = await self._send_cco_close(address)
         if result:
             self._cco_states[address.unique_key] = True  # Logical ON
+            self._cco_command_times[address.unique_key] = time.monotonic()
             self.async_set_updated_data(
                 {"connected": True, "poll_count": self._poll_count}
             )
@@ -624,6 +648,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             result = await self._send_cco_open(address)
         if result:
             self._cco_states[address.unique_key] = False  # Logical OFF
+            self._cco_command_times[address.unique_key] = time.monotonic()
             self.async_set_updated_data(
                 {"connected": True, "poll_count": self._poll_count}
             )
