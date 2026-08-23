@@ -9,6 +9,7 @@ A Home Assistant custom integration for Lutron Homeworks Series 4 and Series 8 l
 - **CCO Relay Control**: Switch, light, cover, and lock entities backed by CCO relays
 - **Dimmable Lights**: Full brightness control for RPM, D48, H48, and RF dimmers
 - **Keypad Buttons**: Expose keypad buttons as button entities with LED state feedback
+- **Physical Button Events**: Every keypad button also gets an `event` entity that timestamps presses, releases, holds, and double taps reported by the processor (`KBP`/`KBR`/`KBH`/`KBDT`), so automations can react to presses made on the physical keypad
 - **KLS State Engine**: Automatic state synchronization via KLS polling
 - **Inversion Support**: Handle normally-closed relay configurations
 - **Auto-Reconnect**: Automatic reconnection on connection loss

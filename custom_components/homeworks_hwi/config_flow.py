@@ -878,6 +878,34 @@ async def get_remove_keypad_schema(handler: SchemaCommonFlowHandler) -> vol.Sche
     )
 
 
+def _remove_keypad_button_entities(
+    registry: er.EntityRegistry,
+    controller_id: str,
+    addr: str,
+    button: dict[str, Any],
+) -> None:
+    """Remove every entity belonging to one keypad button.
+
+    A single configured button owns a button entity (press simulation), an
+    event entity (activations reported by the processor) and, when the button
+    has an LED, a binary sensor.
+    """
+    btn_num = button[CONF_NUMBER]
+    unique_ids = [
+        ("button", f"homeworks.{controller_id}.button.{addr}.{btn_num}.v2"),
+        ("event", f"homeworks.{controller_id}.event.{addr}.{btn_num}.v2"),
+    ]
+    if button.get(CONF_LED, False):
+        unique_ids.append(
+            ("binary_sensor", f"homeworks.{controller_id}.led.{addr}.{btn_num}.v2")
+        )
+
+    for platform, unique_id in unique_ids:
+        eid = registry.async_get_entity_id(platform, DOMAIN, unique_id)
+        if eid:
+            registry.async_remove(eid)
+
+
 async def validate_remove_keypad(
     handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
 ) -> dict[str, Any]:
@@ -892,20 +920,10 @@ async def validate_remove_keypad(
             new_items.append(item)
         else:
             addr = item[CONF_ADDR]
-            # Remove all button and LED entities for this keypad
             for button in item.get(CONF_BUTTONS, []):
-                btn_num = button[CONF_NUMBER]
-                btn_uid = f"homeworks.{controller_id}.button.{addr}.{btn_num}.v2"
-                eid = registry.async_get_entity_id("button", DOMAIN, btn_uid)
-                if eid:
-                    registry.async_remove(eid)
-                if button.get(CONF_LED, False):
-                    led_uid = f"homeworks.{controller_id}.led.{addr}.{btn_num}.v2"
-                    eid = registry.async_get_entity_id(
-                        "binary_sensor", DOMAIN, led_uid
-                    )
-                    if eid:
-                        registry.async_remove(eid)
+                _remove_keypad_button_entities(
+                    registry, controller_id, addr, button
+                )
 
     handler.options[CONF_KEYPADS] = new_items
     return {}
@@ -1015,18 +1033,7 @@ async def validate_remove_button(
         if str(i) not in removed:
             new_buttons.append(button)
         else:
-            btn_num = button[CONF_NUMBER]
-            btn_uid = f"homeworks.{controller_id}.button.{addr}.{btn_num}.v2"
-            eid = registry.async_get_entity_id("button", DOMAIN, btn_uid)
-            if eid:
-                registry.async_remove(eid)
-            if button.get(CONF_LED, False):
-                led_uid = f"homeworks.{controller_id}.led.{addr}.{btn_num}.v2"
-                eid = registry.async_get_entity_id(
-                    "binary_sensor", DOMAIN, led_uid
-                )
-                if eid:
-                    registry.async_remove(eid)
+            _remove_keypad_button_entities(registry, controller_id, addr, button)
 
     keypad[CONF_BUTTONS] = new_buttons
     return {}

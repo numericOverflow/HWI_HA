@@ -89,6 +89,7 @@ PLATFORMS: list[Platform] = [
     Platform.BUTTON,
     Platform.CLIMATE,
     Platform.COVER,
+    Platform.EVENT,
     Platform.FAN,
     Platform.LIGHT,
     Platform.LOCK,

@@ -104,6 +104,24 @@ EVENT_BUTTON_RELEASE: Final = "homeworks_button_release"
 EVENT_BUTTON_HOLD: Final = "homeworks_button_hold"
 EVENT_BUTTON_DOUBLE_TAP: Final = "homeworks_button_double_tap"
 
+# Event types reported by keypad button event entities.
+# These match the values dispatched by the coordinator for the
+# KBP / KBR / KBH / KBDT monitoring messages, in that order.
+BUTTON_EVENT_PRESSED: Final = "pressed"
+BUTTON_EVENT_RELEASED: Final = "released"
+BUTTON_EVENT_HOLD: Final = "hold"
+BUTTON_EVENT_DOUBLE_TAP: Final = "double_tap"
+BUTTON_EVENT_TYPES: Final = (
+    BUTTON_EVENT_PRESSED,
+    BUTTON_EVENT_RELEASED,
+    BUTTON_EVENT_HOLD,
+    BUTTON_EVENT_DOUBLE_TAP,
+)
+
+# Entity state attributes
+ATTR_HOMEWORKS_ADDRESS: Final = "homeworks_address"
+ATTR_BUTTON_NUMBER: Final = "button_number"
+
 # Service names
 SERVICE_SEND_COMMAND: Final = "send_command"
 SERVICE_REQUEST_STATE: Final = "request_state"

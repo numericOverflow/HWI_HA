@@ -121,7 +121,8 @@ This is implemented as a centralized state engine in the `HomeworksCoordinator`.
 - `lock.py`: CCO-backed locks
 - `sensor.py`: Health/diagnostic sensors
 - `binary_sensor.py`: Keypad LED indicators
-- `button.py`: Keypad button simulation
+- `button.py`: Keypad button simulation (actuator only — `ButtonEntity.state` is `@final` and only reflects presses made through Home Assistant)
+- `event.py`: Keypad button activations reported by the processor (`KBP`/`KBR`/`KBH`/`KBDT`), which is where physical presses show up
 
 ## Configuration Structure
 
