@@ -129,8 +129,10 @@ class MessageParser:
         if not line or line in IGNORED_MESSAGES:
             return None
 
-        # Split by comma-space
-        parts = [p.strip() for p in line.split(", ")]
+        # Split on commas. The protocol spec (L232/command_formatting.htm)
+        # states spaces are insignificant, so do not rely on ", " as the
+        # delimiter — a processor emitting "KBP,[01:04:04],1" must parse too.
+        parts = [p.strip() for p in line.split(",")]
         if not parts:
             return None
 
