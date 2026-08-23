@@ -1,0 +1,99 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>SVS_MON</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+<table border="0" width="100%">
+	<tr>
+	<td width="38%"><font size="6" face="Arial">SVS Monitor String</font>
+	</td>
+	<td align="right" width="62%"><font size="5" face="Arial">Sivoia State Monitor
+		String</font>
+	</td>
+	</tr>
+</table>
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>SVS, &lt;address&gt;, &lt;state&gt;, &lt;status&gt;</font></p>
+<table border="1" cellspacing="1" width="100%">
+	<tr>
+	<td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font>
+	</td>
+	<td valign="top"><font face="Arial"><strong>Description</strong></font>
+	</td>
+	<td valign="top"><font face="Arial"><strong>Format</strong></font>
+	</td>
+	</tr>
+	<tr>
+	<td valign="top"><font face="Arial">address</font>
+	</td>
+	<td valign="top"><font face="Arial">system address of Sivoia control that changed</font>
+	</td>
+	<td valign="top"><font face="Arial">[processor : link : address]<br>
+		see </font><a href="device_addressing.htm"><font face="Arial">device address
+		formatting</font></a><font face="Arial"> description</font>
+	</td>
+	</tr>
+	<tr>
+	<td valign="top"><font size="3" face="Arial">state</font>
+	</td>
+	<td valign="top"><font face="Arial">Sivoia state, either a defined level or an
+		action.</font>
+	</td>
+	<td valign="top"><font face="Arial">1 = Preset 1<br>
+		2 = Preset 2<br>
+		3 = Preset 3<br>
+		R = Raise<br>
+		L = Lower<br>
+		o = Open<br>
+		C = Close<br>
+		S = Stop</font>
+	</td>
+	</tr>
+	<tr>
+	<td valign="top"><font face="Arial">status</font>
+	</td>
+	<td valign="top"><font face="Arial">current status of the Sivoia</font>
+	</td>
+	<td valign="top"><font face="Arial">STOPPED or MOVING</font>
+	</td>
+	</tr>
+</table>
+<p><font face="Arial"><strong>Description<br>
+</strong>The SVS monitor string is output from a processor when a Sivoia changes state
+or status.</font></p>
+<p><font face="Arial"><strong>Example 1<br>
+</strong>Someone selects Preset 1 on the Sivoia controlled by processor 1, link 6,
+Sivoia control address 3.</font></p>
+<p><font face="Courier">SVS, [01:06:03], 1, MOVING</font></p>
+<p><font face="Arial">When the same Sivoia stops at Preset 1.</font></p>
+<p><font face="Courier">SVS, [01:06:03], 1, STOPPED</font></p>
+<p><font face="Arial"><strong>Example 2<br>
+</strong>Someone selects the raise command on the Sivoia controlled by processor 1, link
+6, Sivoia control address 3.&nbsp;</font></p>
+<p><font face="Courier">SVS, [01:06:03], R, MOVING</font></p>
+<p><font face="Arial">When the same Sivoia stops raising.</font></p>
+<p><font face="Courier">SVS, [01:06:03], S, STOPPED</font></p>
+<p><font face="Arial"><strong>See Also<br>
+</strong><a href="svbp_mon.htm">SVBP Monitor String</a><br>
+<a href="svbr_mon.htm">SVBR Monitor String</a><br>
+<a href="svbh_mon.htm">SVBH Monitor String</a><br>
+<a href="svbdt_mon.htm">SVBDT Monitor String</a><br>
+<a href="kbmon.htm">KBMON - Keypad/Sivoia control button monitoring on</a><br>
+<a href="kbmoff.htm">KBMOFF - Keypad/Sivoia control button monitoring off</a></font><a
+href="../L232.htm" class="noprint"><font size="2" face="Arial"><br>
+</font></a></p>
+<p><a href="../L232.htm" class="noprint"><font size="2" face="Arial">back to the table
+of contents...</font></a></p>
+
+</body>
+
+</html>

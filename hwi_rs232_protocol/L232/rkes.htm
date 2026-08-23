@@ -1,0 +1,81 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>RKES</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">RKES</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Request
+        Keypad Enabled State</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong></font><font
+size="2" face="Arial"><br>
+</font><font size="3" face="Arial">RKES, &lt;address&gt;</font></p>
+
+<p><font face="Arial"><strong>Processor responds with</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Courier">KES, &lt;address&gt;, &lt;state&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of the
+        keypad</font></td>
+        <td valign="top"><font face="Arial">[processor : link :
+        address]<br>
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+    <tr>
+        <td><font face="Arial">state</font></td>
+        <td><font face="Arial">the enabled/disabled state of the
+        keypad</font></td>
+        <td>&nbsp;</td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Queries the system for the
+enabled/disabled state of a keypad</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Query processor 1, link 4, keypad
+address 10</font></p>
+
+<p><font face="Courier">L232&gt; RKES, [1:4:10]</font><font
+size="2" face="Arial"><br>
+</font><font face="Courier">KES, [01:04:10], enabled</font></p>
+
+<p><font face="Arial"><strong>See Also</strong></font><font
+size="2" face="Arial"><br>
+</font><a href="kd.htm"><font face="Arial">KD - Keypad disable</font></a><font
+size="2" face="Arial"><br>
+</font><a href="ke.htm"><font face="Arial">KE - Keypad enable</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

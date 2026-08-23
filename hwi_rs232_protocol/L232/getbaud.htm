@@ -1,0 +1,97 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>GETBAUD</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">GETBAUD</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Get
+        RS-232 port baud rate</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong></font><font
+size="2" face="Arial"><br>
+</font><font size="3" face="Arial">GETBAUD, &lt; port address &gt;</font></p>
+
+<p><font face="Arial"><strong>Processor responds with the
+following</strong></font><font size="2" face="Arial"><br>
+</font><font face="Courier">RS232 port baud rate on port
+&lt;port address&gt; is &lt;baud rate&gt;<br>
+</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25%"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top" width="25%"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top" width="25%"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">port address
+        (optional)</font></td>
+        <td valign="top"><font face="Arial">the port address
+        the request is for</font></td>
+        <td valign="top"><font face="Arial">pp:ll (see
+        <a href="device_addressing.htm"><font face="Arial">RS232
+        Port Addressing</a>)
+        This parameter is optional. If omitted, the request will
+        default to the port that receives the command</font></td>
+    </tr>
+    <tr>
+        <td><font face="Arial">baud rate</font></td>
+        <td><font face="Arial">the RS-232 port baud rate</font></td>
+        <td><font face="Arial">the processor will respond with
+        one of the following<br>
+        300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600,
+        115200</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Requests the RS-232 port baud rate
+setting for an RS232 port in the system.</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+face="Courier"><br>
+</font><font face="Arial">Get RS-232 port baud rate for the
+port you are connected to</font></p>
+
+<p><font face="Courier">L232&gt; GETBAUD</font><font size="2"
+face="Arial"><br>
+</font><font face="Courier">RS232 port baud rate on port 01:03
+is 115200<br>
+</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Get RS-232 port baud rate for link 7
+on processor 2</font></p>
+
+<p><font face="Courier">L232&gt; GETBAUD, 2:7 </font><font size="2"
+face="Arial"><br>
+</font><font face="Courier">RS232 port baud rate on port 02:07
+is 115200<br>
+</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="setbaud.htm"><font face="Arial">SETBAUD
+- Set RS-232 port baud rate</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<title>KBSS</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">KBSS</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Keypad Button Scene
+          Save</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong></font><br>
+<font size="3" face="Arial">KBSS, &lt;address&gt;, &lt;button number&gt;</font></p>
+
+<table border="1" cellspacing="1" width="859">
+  <tr>
+    <td valign="top" width="102"><font face="Arial"><strong>Parameter</strong></font></td>
+    <td valign="top" width="396"><font face="Arial"><strong>Description</strong></font></td>
+    <td valign="top" width="339"><font face="Arial"><strong>Format</strong></font></td>
+  </tr>
+  <tr>
+    <td valign="top" width="102"><font face="Arial">address</font></td>
+    <td valign="top" width="396"><font face="Arial">system address of the
+        keypad</font></td>
+    <td valign="top" width="339"><font face="Arial">[processor : link :
+        address]<br>
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+  </tr>
+  <tr>
+    <td valign="top" width="102"><font face="Arial">button number</font></td>
+    <td valign="top" width="396"><font face="Arial">button number to scene save</font></td>
+    <td valign="top" width="339"><font face="Arial">1 - 24</font></td>
+  </tr>
+</table>
+<p><font face="Arial"><strong>Processor Responds</strong></font><br>
+<font face="Arial">Preset Saved</font></p>
+
+<p><font face="Arial"><strong>Description</strong></font><br>
+<font face="Arial">Scene save the current levels of the preset on the button
+that has scene saver option checked.</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><br>
+<font face="Arial">Scene save the preset on button 1 on processor 1, link 6, keypad address 10.</font></p>
+
+<p><font face="Courier">L232&gt; KBSS, [1:6:10], 1</font><br>
+<font face="Courier">Preset Saved</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong><a href="ssb.htm">SSB - Scene saver mode begin</a></font><br>
+<font face="Arial"><a href="sst.htm">SST - Scene saver mode
+terminate</a></font><br>
+<font face="Arial"><a href="sss.htm">SSS - Request scene saver mode state</a><br>
+<a href="kbsr.htm">KBSR - Keypad button scene restore</a></font>
+</p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

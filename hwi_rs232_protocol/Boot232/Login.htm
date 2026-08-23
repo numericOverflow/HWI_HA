@@ -1,0 +1,70 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>LOGIN</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">LOGIN</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Login
+        to all of a processor's ports</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong></font><font
+size="2" face="Arial"><br>
+</font><font size="3" face="Arial">LOGIN, &lt;processor address&gt;</font></p>
+
+<p><font face="Arial"><strong>Processor responds with the
+following</strong></font><font size="2" face="Arial"><br>
+</font><font face="Courier">Logging in processor &lt;processor
+address&gt;<br>
+</font><font face="Arial"><strong>OR</strong></font><font
+face="Courier"><br>
+Already logged in processor &lt;processor address&gt;<br>
+</font></p>
+
+<p><font face="Arial"><strong>Description</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">This will login all RS232 ports for the
+processor specified. If none are specified, then it will login
+only to the processor you are connected to. Logging in to a
+processor in the Boot will result in the processor being logged
+in when it switches to the OS.</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+face="Courier"><br>
+</font><font face="Arial">Login to the processor that you are
+connected to. (Processor is currently logged out)</font></p>
+
+<p><font face="Courier">&gt; LOGIN</font><font size="2"
+face="Arial"><br>
+</font><font face="Courier">Logging in processor 01<br>
+</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Login processor 2. (Processor is
+currently logged in)</font></p>
+
+<p><font face="Courier">&gt; LOGIN, 2</font><font size="2"
+face="Arial"><br>
+</font><font face="Courier">Already logged in processor 02<br>
+</font></p>
+
+<p><a href="../Boot232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

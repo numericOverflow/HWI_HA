@@ -1,0 +1,83 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>CCOPULSE</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">CCOPULSE</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">CCO
+        Relay Pulse</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong><br>
+CCOPULSE, &lt;address&gt;, &lt;relay number&gt;, &lt;pulse
+time&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of the
+        CCO</font></td>
+        <td valign="top"><font face="Arial">[processor : link :
+        address]<br>
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">relay number</font></td>
+        <td valign="top"><font face="Arial">relay number to pulse</font></td>
+        <td valign="top"><font face="Arial">1 - 8</font></td>
+    </tr>
+    <tr>
+        <td><font face="Arial">pulse time</font></td>
+        <td><font face="Arial">pulse duration in 0.5 second
+        increments</font></td>
+        <td><font face="Arial">1 - 245<br>
+        1 = 0.5 seconds<br>
+        2 = 1.0 seconds<br>
+        3 = 1.5 seconds<br>
+        .<br>
+        .<br>
+        245 = 122.5 seconds</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description<br>
+</strong>Pulses a specific CCO relay for a specified duration.</font></p>
+
+<p><font face="Arial"><strong>Example<br>
+</strong>Pulse relay 3 on processor 2, link 4, CCO address 6, for
+2 seconds</font></p>
+
+<p><font face="Courier">L232&gt; CCOPULSE, [2:4:6], 3, 4</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="ccoclose.htm"><font face="Arial">CCOCLOSE
+- Close a CCO relay</font></a><font face="Arial"><strong><br>
+</strong></font><a href="ccoopen.htm"><font face="Arial">CCOOPEN
+- Open a CCO relay</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>DL_MON</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">DL Monitor
+        Output</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Dimmer
+        Level Monitor String</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>DL, &lt;address&gt;, &lt;level&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of
+        zone that changed</font></td>
+        <td valign="top"><font face="Arial">[processor : link :
+        interface : module or bus : zone]<br>
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+    <tr>
+        <td><font face="Arial">level</font></td>
+        <td><font face="Arial">new level of the zone</font></td>
+        <td><font face="Arial">0 - 100 (percent)</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description<br>
+</strong>The DL monitor string is output from a processor when
+any zone in the system changes level</font></p>
+
+<p><font face="Arial"><strong>Example<br>
+</strong>Processor 1, link 1, MI address 0, RPM module 2, zone 4
+changes level to 50%</font></p>
+
+<p><font face="Courier">DL, [01:01:00:02:04], 50</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="dlmon.htm"><font face="Arial">DLMON -
+Dimmer level monitoring on</font></a><font face="Arial"><strong><br>
+</strong></font><a href="dlmoff.htm"><font face="Arial">DLMOFF -
+Dimmer level monitoring off</font></a><font face="Arial"><strong><br>
+</strong></font></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

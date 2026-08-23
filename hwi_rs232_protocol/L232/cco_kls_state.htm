@@ -1,0 +1,236 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<title>CCO Relay State via KLS</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">CCO Relay
+        State</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Reading
+        Relay State via KLS / RKLS</font></td>
+    </tr>
+</table>
+
+<p>&nbsp;</p>
+
+<table border="1" cellspacing="1" width="100%" bgcolor="#FFFFE0">
+    <tr>
+        <td><font face="Arial"><strong>Important supplemental
+        information</strong><br>
+        This page is <strong>not</strong> part of the original
+        Lutron L232 command reference. It documents observed
+        processor behavior that the shipped documentation does not
+        describe, and is included alongside the protocol docs
+        because integrations depending on CCO state cannot be
+        written correctly without it.</font></td>
+    </tr>
+</table>
+
+<p>&nbsp;</p>
+
+<p><font face="Arial"><strong>Summary<br>
+</strong>The command set provides no dedicated &quot;request CCO
+relay state&quot; command. There is no RCCO, and </font><a
+href="ccoclose.htm"><font face="Arial">CCOCLOSE</font></a><font
+face="Arial">, </font><a href="ccoopen.htm"><font face="Arial">CCOOPEN</font></a><font
+face="Arial">, and </font><a href="ccopulse.htm"><font
+face="Arial">CCOPULSE</font></a><font face="Arial"> are
+write-only. CCO relay state is nevertheless fully readable,
+because <strong>a CCO module reports its relay positions in the
+LED-state field of a KLS string</strong>. The relay state is
+therefore available both by unsolicited broadcast (with </font><a
+href="klmon.htm"><font face="Arial">KLMON</font></a><font
+face="Arial"> enabled) and by explicit query with </font><a
+href="rkls.htm"><font face="Arial">RKLS</font></a><font
+face="Arial">.</font></p>
+
+<p><font face="Arial">This makes authoritative state
+reconciliation possible: an integration can issue RKLS at startup
+or after a reconnect and learn the true relay position of every
+CCO in the system, rather than assuming a default.</font></p>
+
+<p><font face="Arial">The </font><a href="ccoclose.htm"><font
+face="Arial">CCOCLOSE</font></a><font face="Arial"> page hints at
+the same shared mechanism from the other direction, noting that
+if a CCO command is sent to a normal keypad address &quot;the
+command may temporarily change the state of the leds on that
+keypad.&quot; Relay position and LED state occupy the same
+underlying register.</font></p>
+
+<p><font face="Arial"><strong>Digit Mapping<br>
+</strong>Relay <em>N</em> appears at digit position <strong>9 + <em>N</em></strong>
+of the 24-digit LED-state field (digit position 1 being the
+leftmost). Relays 1 through 8 therefore occupy digit positions 10
+through 17.</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top"><font face="Arial"><strong>Digit
+        position</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>1 - 9</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>10</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>11</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>12</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>13</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>14</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>15</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>16</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>17</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>18 - 24</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">Meaning</font></td>
+        <td valign="top"><font face="Arial">UNDOCUMENTED<BR>&amp; UNDISCOVERED</font></td>
+        <td valign="top"><font face="Arial">relay 1</font></td>
+        <td valign="top"><font face="Arial">relay 2</font></td>
+        <td valign="top"><font face="Arial">relay 3</font></td>
+        <td valign="top"><font face="Arial">relay 4</font></td>
+        <td valign="top"><font face="Arial">relay 5</font></td>
+        <td valign="top"><font face="Arial">relay 6</font></td>
+        <td valign="top"><font face="Arial">relay 7</font></td>
+        <td valign="top"><font face="Arial">relay 8</font></td>
+        <td valign="top"><font face="Arial">UNDOCUMENTED<BR>&amp; UNDISCOVERED</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Digit Values<br>
+</strong>Within the relay window the digits do <strong>not</strong>
+carry the keypad LED meanings given in </font><a
+href="kls_mon.htm"><font face="Arial">KLS_MON</font></a><font
+face="Arial"> and </font><a href="rkls.htm"><font face="Arial">RKLS</font></a><font
+face="Arial">. They are repurposed:</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="15%"><font face="Arial"><strong>Digit</strong></font></td>
+        <td valign="top" width="30%"><font face="Arial"><strong>Relay
+        state</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Notes</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">1</font></td>
+        <td valign="top"><font face="Arial">Open (de-energized,
+        device OFF)</font></td>
+        <td valign="top"><font face="Arial">The resting value. Note
+        this is <em>not</em> 0 - an idle relay reports 1, not
+        Off.</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">2</font></td>
+        <td valign="top"><font face="Arial">Closed (energized,
+        device ON)</font></td>
+        <td valign="top"><font face="Arial">On a keypad this digit
+        would mean Flash 1. On a CCO it means the relay is closed.</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">0</font></td>
+        <td valign="top"><font face="Arial">UNDOCUMENTED &amp; UNDISCOVERED</font></td>
+        <td valign="top"><font face="Arial">This digit has not been seen yet
+         and meaning has not yet been discovered through reverse engineering.</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>LED Meaning for relay states<br>
+</strong>The LEDs indicate the position of the
+ relays. When the LED is off, the common is connected to the normally
+ closed terminal. When the LED is on, the common is connected to the
+ normally open terminal.</font></p>
+
+<p><font face="Arial"><strong>Example 1 - CCO relay 1 at
+[01:05:03]<br>
+</strong>Relay 1 is digit position 10.</font></p>
+
+<p><font face="Courier">#Start, CCO relay 01:05:03(1) is off<br>
+LNET&gt; RKLS,01:05:03<br>
+KLS, [01:05:03], 000000000111111110000000<br>
+<br>
+#Relay 1 turned ON by keypad command (state then broadcast by
+HWI)<br>
+LNET&gt;<br>
+KLS, [01:05:03], 000000000211111110000000<br>
+<br>
+#Query again to confirm - the broadcast and the query agree<br>
+LNET&gt; RKLS,01:05:03<br>
+KLS, [01:05:03], 000000000211111110000000<br>
+<br>
+#Relay 1 turned OFF by keypad command<br>
+LNET&gt;<br>
+KLS, [01:05:03], 000000000111111110000000</font></p>
+
+<p><font face="Arial"><strong>Example 2 - CCO relay 2 at
+[01:05:03]<br>
+</strong>Relay 2 is digit position 11. Only that digit moves;
+relay 1 stays open at 1.</font></p>
+
+<p><font face="Courier">#Start, CCO relay 01:05:03(2) is off<br>
+LNET&gt; RKLS,01:05:03<br>
+KLS, [01:05:03], 000000000111111110000000<br>
+<br>
+#Relay 2 turned ON by keypad (state then broadcast by HWI)<br>
+LNET&gt;<br>
+KLS, [01:05:03], 000000000121111110000000<br>
+<br>
+#Query again to confirm<br>
+LNET&gt; RKLS,01:05:03<br>
+KLS, [01:05:03], 000000000121111110000000<br>
+<br>
+#Relay 2 turned OFF by keypad command<br>
+LNET&gt;<br>
+KLS, [01:05:03], 000000000111111110000000</font></p>
+
+<p><font face="Arial"><strong>Implementation Notes</strong></font></p>
+
+<p><font face="Arial">1. <strong>The 9-digit offset should be
+treated as configurable, not as a constant.</strong> It is
+consistent across the CCO modules observed here, but it is
+undocumented by Lutron and may differ by module type, processor
+family, or firmware revision. Code that hard-codes it will break
+silently - reporting a neighbouring relay's position - rather
+than failing loudly.</font></p>
+
+<p><font face="Arial">2. <strong>Query at startup and after every
+reconnect.</strong> Unsolicited KLS broadcasts only tell you
+about changes that happen while you are listening. RKLS is the
+only way to establish the initial truth, and the only way to
+re-establish it after a dropped connection during which relays
+may have moved.</font></p>
+
+<p><font face="Arial">3. <strong>One RKLS per module address, not
+per relay.</strong> A single response carries all eight relay
+positions. Issuing one request per relay produces eight identical
+responses.</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="rkls.htm"><font face="Arial">RKLS -
+Request Keypad LED States</font></a><font face="Arial"><br>
+</font><a href="kls_mon.htm"><font face="Arial">KLS - Keypad LED
+Monitor String</font></a><font face="Arial"><br>
+</font><a href="klmon.htm"><font face="Arial">KLMON - Keypad led
+monitoring on</font></a><font face="Arial"><br>
+</font><a href="ccoclose.htm"><font face="Arial">CCOCLOSE - Close
+a CCO relay</font></a><font face="Arial"><br>
+</font><a href="ccoopen.htm"><font face="Arial">CCOOPEN - Open a
+CCO relay</font></a><font face="Arial"><br>
+</font><a href="ccopulse.htm"><font face="Arial">CCOPULSE - Pulse
+a CCO relay</font></a><font face="Arial"><br>
+</font><a href="device_addressing.htm"><font face="Arial">Device
+address formatting</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+
+<p>&nbsp;</p>
+</body>
+</html>

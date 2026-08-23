@@ -1,0 +1,150 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>SETBAUD2</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF" align="center" vlink="#0000FF" link="#0000FF" alink="#FF0000"
+style="font-family: Arial; font-size: 10pt">
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 10pt">
+		<tr>
+		<td width="100%" colspan="2">&nbsp;
+		<tr>
+		<td width="50%" style="font-size: 24pt">SETBAUD2
+		<td align="right" width="50%" style="font-size: 18pt">Set the RS-232 port baud
+			rate
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Syntax
+		<tr>
+		<td width="100%" style="font-family: Courier">SETBAUD2, &lt;baud rate&gt;,
+			&lt;processor&gt;, &lt;link&gt;
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Processor Response
+		<tr>
+		<td width="100%" style="font-family: Courier">For the new baud rate to take
+			effect, you must cycle the processor power.<br>
+			The port settings will be set to 8 data bits, No parity, 1 stop bit.
+		<tr>
+		<td width="100%">&nbsp;
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="1" cellspacing="1" width="100%"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td valign="top" width="25" style="font-weight: bold">Parameter
+		<td valign="top" style="font-weight: bold">Description
+		<td valign="top" style="font-weight: bold">Format
+		<tr>
+		<td valign="top">baud rate
+		<td valign="top">new RS-232 port baud rate
+		<td valign="top">300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, or
+			115200
+		<tr>
+		<td valign="top">processor
+		<td valign="top">processor number
+		<td valign="top">1-16
+		<tr>
+		<td valign="top">link
+		<td valign="top">link number
+		<td valign="top">3 or 7
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Description
+		<tr>
+		<td width="100%">When dip switch #1 on S2 is in the up position, the processor
+			RS232 ports baud rate is fixed at 9600 baud. When dip switch #1 on S2 is in
+			the down position, the processor RS232 ports baud rate will be set to the
+			user setting determined by the SETBAUD or SETBAUD2 commands. When the
+			SETBAUD command is issued, the processor power must be cycled for the change
+			to take effect. This will allow laptops that have problems communicating at
+			115200 baud to use an intermediate baud rate that is faster than 9600 baud
+			in order to minimize download times. Also, with dip switch #1 on S2 set to
+			the up position, the processor can be set to a known baud rate (9600 baud),
+			ensuring reliable communications. This adjustable baud rate also provides
+			greater flexibility when connecting to external A/V equipment.
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Example
+		<tr>
+		<td width="100%">Set Processor 3 Link 3 baud rate to 57600 bps.
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-family: Courier">&gt; SETBAUD2, 57600, 3, 3<br>
+			For the new baud rate to take effect, you must cycle the processor power.<br>
+			The port settings will be set to 8 data bits, No parity, 1 stop bit.
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">See Also
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%"><a href="setbaud.htm">SETBAUD - Set baud rate for RS232 port
+			connected to.</a>
+		<tr>
+		<td width="100%"><a href="status.htm">STATUS - Displays the processor's status
+			information.</a>
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 10pt" class="noprint">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%"><a href="../Boot232.htm">Back to the table of contents...</a>
+	</table>
+</div>
+
+</body>
+
+</html>

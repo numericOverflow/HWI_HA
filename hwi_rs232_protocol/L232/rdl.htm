@@ -1,0 +1,75 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>RDL</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">RDL</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Request
+        a Dimmer Level</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>RDL, &lt;address&gt;</font></p>
+
+<p><strong>Processor responds with<br>
+</strong><font face="Courier">DL, &lt;address&gt;, &lt;level&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of
+        zone to query</font></td>
+        <td valign="top"><font face="Arial">[processor : link :
+        interface : module or bus : zone]<br>
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+    <tr>
+        <td><font face="Arial">level</font></td>
+        <td><font face="Arial">current level of the queried zone</font></td>
+        <td><font face="Arial">0 - 100 (percent)</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description<br>
+</strong>Returns the current or target level for any zone in the
+sysyem</font></p>
+
+<p><font face="Arial"><strong>Example<br>
+</strong>Request the current intensity of processor 1, link 1, MI
+address 0, RPM module 2, zone 4</font></p>
+
+<p><font face="Courier">L232&gt; RDL, [1:1:0:2:4]<br>
+</font><font size="4" face="Courier">DL, [01:01:00:02:04], 50</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="frpm.htm"><font face="Arial">FRPM - Fade
+an RPM Dimmer</font></a><font face="Arial"><strong><br>
+</strong></font><a href="fv.htm"><font face="Arial">FV - Fade
+Vareo Dimmer</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

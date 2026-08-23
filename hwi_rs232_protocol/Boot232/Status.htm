@@ -1,0 +1,121 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>STATUS</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">STATUS</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Display
+        the status of a processor</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong></font><font
+size="2" face="Arial"><br>
+</font><font size="3" face="Arial">STATUS, &lt;processor address&gt;</font></p>
+
+<p><font face="Arial"><strong>Processor responds with the
+following</strong></font><font size="2" face="Arial"><br>
+</font><font face="Courier">---------------------------------------<br>
+Processor address : &lt;processor address&gt;<br>
+Build Date &lt;date(yymmdd).time(hhmm)&gt; of the boot build date<br>
+<br>
+The time is set to: &lt;current time&gt;<br>
+The date is set to: &lt;current date&gt;<br>
+Boot flash : &lt;PGM GOOD&gt; or &lt;ERASED&gt;<br>
+Boot rev : &lt;boot revision&gt;<br>
+Boot upload date : &lt;date(mmddyy)&gt; the Boot was uploaded<br>
+OS flash : &lt;PGM GOOD&gt; or &lt;ERASED&gt;<br>
+OS rev : &lt;OS revision&gt;<br>
+OS upload date : &lt;date(mmddyy)&gt; the OS was uploaded<br>
+User baud rate : &lt;Link 3 baud rate&gt;, &lt;Link 7 baud rate&gt;<br>
+Processor is &lt;LOGGED IN&gt; or &lt;LOGGED OUT&gt;<br>
+<br>
+A power cycle will start : &lt;OS&gt; or &lt;BOOT&gt;<br>
+The boot mode was : &lt;forced via switch S1-1&gt; or &lt;started
+via command&gt; </font></p>
+
+<p><font face="Arial"><strong>Description</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Displays the status information for a
+processor. The description of each status is shown above.<br>
+</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+face="Courier"><br>
+</font><font face="Arial">Display the status information for the
+processor you are connected to.</font></p>
+
+<p><font face="Courier">&gt; STATUS</font><font size="2"
+face="Arial"><br>
+</font><font face="Courier">---------------------------------------<br>
+Processor address : 01<br>
+Build Date 000403.0947<br>
+<br>
+The time is set to: 11:04:40<br>
+The date is set to: 04/10/00<br>
+Boot flash : PGM GOOD<br>
+Boot rev : 20<br>
+Boot upload date : 040500<br>
+OS flash : PGM GOOD<br>
+OS rev : 40<br>
+OS upload date : 040300<br>
+User baud rate : 115K, 115K<br>
+Processor is LOGGED OUT<br>
+<br>
+A power cycle will start : the OS<br>
+The boot mode was : forced via switch S1-1<br>
+</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+face="Courier"><br>
+</font><font face="Arial">Display the status information for
+processor 2.</font></p>
+
+<p><font face="Courier">&gt; STATUS, 2</font><font size="2"
+face="Arial"><br>
+</font><font face="Courier">---------------------------------------<br>
+Processor address : 02<br>
+Build Date 000403.0947<br>
+<br>
+The time is set to: 11:04:40<br>
+The date is set to: 04/10/00<br>
+Boot flash : PGM GOOD<br>
+Boot rev : 20<br>
+Boot upload date : 040500<br>
+OS flash : PGM GOOD<br>
+OS rev : 40<br>
+OS upload date : 040300<br>
+User baud rate : 115K, 115K<br>
+Processor is LOGGED OUT<br>
+<br>
+A power cycle will start : the OS<br>
+The boot mode was : forced via switch S1-1<br>
+</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="Ping.htm"><font face="Arial">PING -
+Check if processor is present</font></a><font face="Arial"><br>
+</font><a href="ProcAddr.htm"><font face="Arial">PROCADDR -
+Displays the processor address</font></a><font face="Arial"><br>
+</font><a href="Serial.htm"><font face="Arial">SERIAL - Displays
+the processor's serial number</font></a><font face="Arial"><br>
+</font></p>
+
+<p><a href="../Boot232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

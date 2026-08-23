@@ -1,0 +1,61 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>SETLED</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+<table border="0" width="100%">
+	<tr>
+	<td width="50%"><font size="6" face="Arial">SETLED</font>
+	<td align="right" width="50%"><font size="5" face="Arial">Set One Keypad LED State</font>
+</table>
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>SETLED, &lt;address&gt;, &lt;led number&gt;, &lt;led state&gt;</font></p>
+<table border="1" cellspacing="1" width="100%">
+	<tr>
+	<td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font>
+	<td valign="top"><font face="Arial"><strong>Description</strong></font>
+	<td valign="top"><font face="Arial"><strong>Format</strong></font>
+	<tr>
+	<td valign="top"><font face="Arial">address</font>
+	<td valign="top"><font face="Arial">system address of the keypad</font>
+	<td valign="top"><font face="Arial">[processor : link : address]<br>
+		see </font><a href="device_addressing.htm"><font face="Arial">device address
+		formatting</font></a><font face="Arial"> description</font>
+	<tr>
+	<td valign="top"><font face="Arial">led number</font>
+	<td valign="top"><font face="Arial">led number on the keypad</font>
+	<td valign="top"><font face="Arial">1 - 24<br>
+		The led number is the corresponding button number</font>
+	<tr>
+	<td><font face="Arial">led state</font>
+	<td><font face="Arial">state to set the LED to</font>
+	<td><font face="Arial">0 = Off<br>
+		1 = On<br>
+		2 = Flash 1<br>
+		3 = Flash 2</font>
+</table>
+<p><font face="Arial"><strong>Description<br>
+</strong>Sets the state of a keypad led. If the designated led is already programmed to
+indicate the status of something else in the system, this command will have no effect on
+the led state.</font></p>
+<p><font face="Arial"><b>Example</b><br>
+Turn on LED 3 on processor 2, link 5, keypad address 7</font></p>
+<p><font face="Courier">L232&gt; SETLED, [2:5:7], 3, 1</font></p>
+<p><font face="Arial"><b>See Also</b></font><br>
+<font face="Arial"><a href="setleds.htm">SETLEDS - Set Keypad LED States</a></font><br>
+<font face="Arial"><a href="rkls.htm">RKLS - Request Keypad LED States</font></a></p>
+<p><a href="../L232.htm" class="noprint"><font size="2" face="Arial">back to the table
+of contents...</font></a></p>
+
+</body>
+
+</html>

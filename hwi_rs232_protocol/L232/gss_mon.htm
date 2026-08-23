@@ -1,0 +1,73 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>GSS_MON</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+<table border="0" width="100%">
+	<tr>
+	<td width="50%"><font size="6" face="Arial">GSS Monitor String</font>
+	</td>
+	<td align="right" width="50%"><font size="5" face="Arial">GRAFIK Eye Scene Select
+		Monitor String</font>
+	</td>
+	</tr>
+</table>
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>GSS, &lt;address&gt;, &lt;scene number&gt;</font></p>
+<table border="1" cellspacing="1" width="100%">
+	<tr>
+	<td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font>
+	</td>
+	<td valign="top"><font face="Arial"><strong>Description</strong></font>
+	</td>
+	<td valign="top"><font face="Arial"><strong>Format</strong></font>
+	</td>
+	</tr>
+	<tr>
+	<td valign="top"><font face="Arial">address</font>
+	</td>
+	<td valign="top"><font face="Arial">system address of GRAFIK Eye that changed</font>
+	</td>
+	<td valign="top"><font face="Arial">[processor : link : address]<br>
+		see </font><a href="device_addressing.htm"><font face="Arial">device address
+		formatting</font></a><font face="Arial"> description</font>
+	</td>
+	</tr>
+	<tr>
+	<td valign="top"><font face="Arial">scene number</font>
+	</td>
+	<td valign="top"><font face="Arial">scene number selected</font>
+	</td>
+	<td valign="top"><font face="Arial">0 - 16<br>
+		0 = Off<br>
+		1 - 16 = scene 1 - scene 16</font>
+	</td>
+	</tr>
+</table>
+<p><font face="Arial"><strong>Description<br>
+</strong>The GSS monitor string is output from a processor when a GRAFIK Eye changes
+scenes</font></p>
+<p><font face="Arial"><strong>Example<br>
+</strong>Someone selects scene 1 on processor 1, link 4, GRAFIK Eye address 3</font></p>
+<p><font face="Courier">GSS, [01:04:03], 1</font></p>
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="gsmon.htm"><font face="Arial">GSMON - GRAFIK Eye Scene
+Monitoring On</font></a><font face="Arial"><br>
+</font><a href="gsmoff.htm"><font face="Arial">GSMOFF - GRAFIK Eye Scene Monitoring Off</font></a><font
+face="Arial"><br>
+</font></p>
+<p><a href="../L232.htm" class="noprint"><font size="2" face="Arial">back to the table
+of contents...</font></a></p>
+
+</body>
+
+</html>

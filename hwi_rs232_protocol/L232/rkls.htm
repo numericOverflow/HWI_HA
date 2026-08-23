@@ -1,0 +1,76 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>RKLS</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+<table border="0" width="100%">
+	<tr>
+	<td width="50%"><font size="6" face="Arial">RKLS</font>
+	</td>
+	<td align="right" width="50%"><font size="5" face="Arial">Request Keypad LED States</font>
+	</td>
+	</tr>
+</table>
+<p><font size="3" face="Arial"><strong>Syntax</strong></font><font size="2" face="Arial"><br>
+</font><font size="3" face="Arial">RKLS, &lt;address&gt;</font></p>
+<p><font face="Arial"><strong>Processor Response</strong></font><font size="2"
+face="Arial"><br>
+</font><font face="Arial">KLS, &lt;address&gt;, &lt;led states&gt;</font></p>
+<table border="1" cellspacing="1" width="100%">
+	<tr>
+	<td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font>
+	</td>
+	<td valign="top"><font face="Arial"><strong>Description</strong></font>
+	</td>
+	<td valign="top"><font face="Arial"><strong>Format</strong></font>
+	</td>
+	</tr>
+	<tr>
+	<td valign="top"><font face="Arial">address</font>
+	</td>
+	<td valign="top"><font face="Arial">system address of the keypad</font>
+	</td>
+	<td valign="top"><font face="Arial">[processor : link : address]<br>
+		see </font><a href="device_addressing.htm"><font face="Arial">device address
+		formatting</font></a><font face="Arial"> description</font>
+	</td>
+	</tr>
+	<tr>
+	<td><font face="Arial">led states</font>
+	</td>
+	<td><font face="Arial">the current state of the keypad's LEDs</font>
+	</td>
+	<td><font face="Arial">The first digit is LED 1, the last digit is LED 24<br>
+		0 = Off<br>
+		1 = On<br>
+		2 = Flash 1<br>
+		3 = Flash 2</font>
+	</td>
+	</tr>
+</table>
+<p><font face="Arial"><b>Description</b></font><font size="2" face="Arial"><br>
+</font><font face="Arial">Queries the system for the state of the LEDs on a specified
+keypad. 24 led digits will be returned regardless of the number of physical LEDs on the
+keypad.</font></p>
+<p><font face="Arial"><b>Example</b></font><font size="2" face="Arial"><br>
+</font><font face="Arial">Query processor 4, link 6, keypad 1</font></p>
+<p><font face="Courier">L232&gt; RKLS, [4:6:1]</font><font size="2" face="Arial"><br>
+</font><font face="Courier">KLS, [04:06:01], 000001000010000010000000</font></p>
+<p><font face="Arial"><b>See Also</b></font><br>
+<a href="setled.htm"><font face="Arial">SETLED - Set One Keypad LED State</font></a><br>
+<a href="setleds.htm"><font face="Arial">SETLEDS - Set Keypad LED States</font></a></p>
+<p><a href="../L232.htm" class="noprint"><font size="2" face="Arial">back to the table
+of contents...</font></a></p>
+
+</body>
+
+</html>

@@ -1,0 +1,182 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>RFDBSTAT</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF" align="center" vlink="#0000FF" link="#0000FF" alink="#FF0000"
+style="font-family: Arial; font-size: 10pt">
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 10pt">
+		<tr>
+		<td width="100%" colspan="2">&nbsp;
+		<tr>
+		<td width="50%" style="font-size: 24pt">RFDBSTAT
+		<td align="right" width="50%" style="font-size: 18pt">Request RF Devices with
+			Errors
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Syntax
+		<tr>
+		<td width="100%" style="font-family: Courier">RFDBSTAT, &lt;processor
+			address&gt;
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Processor response (no devices with
+			errors)
+		<tr>
+		<td width="100%" style="font-family: Courier">No invalid databases
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Processor response (devices with
+			errors exist)
+		<tr>
+		<td width="100%" style="font-family: Courier">Devices with invalid DBs:<br>
+			&lt;address 1&gt;<br>
+			&lt;...&gt;<br>
+			&lt;address N&gt;
+		<tr>
+		<td width="100%">&nbsp;
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="1" cellspacing="1" width="100%"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td valign="top" width="25" style="font-weight: bold">Parameter
+		<td valign="top" style="font-weight: bold">Description
+		<td valign="top" style="font-weight: bold">Format
+		<tr>
+		<td valign="top">processor address
+		<td valign="top">The processor address
+		<td valign="top">1-16
+		<tr>
+		<td valign="top">address 1<br>
+			...<br>
+			address N
+		<td valign="top">The RF device addresses with errors
+		<td valign="top">[processor : link : device type : device]<br>
+			see <a href="device_addressing.htm">device address formatting</a>
+			description
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Description
+		<tr>
+		<td width="100%">Requests a list of all RF devices with errors on an RF
+			processor, i.e. RF devices without an updated database. This updated
+			database contains device specific information about the current project. It
+			is stored in processor and is vital for the RF device to operate in the
+			system. Note: RF dimmers and switches without an updated database will have
+			local function only.
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%">If all RF devices have an updated database, the processor
+			returns with no errors. Otherwise, a list of the RF devices that do not have
+			the current project is returned.
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Example
+		<tr>
+		<td width="100%">Request all RF devices with errors on RF processor 1. The
+			processor returns three RF dimmers addressed 1, 2, and 3 that do not have an
+			updated database.
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-family: Courier">L232&gt; RFDBSTAT, 1<br>
+			Devices with invalid DBs:<br>
+			[01:08:01:01]<br>
+			[01:08:01:02]<br>
+			[01:08:01:03]
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%">Troubleshoot the communication problem with the three devices.
+			In this example, their FASS sliders were in the OFF position.
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%">Retry sending the current project stored in RF processor 1 to
+			each RF device that failed (3 total). After fifteen seconds, all devices
+			have an updated database.
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-family: Courier">L232&gt; RETRYDB, 1<br>
+			Upload Mode started<br>
+			********<br>
+			Upload Mode Term - Errs: 0
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">See Also
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%"><a href="syncdb.htm">SYNCDB - Send Database to All RF Devices</a>
+		<tr>
+		<td width="100%"><a href="retrydb.htm">RETRYDB - Send Database to All RF Devices
+			with Errors</a>
+		<tr>
+		<td width="100%"><a href="senddb.htm">SENDDB - Send Database to One RF Device</a>
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 10pt" class="noprint">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%"><a href="../L232.htm">Back to the table of contents...</a>
+	</table>
+</div>
+
+</body>
+
+</html>

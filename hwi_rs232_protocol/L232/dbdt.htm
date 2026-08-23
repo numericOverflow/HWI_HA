@@ -1,0 +1,77 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<title>Dimmer Button Double Tap</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">DBDT</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Dimmer
+        Button Double Tap</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>DBDT, &lt;address&gt;, &lt;button number&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of the H48 or RF
+          dimmer/switch</font></td>
+        <td valign="top"><font face="Arial">
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">button number</font></td>
+        <td valign="top"><font face="Arial">button number to
+        double tap</font></td>
+        <td valign="top"><font face="Arial">1</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description<br>
+</strong>Simulates the double tap action of the tap switch for an H48 or RF
+dimmer/switch. This will affect the
+local load and activate any keypad-like double tap programming. This
+does not simulate a true keypad button double tap that is preceded by a press and
+release and followed by a second release. This does not simulate the double tap action of
+the tap switch for a D48 dimmer/switch.</font></p>
+
+<p><font face="Arial"><strong>Example<br>
+</strong>Double tap H48 tap switch on processor 1, link 4, router 1, bus 3, dimmer
+2.</font></p>
+
+<p><font face="Courier">L232&gt; DBDT, [1:4:1:3:2], 1</font></p>
+
+<p><font face="Arial">Double tap RF tap switch on processor 1, link 8, dimmer address
+54. (The device type is 1 for all RF dimmers/switches.)</font></p>
+
+<p><font face="Courier">L232&gt; DBDT, [1:8:1:54], 1</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="dbp.htm"><font face="Arial">DBP - Dimmer button press</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

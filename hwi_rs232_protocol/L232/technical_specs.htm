@@ -1,0 +1,276 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Technical Specifications</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+<p><font size="6" face="Arial"><strong>Technical Specifications</strong></font></p>
+<ul>
+	<li><font size="2" face="Arial">HomeWorks processors require the use of
+		a standard 9-pin DB9 serial cable for communications with external equipment.
+		This cable must be a 9-wire, straight through cable, not a 3-wire cable.</font></li>
+</ul>
+<ul>
+	<li><font size="2" face="Arial">The available baud rates are 9600, 19200, 38400,
+		57600, and 115,200 baud. When dip switch #1 on S2 is up the baud rate is 9600
+		baud, and when it is down the baud rate is set to the user setting according to
+		the </font><a href="setbaud.htm"><font size="2" face="Arial">SETBAUD</font></a><font
+		size="2" face="Arial"> command</font></li>
+</ul>
+<ul>
+	<li><font size="2" face="Arial">The HomeWorks processors use hardware
+		handshaking for flow control by default. Software handshaking will not work. The
+		hardware handshaking may be disabled using the </font><a href="sethand.htm"><font
+		size="2" face="Arial">SETHAND</font></a><font size="2" face="Arial"> command. If
+		hardware handshaking is disabled, Lutron recommends using a low baud rate to
+		avoid buffer overflow problems.</font></li>
+</ul>
+<ul>
+	<li><font size="2" face="Arial">Other communication settings include, 8 data bits, 1
+		stop bit, and no parity bit</font></li>
+</ul>
+<p align="center"><img src="../Images/DB9.gif" width="188" height="149"></p>
+<p align="center">&nbsp;</p>
+<div align="center">
+	<center>
+	<table border="1" cellpadding="7" cellspacing="1" width="720">
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial"><b>HW Pin Number</b></font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial"><b>HW Pin Name</b></font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial"><b>Description for HomeWorks
+			Processor</b></font></p>
+		</td>
+		<td valign="top" width="24%">
+			<p align="center"><font size="2" face="Arial"><b>Required for Hardware
+			Handshaking</b></font></p>
+		</td>
+		<td valign="top" width="25%">
+			<p align="center"><font size="2" face="Arial"><b>Required for Simple
+			Communications (hardware handshaking disabled)</b></font></p>
+		</td>
+		</tr>
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial">1</font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial">DCD</font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial">Data Carrier Detect (input)</font></p>
+		</td>
+		<td valign="top" width="24%">
+			&nbsp;
+		</td>
+		<td valign="top" width="25%">
+			&nbsp;
+		</td>
+		</tr>
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial">2</font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial">TX</font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial">Transmit Data (output)</font></p>
+		</td>
+		<td valign="top" width="24%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		<td valign="top" width="25%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		</tr>
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial">3</font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial">RX</font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial">Receive Data (input)</font></p>
+		</td>
+		<td valign="top" width="24%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		<td valign="top" width="25%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		</tr>
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial">4</font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial">DSR</font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial">Data Set Ready (input)</font></p>
+		</td>
+		<td valign="top" width="24%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		<td valign="top" width="25%">
+			&nbsp;
+		</td>
+		</tr>
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial">5</font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial">GND</font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial">Ground</font></p>
+		</td>
+		<td valign="top" width="24%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		<td valign="top" width="25%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		</tr>
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial">6</font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial">DTR</font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial">Data Terminal Ready (output)</font></p>
+		</td>
+		<td valign="top" width="24%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		<td valign="top" width="25%">
+			&nbsp;
+		</td>
+		</tr>
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial">7</font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial">CTS</font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial">Clear To Send (input)</font></p>
+		</td>
+		<td valign="top" width="24%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		<td valign="top" width="25%">
+			&nbsp;
+		</td>
+		</tr>
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial">8</font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial">RTS</font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial">Request To Send (output)</font></p>
+		</td>
+		<td valign="top" width="24%">
+			<p align="center"><font size="2" face="Arial">X</font></p>
+		</td>
+		<td valign="top" width="25%">
+			&nbsp;
+		</td>
+		</tr>
+		<tr>
+		<td valign="top" width="12%">
+			<p align="center"><font size="2" face="Arial">9</font></p>
+		</td>
+		<td valign="top" width="13%">
+			<p align="center"><font size="2" face="Arial">RI</font></p>
+		</td>
+		<td valign="top" width="26%">
+			<p align="center"><font size="2" face="Arial">Ring Indicate (input)</font></p>
+		</td>
+		<td valign="top" width="24%">
+			&nbsp;
+		</td>
+		<td valign="top" width="25%">
+			&nbsp;
+		</td>
+		</tr>
+	</table>
+	</center>
+</div>
+
+<p><font size="2" face="Arial"><b>General Specifications</b></font></p>
+<ul>
+	<li><font size="2" face="Arial">The HomeWorks processor connects to the serial port on a
+		laptop using a standard DB-9 serial cable (all pins straight through)</font></li>
+	<li><font size="2" face="Arial">The default configuration for the HomeWorks processor is
+		to use hardware handshaking, which requires the pin connections as shown in the
+		table above. The </font><a href="sethand.htm"><font size="2" face="Arial">SETHAND</font></a><font
+		size="2" face="Arial"> command can be used to disable hardware handshaking if
+		needed.</font></li>
+	<li><font size="2" face="Arial">When hardware handshaking is used, communications
+		with the HomeWorks processor will be reliable up to 115200 bps. (Note: Some older
+		laptops cannot communicate reliably at 115200 bps)</font></li>
+	<li><font size="2" face="Arial">The DTR output from the HomeWorks processor is used by the
+		HomeWorks programming software. It indicates to the software that the processor is
+		powered and ready for communications. This line is optional, and the DTR check
+		can be disabled in the HomeWorks programming software. Contact Lutron for more
+		information.</font></li>
+	<li><font size="2" face="Arial">The DSR input to the HomeWorks processor is used to
+		determine if an external device is controlling the handshaking lines. The DSR
+		line must be asserted for the hardware handshaking to work properly. If the DSR
+		line is unasserted while hardware handshaking is enabled, the processor will
+		ignore the CTS input and always transmit characters.</font></li>
+	<li><font size="2" face="Arial">All communications lines indicated in the Hardware
+		Handshaking column are required when connecting a modem to an HomeWorks processor.</font></li>
+</ul>
+<p><font size="2" face="Arial"><b>Using Simple 3-Wire Communications</b></font></p>
+<ul>
+	<li><font size="2" face="Arial">If hardware handshaking communications lines are not
+		available on the external serial device, it is possible to communicate to the
+		HomeWorks processor using a simple 3-wire interface. The pins required are shown in
+		the table above.</font></li>
+	<li><font size="2" face="Arial">The hardware handshaking should be disabled on the
+		processor using the </font><a href="sethand.htm"><font size="2" face="Arial">SETHAND</font></a><font
+		size="2" face="Arial"> command.</font></li>
+	<li><font size="2" face="Arial">In this configuration, the HomeWorks processor will be
+		unable to tell the external equipment to stop sending data, and the external
+		equipment will be unable to tell the HomeWorks processor to stop sending data. This
+		can result in buffer overruns if the communications rates are too high.</font></li>
+	<li><font size="2" face="Arial">Care must be taken to understand the amount of data
+		being sent to/from the HomeWorks processor using the 3-wire interface. Unnecessary
+		monitoring messages should be disabled on the HomeWorks processor to minimize
+		communications.</font></li>
+	<li><font size="2" face="Arial">Lutron does not recommend using the simple 3-wire
+		interface to connect to external equipment that may send continuous data at a
+		high data rate, or if your external equipment cannot process a continuous stream
+		of monitoring output from the HomeWorks processor.</font></li>
+	<li><font size="2" face="Arial">The 3-wire interface cannot be used to connect a
+		modem to an HomeWorks processor.</font></li>
+</ul>
+<p><a href="../L232.htm" class="noprint"><font size="2" face="Arial">back to the table
+of contents...</font></a></p>
+
+</body>
+
+</html>

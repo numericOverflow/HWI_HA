@@ -1,0 +1,98 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<title>FV</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">FV</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Fade
+        a Vareo zone</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong></font><font
+size="2" face="Arial"><br>
+</font><font size="3" face="Arial">FV, &lt;intensity&gt;,
+&lt;fade time&gt;, &lt;delay time&gt;, &lt;address 1&gt;, ...,
+&lt;address n&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">intensity</font></td>
+        <td valign="top"><font face="Arial">target intensity for
+        specified zones</font></td>
+        <td valign="top"><font face="Arial">0 - 100 (percent)</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">fade time</font></td>
+        <td valign="top"><font face="Arial">time for zones to
+        fade from current intensity to target intensity</font></td>
+        <td valign="top"><font face="Arial">HH:MM:SS<br>
+        example: 00:00:05 for 5 seconds<br>
+        see </font><a href="time_formatting.htm"><font
+        face="Arial">time formatting</font></a><font face="Arial">
+        description<br>
+        if omitted, time defaults to 0 seconds</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">delay time</font></td>
+        <td valign="top"><font face="Arial">time for zones to
+        delay before starting to fade</font></td>
+        <td valign="top"><font face="Arial">HH:MM:SS<br>
+        example: 00:00:05 for 5 seconds<br>
+        see </font><a href="time_formatting.htm"><font
+        face="Arial">time formatting</font></a><font face="Arial">
+        description<br>
+        if omitted, time defaults to 0 seconds</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of
+        zones to fade</font></td>
+        <td valign="top"><font face="Arial">[processor : link :
+        address]<br>
+        maximum of 10 address per command<br>
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description<br>
+</strong>Fades one or more Vareo zones to a target intensity
+using a specified fade time and after a specified delay time</font></p>
+
+<p><font face="Arial"><strong>Example<br>
+</strong>Fade processor 1, link1, D48 dimmer interface address 1,
+Vareo bus 2, Vareo control 3 to 100% with a 1 second fade time
+and a 2 second delay time</font></p>
+
+<p><font face="Courier">L232&gt; FV, 100, 00:00:01, 00:00:02,
+[1:1:1:2:3]</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="frpm.htm"><font face="Arial">FRPM - Fade
+RPM dimmer</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

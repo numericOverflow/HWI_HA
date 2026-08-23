@@ -1,0 +1,228 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>SENDDB</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF" align="center" vlink="#0000FF" link="#0000FF" alink="#FF0000"
+style="font-family: Arial; font-size: 10pt">
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 10pt">
+		<tr>
+		<td width="100%" colspan="2">&nbsp;
+		<tr>
+		<td width="50%" style="font-size: 24pt">SENDDB
+		<td align="right" width="50%" style="font-size: 18pt">Send Database to One RF
+			Device
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Syntax
+		<tr>
+		<td width="100%" style="font-family: Courier">SENDDB, &lt;device address&gt;
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Processor response (no devices with
+			errors)
+		<tr>
+		<td width="100%" style="font-family: Courier">Upload Mode started<br>
+			Upload Mode Term - Errs: 0
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Processor response (devices with
+			errors exist)
+		<tr>
+		<td width="100%" style="font-family: Courier">Upload Mode started<br>
+			Devices with invalid DBs:<br>
+			&lt;address 1&gt;<br>
+			&lt;...&gt;<br>
+			&lt;address N&gt;<br>
+			Upload Mode Term - Errs: &lt;N&gt;
+		<tr>
+		<td width="100%">&nbsp;
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="1" cellspacing="1" width="100%"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td valign="top" width="25" style="font-weight: bold">Parameter
+		<td valign="top" style="font-weight: bold">Description
+		<td valign="top" style="font-weight: bold">Format
+		<tr>
+		<td valign="top">device address
+		<td valign="top">The RF device address to send the database to
+		<td valign="top">[processor : link : device type : device]<br>
+			see <a href="device_addressing.htm">device address formatting</a>
+			description
+		<tr>
+		<td valign="top">address 1<br>
+			...<br>
+			address N
+		<td valign="top">The RF device addresses with errors
+		<td valign="top">[processor : link : device type : device]<br>
+			see <a href="device_addressing.htm">device address formatting</a>
+			description
+		<tr>
+		<td valign="top">N
+		<td valign="top">The number of devices that did not receive the database
+		<td valign="top">Integer
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Description
+		<tr>
+		<td width="100%">Sends the current project stored in the RF processor to one RF
+			device (keypad, dimmer, or switch). Note: A database must be uploaded to the
+			processor before this command will work.
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%">After the upload mode starts, the RF Activity LEDs (TX and RX)
+			on the RF processor will be flashing. If all RF devices have an updated
+			database, the processor returns with no errors. Otherwise, the number and
+			addresses of the RF devices that do not have the current project is
+			returned.
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Example 1 (success, no other devices
+			with errors)
+		<tr>
+		<td width="100%">Send the current project stored in RF processor 1 to an RF
+			switch addressed 4. After three seconds, the database is transferred
+			successfully. The processor reports that all devices have an updated
+			database.
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-family: Courier">L232&gt; SENDDB, [01:08:01:04]<br>
+			Upload Mode started<br>
+			Upload Mode Term - Errs: 0
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Example 2 (success, other devices
+			with errors exist)
+		<tr>
+		<td width="100%">Send the current project stored in RF processor 1 to an RF
+			switch addressed 4. After three seconds, the database is transferred
+			successfully. The processor reports that three RF dimmers addressed 1, 2,
+			and 3 still require an updated database.
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-family: Courier">L232&gt; SENDDB, [01:08:01:04]<br>
+			Upload Mode started<br>
+			********<br>
+			Devices with invalid DBs:<br>
+			[01:08:01:01]<br>
+			[01:08:01:02]<br>
+			[01:08:01:03]<br>
+			Upload Mode Term - Errs: 3
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">Example 3 (failure)
+		<tr>
+		<td width="100%">Send the current project stored in RF processor 1 to an RF
+			switch addressed 4. After five seconds, the database transfer fails. The
+			processor reports that three RF dimmers addressed 1, 2, and 3 and the RF
+			switch addressed 4 still require an updated database.
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-family: Courier">L232&gt; SENDDB, [01:08:01:04]<br>
+			Upload Mode started<br>
+			********<br>
+			Devices with invalid DBs:<br>
+			[01:08:01:01]<br>
+			[01:08:01:02]<br>
+			[01:08:01:03]<br>
+			[01:08:01:04]<br>
+			Upload Mode Term - Errs: 4
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 12pt">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%" style="font-weight: bold">See Also
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%"><a href="syncdb.htm">SYNCDB - Send Database to All RF Devices</a>
+		<tr>
+		<td width="100%"><a href="retrydb.htm">RETRYDB - Send Database to All RF Devices
+			with Errors</a>
+		<tr>
+		<td width="100%"><a href="rfdbstat.htm">RFDBSTAT - Request RF Devices with
+			Errors</a>
+	</table>
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+	<table border="0" width="100%" cellspacing="0" cellpadding="0"
+	style="font-family: Arial; font-size: 10pt" class="noprint">
+		<tr>
+		<td width="100%">&nbsp;
+		<tr>
+		<td width="100%"><a href="../L232.htm">Back to the table of contents...</a>
+	</table>
+</div>
+
+</body>
+
+</html>

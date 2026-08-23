@@ -1,0 +1,78 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>STOPDIM</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">STOPDIM</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Stop
+        a dimmer raise/lower</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>STOPDIM, &lt;address 1&gt;, ..., &lt;address n&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of
+        zones to fade</font></td>
+        <td valign="top"><font face="Arial">[processor : link :
+        address]<br>
+        maximum of 10 address per command<br>
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description</strong></font><font
+size="3" face="Arial"><strong><br>
+</strong></font><font face="Arial">Stops raising/lowering one or
+more system dimmers</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="3" face="Arial"><strong><br>
+</strong></font><font face="Arial">Stop raising/lowering
+processor 1, link1, MI address 0, RPM module 2, zone 3</font></p>
+
+<p><font face="Courier">L232&gt; STOPDIM, [1:1:0:2:3]</font></p>
+
+<p><font face="Arial"><strong>See Also</strong></font><font
+size="3" face="Arial"><strong><br>
+</strong></font><a href="raisedim.htm"><font face="Arial">RAISEDIM
+- Raise a system dimmer</font></a><font size="3" face="Arial"><strong><br>
+</strong></font><a href="lowerdim.htm"><font face="Arial">LOWERDIM
+- Lower a system dimmer</font></a><font size="3" face="Arial"><strong><br>
+</strong></font><a href="fadedim.htm"><font face="Arial">FADEDIM
+- Fade a system dimmer</font></a><font size="3" face="Arial"><strong><br>
+</strong></font><a href="flashdim.htm"><font face="Arial">FLASHDIM
+- Flash a system dimmer</font></a><font size="3" face="Arial"><strong><br>
+</strong></font><a href="stopflash.htm"><font face="Arial">STOPFLASH
+- Stop flashing a system dimmer</font></a></p>
+
+<p><font face="Arial"></font>&nbsp;</p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

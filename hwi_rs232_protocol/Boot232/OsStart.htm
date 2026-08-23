@@ -1,0 +1,95 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<title>OSSTART</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">OSSTART</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Switches
+        all processors to the OS mode</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong></font><font
+size="2" face="Arial"><br>
+</font><font size="3" face="Arial">OSSTART</font></p>
+
+<p><font face="Arial"><strong>Processor responds with the
+following</strong> (assuming connected to processor 1,
+processors 2 & 3 in the system, error messages are shown)
+</font><font size="2" face="Arial"><br>
+</font><font face="Courier">
+Processor: 02<br>
+Switching to OS<br><br>
+Processor: 03<br>
+Not valid OS present. Remaining in boot.<br><br>
+Processor: 04<br>
+Processor: 05<br>
+Processor: 06<br>
+Processor: 07<br>
+Processor: 08<br>
+Processor: 09<br>
+Processor: 10<br>
+Processor: 11<br>
+Processor: 12<br>
+Processor: 13<br>
+Processor: 14<br>
+Processor: 15<br>
+Processor: 16<br>
+Processor: 01<br>
+OS will start when S1-1 is flipped down<br>
+<br></font></p>
+
+<p><font face="Arial"><strong>Description</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Switches all processors to the OS Mode.
+If an OS is not present (as with processor 3 above) or the dip switch
+1-1 is up (as with processor 1 above) then a processor will not switch
+to the OS.</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+face="Courier"><br>
+</font><font face="Arial">Switch all processors to OS Mode.
+</font></p>
+
+<p><font face="Courier">&gt; OSSTART</font><font size="2"
+face="Arial"><br>
+</font><font face="Courier">
+Processor: 02<br>
+Switching to OS<br><br>
+Processor: 03<br>
+Switching to OS<br><br>
+Processor: 04<br>
+Processor: 05<br>
+Processor: 06<br>
+Processor: 07<br>
+Processor: 08<br>
+Processor: 09<br>
+Processor: 10<br>
+Processor: 11<br>
+Processor: 12<br>
+Processor: 13<br>
+Processor: 14<br>
+Processor: 15<br>
+Processor: 16<br>
+Processor: 01<br>
+Switching to OS<br>
+</font></p>
+
+<p><a href="../Boot232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

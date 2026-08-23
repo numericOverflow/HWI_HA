@@ -1,0 +1,131 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>OSREV</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<table border="0" width="100%">
+	<tr>
+	<td width="100%" colspan="2">
+		<font size="2" face="Arial">&nbsp;</font>
+	<tr>
+	<td width="50%">
+		<font size="6" face="Arial">OSREV</font>
+	<td align="right" width="80%">
+		<font size="5" face="Arial">Request O/S revision</font>
+</table>
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>OSREV</font></p>
+<p><strong>Processor responds with the following for each processor in the system<br>
+</strong><font face="Courier">Processor &lt;processor address&gt; O/S Rev = &lt;O/S
+Rev&gt;&lt;processor type&gt;</font></p>
+<table border="1" cellspacing="1" width="100%">
+	<tr>
+	<td valign="top" width="25">
+		<font face="Arial"><strong>Parameter</strong></font>
+	<td valign="top">
+		<font face="Arial"><strong>Description</strong></font>
+	<td valign="top">
+		<font face="Arial"><strong>Format</strong></font>
+	<tr>
+	<td valign="top">
+		<font face="Arial">processor address</font>
+	<td valign="top">
+		<font face="Arial">The processor address</font>
+	<td valign="top">
+		<font face="Arial">Processor 1-16</font>
+	<tr>
+	<td>
+		<font face="Arial">O/S Rev</font>
+	<td>
+		<font face="Arial">Revision number of the currently installed O/S</font>
+	<td>
+		<font face="Arial">O/S Rev: 1-100.1-100.1-100</font>
+	<tr>
+	<td>
+		<font face="Arial">Processor Type</font>
+	<td>
+		<font face="Arial">Number corresponding to the processor model</font>
+	<td>
+		<font face="Arial">T1-27</font>
+</table>
+
+<p><strong>Processor type and corresponding processor type<br>
+</strong>
+<table border="1" cellspacing="1" width="50%">
+	<tr>
+	<td valign="top" width="200">
+		<font face="Arial"><strong>Processor Type</strong></font>
+	<td valign="top">
+		<font face="Arial"><strong>Processor Model</strong></font>
+	<tr>
+	<td valign="top">
+		<font face="Arial">2</font>
+	<td valign="top">
+		<font face="Arial">H-RFP-2P<br>H-RFP-1P</font>
+	<tr>
+	<td>
+		<font face="Arial">3</font>
+	<td>
+		<font face="Arial">4-Series Proc</font>
+	<tr>
+	<td>
+		<font face="Arial">4, 13, 21</font>
+	<td>
+		<font face="Arial">H4P5</font>
+	<tr>
+	<td>
+		<font face="Arial">5, 12, 20</font>
+	<td>
+		<font face="Arial">H4P5-HRL</font>
+	<tr>
+	<td>
+		<font face="Arial">6, 9, 14, 15, 17, 23</font>
+	<td>
+		<font face="Arial">HRP5</font>
+	<tr>
+	<td>
+		<font face="Arial">7, 8, 10, 11, 18, 19</font>
+	<td>
+		<font face="Arial">H8P5</font>
+	<tr>
+	<td>
+		<font face="Arial">22, 27</font>
+	<td>
+		<font face="Arial">HP5-AMX</font>
+	<tr>
+	<td>
+		<font face="Arial">25</font>
+	<td>
+		<font face="Arial">P5 BLT (Chronos)</font>
+	<tr>
+	<td>
+		<font face="Arial">26</font>
+	<td>
+		<font face="Arial">AMX Interface Processor</font>
+	<tr>
+	
+</table>
+
+<p><font face="Arial"><strong>Description<br>
+</strong>Returns the address, O/S revision, and processor type for all processors in the system</font></p>
+<p><font face="Arial"><strong>Example<br>
+</strong>Request the O/S revisions of a system with 3 processors</font></p>
+<p><font face="Courier">L232&gt; OSREV<br>
+</font><font size="4" face="Courier">Processor 01 O/S Rev : 01.49.00 T11<br>
+Processor 02 O/S Rev : 01.49.00 T13<br>
+Processor 03 O/S Rev : 01.49.00 T11<br>
+</font></p>
+<p><a href="../L232.htm" class="noprint"><font size="2" face="Arial">back to the table
+of contents...</font></a></p>
+
+</body>
+
+</html>

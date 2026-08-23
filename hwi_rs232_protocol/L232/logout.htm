@@ -1,0 +1,111 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>LOGOUT</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">LOGOUT</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Logout
+        of the system</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>LOGOUT, &lt;port address&gt;</font></p>
+
+<p><font face="Arial"><strong>Processor Responds with one of the
+following<br></strong></font>
+<font size="3" face="Arial">
+Processor &lt;processor address&gt; logging out RS232 ports<br>
+Processor &lt;processor address&gt; lRS232 ports logged out<br>
+Logging out RS232 port &lt;port address&gt;<br>
+RS232 port &lt;port address&gt; logged out<br></font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25%"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top" width="25%"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top" width="25%"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">port address</font></td>
+        <td valign="top"><font face="Arial">the specific port to login.</font></td>
+        <td valign="top"><font face="Arial">pp:ll:aaa (see
+        <a href="device_addressing.htm"><font face="Arial">RS232
+        Port Addressing</a>)
+        This parameter is optional. If omitted, the request will
+        default to the port that receives the command
+        allowed</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">processor address</font></td>
+        <td valign="top"><font face="Arial">Reply from a processor</font></td>
+        <td valign="top"><font face="Arial">1-16</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description</strong></font><font
+size="3" face="Arial"><strong><br>
+</strong></font><font face="Arial">Used to logout of the system.
+The login/logout feature can be used to add a layer of protection
+against other people gaining access to the system. When
+logged-out of the system, only two L232 commands are recognized,
+LOGIN and HELP. This means that database changes and L232 control
+of the processor cannot be done until after a successful login.
+This feature is typically used on systems that utilize a modem
+for remote programming.</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="3" face="Arial"><strong><br>
+</strong></font><font face="Arial">Logout of the port connected to</font></p>
+
+<p><font face="Courier">L232&gt; LOGOUT<br></font>
+<font face="Courier">Logging out RS232 port 01:03:001<br></font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="3" face="Arial"><strong><br>
+</strong></font><font face="Arial">Logout of RS232 port 7 on processor 2</font></p>
+
+<p><font face="Courier">L232&gt; LOGOUT, 2:7:1<br></font>
+<font face="Courier">Logging out RS232 port 02:07:001<br></font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="3" face="Arial"><strong><br>
+</strong></font><font face="Arial">Logout all RS232 ports on processor connected to</font></p>
+
+<p><font face="Courier">L232&gt; LOGOUT, PROC<br></font>
+<font face="Courier">Processor 1 logging out RS232 ports<br></font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="3" face="Arial"><strong><br>
+</strong></font><font face="Arial">Logout all RS232 ports in the system with processors 1, 2 and 3 present</font></p>
+
+<p><font face="Courier">L232&gt; LOGOUT, ALL<br></font>
+<font face="Courier">Processor 1 logging out RS232 ports<br></font>
+<font face="Courier">Processor 2 logging out RS232 ports<br></font>
+<font face="Courier">Processor 3 logging out RS232 ports<br></font></p>
+
+<p><font face="Arial"><strong>See Also</strong></font><font
+size="3" face="Arial"><strong><br>
+</strong></font><a href="login.htm"><font face="Arial">LOGIN -
+Login to the system</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+
+<p>&nbsp;</p>
+</body>
+</html>

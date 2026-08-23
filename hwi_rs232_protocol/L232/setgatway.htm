@@ -1,0 +1,163 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+
+  
+  <title>SETGATEWAY</title>
+</head>
+
+
+<body style="background-color: white;" lang="EN-US" link="blue" vlink="blue">
+
+
+<div class="Section1">
+<p class="chapter" style="text-align: center;" align="center">&nbsp;</p>
+
+
+<table style="width: 100%;" border="0" cellpadding="0" width="100%">
+
+
+  <tbody>
+
+
+    <tr>
+
+
+      <td style="padding: 0.75pt; width: 50%;" width="50%">
+      
+      <p class="MsoNormal"><span style="font-size: 24pt; font-family: Arial;">SETGATEWAY</span></p>
+
+
+      </td>
+
+
+      <td style="padding: 0.75pt; width: 50%;" width="50%">
+      
+      <p class="MsoNormal" style="text-align: right;" align="right"><span style="font-size: 18pt; font-family: Arial;">Set the Gateway
+Address</span></p>
+
+
+      </td>
+
+
+    </tr>
+
+
+  
+  </tbody>
+</table>
+
+
+<p><strong><span style="font-family: Arial;">Syntax</span></strong><span style="font-size: 10pt; font-family: Arial;"><br>
+
+
+</span><span style="font-family: Arial;">SETGATEWAY,
+&lt;processor&gt;,
+&lt;xxx.xxx.xxx.xxx&gt;</span></p>
+
+
+<p><strong><span style="font-family: Arial;">Description</span></strong><span style="font-size: 10pt; font-family: Arial;"><br>
+
+
+</span><span style="font-family: Arial;">This
+command sets the gateway address on
+the given processor.<span style="">&nbsp; </span>The
+gateway
+address is specifically needed when the processor is on a network and /
+or is
+connected to through the Internet.&nbsp;</span><span style="font-family: Arial;">The gateway address will not
+be&nbsp;</span><span style="font-family: Arial;">updated</span><span style="font-family: Arial;"> until processor is
+reset or RESETIP command is sent.</span></p>
+
+
+<p><strong><span style="font-family: Arial;">Example</span></strong><span style="font-size: 10pt; font-family: Arial;"><br>
+
+
+</span><span style="font-family: Arial;">Enter:</span></p>
+
+
+<p><span style="font-family: Courier;">L232&gt;
+SETGATEWAY, 1, 192.168.1.1</span></p>
+
+
+<p><span style="font-family: Arial;">Response:</span></p>
+
+
+
+
+<p><span style="font-family: Courier;">Processor 01:<br>
+
+
+MAC Address: 00-0f-e7-00-18-0a<br>
+
+
+IP Address :&nbsp;</span><span style="font-family: Courier;">192.168.1.100<br>
+
+
+Subnet Mask: 255.255.255.0<br>
+
+
+Gateway<span style="">&nbsp;&nbsp;&nbsp; </span>:
+192.168.1.1<br>
+</span></p>
+<p><span style="font-family: Courier;">Telnet Port:<span style="">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>23<br>
+FTP Port<span style="">&nbsp;&nbsp; </span>:<span style="">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>21<br>
+
+
+HTTP Port<span style="">&nbsp; </span>:<span style="">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>80</span></p>
+
+
+<p><span style="font-family: Courier;">Buffer HWM =
+00001<br>
+
+
+Socket HWM = 00006<br>
+
+
+Successful Tx = 00112<br>
+
+
+Error Tx = 00000<br>
+
+
+Successful Rx = 00000<br>
+
+
+Error Rx = 00000</span></p>
+
+
+<p><span style="font-family: Courier;">Ping
+response: ENABLED<br>
+
+
+End of network statistics</span></p>
+
+
+<p><span style="font-family: Courier;">This will not
+take effect until processor <br>
+
+
+is reset or RESETIP command is sent</span></p>
+
+
+<p><span style="font-family: Courier;">See Also</span></p>
+
+
+<p><span style="font-family: Courier;">SETSUBNET<br>
+
+
+SETIP</span></p>
+
+
+<p><a href="../L232.htm"><span style="font-size: 10pt; font-family: Arial;">back
+to the table of contents...</span></a></p>
+
+
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,86 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<title>Dimmer Button Press Monitor String</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">DBP Monitor
+        String</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Dimmer Button Press Monitor String</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax<br>
+</strong>DBP, &lt;address&gt;, &lt;button number&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of the H48 or RF
+          dimmer/switch</font></td>
+        <td valign="top"><font face="Arial">
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">button number</font></td>
+        <td valign="top"><font face="Arial">button number that
+        was pressed</font></td>
+        <td valign="top"><font face="Arial">1</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description</strong><br>
+The DBP monitor string is output from a processor when the tap switch for an H48
+or RF dimmer/switch is pressed. This string is not generated when the tap switch
+for a D48 dimmer/switch is pressed nor when the raise/lower rocker for any
+dimmer is pressed.</font></p>
+
+<p><font face="Arial"><strong>Example<br>
+</strong>Someone presses the H48 tap switch on processor 1, link 4, router 1,
+bus 3, dimmer 2.</font></p>
+
+<p><font face="Courier">DBP, [01:04:01:03:02], 1</font></p>
+
+<p><font face="Arial">Someone presses the RF tap switch on processor 1, link 8,
+dimmer 54. (The device type is 1 for all RF dimmers/switches.)</font></p>
+
+<p><font face="Courier">DBP, [01:08:01:54], 1</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="dbr_mon.htm"><font face="Arial">DBR Monitor
+String</font></a><font face="Arial"><br>
+</font><a href="dbh_mon.htm"><font face="Arial">DBH Monitor
+String</font></a><font face="Arial"><br>
+</font><a href="dbdt_mon.htm"><font face="Arial">DBDT Monitor
+String</font></a><font face="Arial"><br>
+</font><a href="kbmon.htm"><font face="Arial">KBMON - Keypad
+button monitoring on</font></a><font face="Arial"><br>
+</font><a href="kbmoff.htm"><font face="Arial">KBMOFF - Keypad
+button monitoring off</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+
+<p>&nbsp;</p>
+</body>
+</html>

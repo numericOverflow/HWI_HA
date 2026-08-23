@@ -1,0 +1,77 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>CCOOPEN</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">CCOOPEN</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">CCO
+        Relay Open</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong><br>
+CCOOPEN, &lt;address&gt;, &lt;relay number&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of the
+        CCO</font></td>
+        <td valign="top"><font face="Arial">[processor : link :
+        address]<br>
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">relay number</font></td>
+        <td valign="top"><font face="Arial">relay number to open</font></td>
+        <td valign="top"><font face="Arial">1 - 8</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description<br>
+</strong>Opens a specific CCO relay</font></p>
+
+<p><font face="Arial">Note - The processor does not verify that
+the given address is ACTUALLY a CCO address. If the address is a
+normal keypad, the command may temporarily change the state of
+the leds on that keypad.</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Open relay 3 on processor 2, link 4,
+CCO address 6</font></p>
+
+<p><font face="Courier">L232&gt; CCOOPEN, [2:4:6], 3</font></p>
+
+<p><font face="Arial"><strong>See Also</strong></font><font
+size="2" face="Arial"><br>
+</font><a href="ccoclose.htm"><font face="Arial">CCOCLOSE - CLOSE
+a CCO relay</font></a><font size="2" face="Arial"><br>
+</font><a href="ccopulse.htm"><font face="Arial">CCOPULSE - Pulse
+a CCO relay</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

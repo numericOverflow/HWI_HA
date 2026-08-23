@@ -1,0 +1,1976 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+
+  <meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+
+  <meta name="ProgId" content="FrontPage.Editor.Document">
+  <title>RS-232 Command Set</title>
+
+
+  <link href="print.css" media="PRINT" rel="STYLESHEET" type="text/css">
+
+  <link href="screen.css" media="SCREEN" rel="STYLESHEET" type="text/css">
+
+</head>
+
+
+<body style="background-color: rgb(255, 255, 255); font-family: Arial; font-size: 10pt;" alink="#ff0000" link="#0000ff" vlink="#0000ff">
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td width="100%"><a name="Title"><!--webbot bot="PurpleText" preview="Title" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td style="font-size: 24pt; font-weight: bold;" width="100%">5.1 Normal Mode Commands </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="100%">Contents </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="100%"><a href="L232.htm#First">5.1.1
+Specs and Formatting</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="100%"><a href="L232.htm#Second">5.1.2
+Monitoring Output</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="100%"><a href="L232.htm#Third">5.1.3
+Device Commands</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="100%"><a href="L232.htm#Fourth">5.1.4
+System Commands</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td width="100%"><a name="First"><!--webbot bot="PurpleText" preview="First" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td style="font-size: 18pt; font-weight: bold;" width="100%">5.1.1 Specs and Formatting </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td style="font-size: 12pt; font-weight: bold;" width="100%"><a href="L232/technical_specs.htm">Technical
+Specs</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td style="font-size: 12pt; font-weight: bold;" width="100%"><a href="L232/command_formatting.htm">Command
+Format</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td style="font-size: 12pt; font-weight: bold;" width="100%"><a href="L232/device_addressing.htm">Device
+Address Format</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td style="font-size: 12pt; font-weight: bold;" width="100%"><a href="L232/time_formatting.htm">Time
+Format</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td style="font-size: 12pt; font-weight: bold;" width="100%"><a href="L232/date_formatting.htm">Date
+Format</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td style="font-size: 12pt; font-weight: bold;" width="100%"><a href="L232/diagrams.htm">Keypad
+Button Numbering</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td class="noprint" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td class="noprint" width="100%"><a href="L232.htm#Title">Back to top</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="Second"><!--webbot bot="PurpleText" preview="Second" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 18pt; font-weight: bold;" width="100%">5.1.2
+Monitoring Output </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="LevelStateChanges"><!--webbot bot="PurpleText" preview="LevelStateChanges" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Level
+/ State Changes </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Commands:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/dlmon.htm">Dimmer
+Level/Sivoia State Monitoring On</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/dlmoff.htm">Dimmer
+Level/Sivoia State Monitoring Off</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Format:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/dl_mon.htm">Dimmer
+Level Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/svs_mon.htm">Sivoia
+State Monitor String</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="GrafikEyeSceneChanges"><!--webbot bot="PurpleText" preview="GrafikEyeSceneChanges" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">GRAFIK
+Eye Scene Changes </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Commands:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/gsmon.htm">GRAFIK
+Eye Scene Monitoring On</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/gsmoff.htm">GRAFIK
+Eye Scene Monitoring Off</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Format:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/gss_mon.htm">GRAFIK
+Eye Scene Select Monitor String</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="ButtonEvents"><!--webbot bot="PurpleText" preview="ButtonEvents" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Button
+Events </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Commands:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/kbmon.htm">Keypad/Dimmer/Sivoia
+Control Button Monitoring On</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kbmoff.htm">Keypad/Dimmer/Sivoia
+Control Button Monitoring Off</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Format:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/kbp_mon.htm">Keypad
+Button Press Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kbr_mon.htm">Keypad
+Button Release Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kbh_mon.htm">Keypad
+Button Hold Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kbdt_mon.htm">Keypad
+Button Double Tap Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/svbp_mon.htm">Sivoia
+Control Button Press Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/svbr_mon.htm">Sivoia
+Control Button Release Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/svbh_mon.htm">Sivoia
+Control Button Hold Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/svbdt_mon.htm">Sivoia
+Control Button Double Tap Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/dbp_mon.htm">Dimmer
+Button Press Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/dbr_mon.htm">Dimmer
+Button Release Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/dbh_mon.htm">Dimmer
+Button Hold Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/dbdt_mon.htm">Dimmer
+Button Double Tap Monitor String</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="LedStateChanges"><!--webbot bot="PurpleText" preview="LedStateChanges" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">LED
+State Changes </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Commands:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/klmon.htm">Keypad
+LED Monitoring On</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/klmoff.htm">Keypad
+LED Monitoring Off</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Format:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/kls_mon.htm">Keypad
+LED Monitor String</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td class="noprint" colspan="3" style="font-size: 10pt;" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td class="noprint" colspan="3" style="font-size: 10pt;" width="100%"><a href="L232.htm#Title">Back to top</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="Third"><!--webbot bot="PurpleText" preview="Third" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 18pt; font-weight: bold;" width="100%">5.1.3
+Device Commands </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="Keypad"><!--webbot bot="PurpleText" preview="Keypad" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Keypad
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/kbp.htm">Keypad
+Button Press</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kbr.htm">Keypad
+Button Release</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kbh.htm">Keypad
+Button Hold</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kbdt.htm">Keypad
+Button Double Tap</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/ke.htm">Keypad
+Enable</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kd.htm">Keypad
+Disable</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/setled.htm">Set
+One Keypad LED State</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/setleds.htm">Set
+Keypad LED States</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/ccopulse.htm">CCO
+Relay Pulse</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/ccoclose.htm">CCO
+Relay Close</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/ccoopen.htm">CCO
+Relay Open</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/rkes.htm">Request
+Keypad Enabled State</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/rkls.htm">Request
+Keypad LED States</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/rklbp.htm">Request
+Keypad Last Button Pressed</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Supplemental:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/cco_kls_state.htm">Determine CCO
+Relay State via KLS / RKLS</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="Dimmer"><!--webbot bot="PurpleText" preview="Dimmer" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Dimmer
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/fadedim.htm">Fade
+a HomeWorks Dimmer</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/raisedim.htm">Raise
+a HomeWorks Dimmer</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/lowerdim.htm">Lower
+a HomeWorks Dimmer</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/stopdim.htm">Stop
+a Raising/Lowering HomeWorks Dimmer</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/flashdim.htm">Flash
+a HomeWorks Dimmer</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/stopflash.htm">Stop
+a Flashing HomeWorks Dimmer</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/dbp.htm">Dimmer
+Button Press</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/dbdt.htm">Dimmer
+Button Double Tap</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/rdl.htm">Request
+Dimmer Level</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="Sivoia"><!--webbot bot="PurpleText" preview="Sivoia" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Sivoia
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/svss.htm">Select
+Sivoia State</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/rsvs.htm">Request
+Current Sivoia State</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="GrafikEye"><!--webbot bot="PurpleText" preview="GrafikEye" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">GRAFIK
+Eye </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/gss.htm">Select
+GRAFIK Eye Scene</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/rgs.htm">Request
+GRAFIK Eye Scene</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td class="noprint" colspan="3" style="font-size: 10pt;" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td class="noprint" colspan="3" style="font-size: 10pt;" width="100%"><a href="L232.htm#Title">Back to top</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="Fourth"><!--webbot bot="PurpleText" preview="Fourth" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 18pt; font-weight: bold;" width="100%">5.1.4
+System Commands </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="TimeClock"><!--webbot bot="PurpleText" preview="TimeClock" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Time
+Clock </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/st.htm">Set
+system time</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/sd.htm">Set
+system date</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/tce.htm">Time
+clock enable</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/tcd.htm">Time
+clock disable</a> </td>
+
+    </tr>
+
+<tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/startDST.htm">Start Daylight Savings Time</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/endDST.htm">End Daylight Savings Time</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/rst.htm">Request
+system time</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/rst2.htm">Request
+system time with seconds</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/rsd.htm">Request
+system date</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/tcs.htm">Request
+time clock state</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/sunrise.htm">Request
+today's sunrise time</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/sunset.htm">Request
+today's sunset time</a> </td>
+
+    </tr>
+    
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/rDST.htm">Request Daylight Savings Time</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="SceneSaverMode"><!--webbot bot="PurpleText" preview="SceneSaverMode" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Scene
+Saver Mode </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/ssb.htm">Begin
+scene saver mode</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/sst.htm">Terminate
+scene saver mode</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kbss.htm">Scene
+save on a keypad button</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/kbsr.htm">Scene
+restore on a keypad button</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/sss.htm">Request
+scene save mode state</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="VacationMode"><!--webbot bot="PurpleText" preview="Vacation Mode" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Vacation
+Mode </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/vmr.htm">Vacation
+mode record</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/vmp.htm">Vacation
+mode playback</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/vmd.htm">Vacation
+mode disable</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/vms.htm">Request
+Vacation Mode State</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="SecurityMode"><!--webbot bot="PurpleText" preview="SecurityMode" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Security
+Mode </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/smb.htm">Security
+mode begin</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/smt.htm">Security
+mode terminate</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/sms.htm">Security
+mode state request</a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<!--webbot bot="PurpleText" preview=" " -->
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="SystemCommands"><!--webbot bot="PurpleText" preview="System" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">System
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/login.htm">Login
+to system</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/logout.htm">Logout
+of system</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/promptoff.htm">Turn
+L232&gt; prompt off</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/prompton.htm">Turn
+L232&gt; prompt on</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/setbaud.htm">Set
+RS-232 port baud rate</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/sethand.htm">Set
+RS-232 port handshaking type</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/reset232.htm">Reset
+RS-232 port parameters to serial driver settings</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/syncdb.htm">Send
+Database to All RF Devices</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/retrydb.htm">Send
+Database to All RF Devices with Errors</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/senddb.htm">Send
+Database to One RF Device</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td></td>
+
+      <td></td>
+
+      <td><a href="L232/cleanmem.htm">Clear
+Processor Memory (cleanmem)</a></td>
+
+    </tr>
+
+    <tr>
+
+      <td></td>
+
+      <td></td>
+
+      <td><a href="L232/updateos.htm">Put Processor
+into Boot Mode</a></td>
+
+    </tr>
+
+    <tr>
+
+      <td></td>
+
+      <td></td>
+
+      <td><a href="L232/updateinos.htm">Put
+Processor into OS Mode</a></td>
+
+    </tr>
+
+    <tr>
+
+      <td></td>
+
+      <td></td>
+
+      <td></td>
+
+    </tr>
+
+    <tr>
+
+      <td></td>
+
+      <td></td>
+
+      <td>&nbsp; &nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td></td>
+
+      <td></td>
+
+      <td></td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/procaddr.htm">Request
+processor address</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/getbaud.htm">Request
+RS-232 port baud rate</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/gethand.htm">Request
+RS-232 port handshaking type</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/osrev.htm">Request
+system processor O/S revisions</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/rfdbstat.htm">Request
+RF Devices with Errors</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/help.htm">Help</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td class="noprint" colspan="3" style="font-size: 10pt;" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td class="noprint" colspan="3" style="font-size: 10pt;" width="100%"><a href="L232.htm#Title"><br>
+      </a> </td>
+
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+<div align="center">
+<table style="font-family: Arial; font-size: 10pt;" border="0" cellpadding="0" cellspacing="0" width="80%">
+
+  <tbody>
+
+    <tr>
+
+      <td colspan="3" width="100%"><a name="Ethernet"><!--webbot bot="PurpleText"
+preview="Ethernet" -->&nbsp;</a>
+      </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" style="font-size: 12pt; font-weight: bold;" width="100%">Ethernet </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Actions:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/setip.htm">Set IP Address of Processor</a> </td>
+
+    </tr>
+
+    <tr>
+
+      <td colspan="2" width="3%"> </td>
+
+      <td width="97%"><a href="L232/setgatway.htm">Set Gateway Address of Processor</a> </td>
+
+    </tr>
+
+    <tr>
+      <td></td>
+      <td></td>
+      <td><a href="L232/setsubnet.htm">Set Subnet Mask of Processor</a></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td><a href="L232/setftp.htm">Set FTP Port of Processor</a></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td><a href="L232/settelnet.htm">Set Telnet Port of Processor</a></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td><a href="L232/clearip.htm">Clear Current TCP/IP Settings</a></td>
+    </tr>
+    <tr>
+
+      <td colspan="3" width="100%">&nbsp; </td>
+
+    </tr>
+
+    <tr>
+
+      <td width="1%">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="2%">Requests:&nbsp;&nbsp;&nbsp;
+      </td>
+
+      <td width="97%"><a href="L232/netstat.htm">Get Network Settings/Status</a> </td>
+
+    </tr>
+    <tr>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td><a href="L232.htm#Title">Back to top</a></td>
+      <td></td>
+    </tr>
+
+  </tbody>
+</table>
+
+</div>
+
+</body>
+</html>

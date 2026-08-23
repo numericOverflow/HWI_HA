@@ -1,0 +1,97 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>FLASHDIM</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">FLASHDIM</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Flash
+        a dimmer</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong><br>
+FLASHDIM, &lt;intensity&gt;, &lt;flash rate&gt;, &lt;address
+1&gt;, ..., &lt;address n&gt;</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+    <tr>
+        <td><font face="Arial">intensity</font></td>
+        <td><font face="Arial">Intensity to flash the dimmers to</font></td>
+        <td><font face="Arial">0 - 100 (percent)</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">flash rate</font></td>
+        <td valign="top"><font face="Arial">The amount of time
+        the dimmers are on/off</font></td>
+        <td valign="top"><font face="Arial">HH:MM:SS<br>
+        example: 00:00:05 for 5 seconds<br>
+        see </font><a href="time_formatting.htm"><font
+        face="Arial">time formatting</font></a><font face="Arial">
+        description<br>
+        if omitted, flash rate defaults to 2 seconds</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">address</font></td>
+        <td valign="top"><font face="Arial">system address of
+        zones to fade</font></td>
+        <td valign="top"><font face="Arial">[processor : link :
+        address]<br>
+        maximum of 10 address per command<br>
+        see </font><a href="device_addressing.htm"><font
+        face="Arial">device address formatting</font></a><font
+        face="Arial"> description</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description</strong></font><font
+size="3" face="Arial"><br>
+</font><font face="Arial">Starts flashing one or more system
+zones at a specified rate. The dimmer is flashed between the
+specified intensity and Off.</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="3" face="Arial"><br>
+</font><font face="Arial">Start flashing processor 1, link1, MI
+address 0, RPM module 2, zone 3 once a second</font></p>
+
+<p><font face="Courier">L232&gt; FLASHDIM, 100, 1, [1:1:0:2:3]</font></p>
+
+<p><font face="Arial"><strong>See Also</strong></font><font
+size="3" face="Arial"><br>
+</font><a href="stopflash.htm"><font face="Arial">STOPFLASH -
+Stop flashing a system dimmer</font></a><font size="3"
+face="Arial"><br>
+</font><a href="fadedim.htm"><font face="Arial">FADEDIM - Fade a
+system dimmer</font></a><font size="3" face="Arial"><br>
+</font><a href="raisedim.htm"><font face="Arial">RAISEDIM - Raise
+a system dimmer</font></a><font size="3" face="Arial"><br>
+</font><a href="lowerdim.htm"><font face="Arial">LOWERDIM - Lower
+a system dimmer</font></a><font size="3" face="Arial"><br>
+</font><a href="stopdim.htm"><font face="Arial">STOPDIM - Stop a
+dimmer raise/lower</font></a></p>
+
+<p>&nbsp;</p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>

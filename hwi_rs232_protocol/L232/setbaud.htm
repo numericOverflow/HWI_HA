@@ -1,0 +1,107 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>SETBAUD</title>
+<link href="../print.css" media="PRINT" rel="STYLESHEET"
+type="text/css">
+<link href="../screen.css" media="SCREEN" rel="STYLESHEET"
+type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p align="center" class="chapter">&nbsp;</p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="50%"><font size="6" face="Arial">SETBAUD</font></td>
+        <td align="right" width="50%"><font size="5" face="Arial">Set
+        RS-232 port baud rate</font></td>
+    </tr>
+</table>
+
+<p><font size="3" face="Arial"><strong>Syntax</strong></font><font
+size="2" face="Arial"><br>
+</font><font size="3" face="Arial">SETBAUD, &lt; port address &gt; , &lt;baud rate&gt;</font></p>
+
+<p><font face="Arial"><strong>Processor Responds with one of the
+following</strong></font><font size="2" face="Arial"><br>
+</font><font face="Arial">For this change to take effect, you
+must cycle the processor power.</font></p>
+
+<p><font face="Arial">For this change to take effect, you must
+first set dip switch #1 on S2 in the down position and then cycle
+the processor power.</font></p>
+
+<table border="1" cellspacing="1" width="100%">
+    <tr>
+        <td valign="top" width="25%"><font face="Arial"><strong>Parameter</strong></font></td>
+        <td valign="top" width="25%"><font face="Arial"><strong>Description</strong></font></td>
+        <td valign="top" width="25%"><font face="Arial"><strong>Format</strong></font></td>
+    </tr>
+	    <tr>
+        <td valign="top"><font face="Arial">port address
+        (optional)</font></td>
+        <td valign="top"><font face="Arial">the port address
+        the command is for</font></td>
+        <td valign="top"><font face="Arial">pp:ll (see
+        <a href="device_addressing.htm"><font face="Arial">RS232
+        Port Addressing</a>)
+        This parameter is optional. If omitted, the request will
+        default to the port that receives the command</font></td>
+    </tr>
+    <tr>
+        <td valign="top"><font face="Arial">baud rate</font></td>
+        <td valign="top"><font face="Arial">new RS-232 port baud
+        rate</font></td>
+        <td valign="top"><font face="Arial">you must select one
+        of the following baud rates<br>
+        300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600,
+        115200</font></td>
+    </tr>
+</table>
+
+<p><font face="Arial"><strong>Description</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">When dip switch #1 on S2 is in the on
+position, the processor RS232 port baud rate is fixed at 9600
+baud. When dip switch #1 is in the off position, the
+processor RS232 port baud rate will be set to the user setting
+determined by the SETBAUD command. When the SETBAUD command is
+issued, the processor power must be cycled for the change to take
+effect. This will allow laptops that have problems communicating
+at 115200 baud to use an intermediate baud rate that is faster
+than 9600 baud in order to minimize download times. Also, with
+dip switch #1 set to the on position, the processor can be
+set to a known baud rate (9600 baud), ensuring reliable
+communications. This adjustable baud rate also provides greater
+flexibility when connecting to external A/V equipment.</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Set RS-232 port baud rate to 57600 bps</font></p>
+
+<p><font face="Courier">L232&gt; SETBAUD, 57600</font><font
+size="2" face="Arial"><br>
+</font><font face="Courier">For the new baud rate to take effect, you must cycle the processor power.<br>
+The port settings will be set to 8 data bits, No parity, and 1 Stop bit.</font></p>
+
+<p><font face="Arial"><strong>Example</strong></font><font
+size="2" face="Arial"><br>
+</font><font face="Arial">Set RS-232 port baud rate to 115200 bps on link 7 of procesor 2</font></p>
+<p><font face="Courier">L232&gt; SETBAUD, 2:7, 115200</font><font
+size="2" face="Arial"><br>
+</font><font face="Courier">For the new baud rate to take effect, you must cycle the processor power.<br>
+The port settings will be set to 8 data bits, No parity, and 1 Stop bit.</font></p>
+
+<p><font face="Arial"><strong>See Also<br>
+</strong></font><a href="getbaud.htm"><font face="Arial">GETBAUD
+- Request the RS-232 port baud rate</font></a></p>
+
+<p><a href="../L232.htm" class="noprint"><font size="2"
+face="Arial">back to the table of contents...</font></a></p>
+</body>
+</html>
