@@ -92,6 +92,7 @@ class HomeworksClient:
             port=config.port,
             callback=self._handle_message,
             credentials=credentials,
+            reconnect_callback=self._handle_reconnect,
         )
 
         # KLS state cache: normalized address -> KLSState
@@ -163,6 +164,21 @@ class HomeworksClient:
         """Stop the client and close connection."""
         await self._client.stop()
         self._health.connected = False
+
+    def _handle_reconnect(self) -> None:
+        """Handle the read loop re-establishing the connection.
+
+        Fires as soon as the transport reconnects and re-subscribes, rather
+        than waiting for a message to arrive. Relays may have moved during
+        the outage, so listeners must re-query to re-establish the truth
+        (L232/cco_kls_state.htm implementation note 2).
+        """
+        self._health.connected = True
+        if not self._was_connected:
+            self._was_connected = True
+            self._health.record_reconnect()
+        if self._message_callback:
+            self._message_callback(HW_CONNECTION_RESTORED, [])
 
     def _handle_message(self, msg: AnyMessage) -> None:
         """Handle a typed message from pyhomeworks.

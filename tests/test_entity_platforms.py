@@ -71,13 +71,18 @@ class TestCCODeviceCreation:
 
     @pytest.mark.parametrize("entity_type_str,entity_type_enum", CCO_PLATFORMS)
     def test_cco_device_interpret_state_zero(self, entity_type_str, entity_type_enum):
-        """CCO device interprets LED value 0 as OFF (unknown state)."""
+        """CCO device interprets relay-window digit 0 as unknown, not OFF.
+
+        Digit 0 is "UNDOCUMENTED & UNDISCOVERED" for the relay window
+        (L232/cco_kls_state.htm); an idle relay reports 1. An all-zero window
+        means the window offset is wrong, so it must not read as a confident OFF.
+        """
         device = CCODevice(
             address=CCOAddress(2, 6, 3, 6),
             name="Test",
             entity_type=entity_type_enum,
         )
-        assert device.interpret_state(0) is False
+        assert device.interpret_state(0) is None
 
     @pytest.mark.parametrize("entity_type_str,entity_type_enum", CCO_PLATFORMS)
     def test_cco_device_inverted_state(self, entity_type_str, entity_type_enum):

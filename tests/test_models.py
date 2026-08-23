@@ -105,12 +105,13 @@ class TestCCODevice:
         assert device.interpret_state(1) is False
 
     def test_interpret_state_zero(self):
+        """Relay-window digit 0 has no documented meaning -> unknown, not OFF."""
         device = CCODevice(
             address=CCOAddress(2, 6, 3, 6),
             name="Test",
             entity_type=CCOEntityType.SWITCH,
         )
-        assert device.interpret_state(0) is False
+        assert device.interpret_state(0) is None
 
     def test_interpret_state_inverted(self):
         device = CCODevice(
@@ -171,11 +172,12 @@ class TestKLSState:
         assert kls.get_button_state(3) == 3
 
     def test_button_out_of_range(self):
+        """Out-of-range relay numbers are unknown, not OFF."""
         led_states = [1] * 24
         kls = KLSState(address="[02:06:03]", led_states=led_states)
 
-        assert kls.get_cco_state(0) is False
-        assert kls.get_cco_state(9) is False
+        assert kls.get_cco_state(0) is None
+        assert kls.get_cco_state(9) is None
 
     def test_timestamp(self):
         kls = KLSState(address="[02:06:03]", led_states=[0] * 24)

@@ -25,6 +25,10 @@ def _make_bare_coordinator():
         coord = HomeworksCoordinator.__new__(HomeworksCoordinator)
         coord._cco_devices = {}
         coord._cco_states = {}
+        coord._cco_relay_digits = {}
+        coord._cco_state_sources = {}
+        coord._cco_pending_commands = {}
+        coord._kls_last_seen = {}
         coord._kls_poll_addresses = set()
         coord._keypad_led_states = {}
         coord._dimmer_states = {}
@@ -37,6 +41,7 @@ def _make_bare_coordinator():
         coord._poll_count = 0
         coord._client = None
         coord.hass = MagicMock()
+        coord.hass.loop.time = MagicMock(return_value=1000.0)
         coord.async_set_updated_data = MagicMock()
         return coord
 
@@ -68,9 +73,10 @@ class TestCCODeviceLifecycle:
         assert device.address.unique_key in coord._cco_devices
         assert coord._cco_devices[device.address.unique_key] is device
 
-        # State cache (defaults to False/OFF)
+        # State cache (defaults to None/unknown — a latching relay has no
+        # safe default, so state waits for KLS feedback)
         assert device.address.unique_key in coord._cco_states
-        assert coord._cco_states[device.address.unique_key] is False
+        assert coord._cco_states[device.address.unique_key] is None
 
         # KLS polling address
         assert "[02:06:03]" in coord._kls_poll_addresses

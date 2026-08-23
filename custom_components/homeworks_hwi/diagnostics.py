@@ -69,12 +69,19 @@ async def async_get_config_entry_diagnostics(
     cco_state_summary = {
         "total_registered": coordinator.cco_device_count,
         "states_cached": coordinator.cco_state_count,
+        # Relays still awaiting their first KLS report. A persistently
+        # non-zero count on a live system usually means a wrong KLS window
+        # offset or a module that is not reporting.
+        "unknown_count": coordinator.cco_unknown_count,
     }
 
     # Collect KLS cache info
     kls_cache_info = {
         "addresses_monitored": coordinator.kls_poll_address_count,
         "states_cached": coordinator.keypad_led_state_count,
+        # Seconds since the last KLS per module. Diagnostics only — entity
+        # state is never gated on staleness.
+        "last_kls_age_s": coordinator.kls_last_seen_ages(),
     }
 
     # Collect dimmer state info

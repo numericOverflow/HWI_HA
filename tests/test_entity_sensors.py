@@ -23,26 +23,68 @@ from custom_components.homeworks_hwi.models import normalize_address
 
 
 class TestKeypadLEDBinarySensor:
-    """Tests for LED state binary sensors."""
+    """Tests for LED state binary sensors.
 
-    def test_led_state_on(self):
-        """LED value 1 = sensor ON."""
-        led_states = [0] * 24
-        led_states[0] = 1  # LED 1 is ON
-        assert led_states[0] == 1
+    LED values per L232/kls_mon.htm: 0=Off, 1=On, 2=Flash1, 3=Flash2.
+    A flashing LED is lit, so 1/2/3 are all "on" and only 0 is "off".
+    """
 
-    def test_led_state_off(self):
-        """LED value 2 or 0 = sensor OFF."""
+    pytestmark = [pytest.mark.requires_ha]
+
+    @pytest.fixture
+    def led_sensor(self, mock_coordinator):
+        """Create an LED binary sensor for button 2 of a keypad."""
+        try:
+            from custom_components.homeworks_hwi.binary_sensor import (
+                HomeworksLEDBinarySensor,
+            )
+        except ImportError:
+            pytest.skip("Requires Home Assistant dependencies")
+
+        return HomeworksLEDBinarySensor(
+            coordinator=mock_coordinator,
+            controller_id="test_ctrl",
+            keypad_addr="[02:08:02]",
+            keypad_name="Back Hall",
+            button_name="GOODNIGHT",
+            led_number=2,
+        )
+
+    @pytest.mark.parametrize(
+        "led_value,expected",
+        [
+            pytest.param(0, False, id="off"),
+            pytest.param(1, True, id="on"),
+            pytest.param(2, True, id="flash1"),
+            pytest.param(3, True, id="flash2"),
+        ],
+    )
+    def test_is_on_from_led_value(self, led_sensor, mock_coordinator, led_value, expected):
+        """Any non-zero LED value is on; only 0 is off."""
         led_states = [0] * 24
-        led_states[0] = 2  # LED 1 is OFF
-        assert led_states[0] != 1
+        led_states[1] = led_value  # LED 2 is 1-indexed → index 1
+        mock_coordinator.get_keypad_led_states.return_value = led_states
+
+        assert led_sensor.is_on is expected
+
+    def test_is_on_unknown_before_first_kls(self, led_sensor, mock_coordinator):
+        """No KLS seen for this keypad yet reads unknown, not a fabricated off."""
+        mock_coordinator.get_keypad_led_states.return_value = None
+
+        assert led_sensor.is_on is None
+
+    def test_is_on_unknown_when_led_out_of_range(self, led_sensor, mock_coordinator):
+        """A truncated LED string does not silently report off for missing LEDs."""
+        mock_coordinator.get_keypad_led_states.return_value = [0]
+
+        assert led_sensor.is_on is None
 
     def test_led_state_from_kls_string(self):
         """Parse LED states from full KLS string."""
         kls_string = "120000000000000000000000"
         led_states = [int(c) for c in kls_string]
-        assert led_states[0] == 1  # LED 1 ON
-        assert led_states[1] == 2  # LED 2 OFF
+        assert led_states[0] == 1  # LED 1 On
+        assert led_states[1] == 2  # LED 2 Flash1
 
 
 # =============================================================================

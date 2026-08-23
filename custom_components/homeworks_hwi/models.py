@@ -9,7 +9,9 @@ from enum import Enum, auto
 from .hwi_protocol.messages import (
     CCO_BUTTON_WINDOW_LENGTH,
     CCO_BUTTON_WINDOW_OFFSET,
-    CCO_RELAY_CLOSED_DIGIT,
+    CCO_RELAY_CLOSED_DIGIT,  # noqa: F401 — re-exported for callers/tests
+    CCO_RELAY_OPEN_DIGIT,  # noqa: F401 — re-exported for callers/tests
+    cco_relay_digit_to_state,
 )
 
 
@@ -137,18 +139,26 @@ class CCODevice:
         """Generate unique ID for this device."""
         return f"cco_{self.address.processor}_{self.address.link}_{self.address.address}_{self.address.button}"
 
-    def interpret_state(self, kls_digit: int) -> bool:
-        """Interpret KLS digit as ON/OFF state.
+    def interpret_state(self, kls_digit: int) -> bool | None:
+        """Interpret a CCO relay-window KLS digit as logical ON/OFF state.
 
-        KLS LED values for CCO feedback (verified via telnet to processor):
-        - 0 = not used/not applicable
-        - 1 = relay is OPEN (device OFF) - LED solid
-        - 2 = relay is CLOSED (device ON) - LED flashing
-        - 3 = fast flash (not typically used for CCO)
+        Relay-window digit meanings (L232/cco_kls_state.htm):
+        - 1 = relay is OPEN (device OFF) - the resting value
+        - 2 = relay is CLOSED (device ON)
+        - anything else = no documented meaning
 
-        With inversion support for devices wired in reverse.
+        Returns None for an undocumented digit rather than guessing OFF.
+        CCO relays are latching, so a fabricated default is wrong about
+        half the time; an all-zero window also signals a misconfigured
+        window offset, which must not read as a confident OFF.
+
+        Inversion applies only to a known state — an unknown state stays
+        unknown regardless of how the device is wired.
         """
-        is_on = kls_digit == CCO_RELAY_CLOSED_DIGIT
+        is_on = cco_relay_digit_to_state(kls_digit)
+
+        if is_on is None:
+            return None
 
         if self.inverted:
             is_on = not is_on
@@ -228,29 +238,51 @@ class KLSState:
             return self.led_states[button - 1]  # Convert to 0-indexed
         return 0
 
-    def get_cco_state(
+    def get_cco_relay_digit(
         self,
         button: int,
         window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
-    ) -> bool:
-        """Get CCO relay state from the button window.
+    ) -> int | None:
+        """Get the raw relay-window digit for a CCO relay.
 
         Args:
             button: Button/relay number (1-8)
-            window_offset: 0-indexed start of the 8-button window (default: 9)
+            window_offset: 0-indexed start of the 8-relay window (default: 9)
 
         Returns:
-            True if relay is closed/ON, False otherwise.
+            The raw digit, or None if the relay number is out of range or
+            the offset places it past the end of the string.
         """
         if not (1 <= button <= CCO_BUTTON_WINDOW_LENGTH):
-            return False
+            return None
 
         index = window_offset + (button - 1)
 
         if index >= len(self.led_states):
-            return False
+            return None
 
-        return self.led_states[index] == CCO_RELAY_CLOSED_DIGIT
+        return self.led_states[index]
+
+    def get_cco_state(
+        self,
+        button: int,
+        window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
+    ) -> bool | None:
+        """Get CCO relay state from the relay window.
+
+        Args:
+            button: Button/relay number (1-8)
+            window_offset: 0-indexed start of the 8-relay window (default: 9)
+
+        Returns:
+            True if the relay is closed (ON), False if open (OFF), or None
+            if the position is unreadable or the digit has no documented
+            meaning. None means "unknown" and must not be shown as OFF.
+        """
+        digit = self.get_cco_relay_digit(button, window_offset)
+        if digit is None:
+            return None
+        return cco_relay_digit_to_state(digit)
 
 
 @dataclass

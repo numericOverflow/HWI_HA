@@ -34,6 +34,10 @@ from .messages import (
     AnyMessage,
     ButtonEventMessage,
     ButtonEventType,
+    CCO_BUTTON_WINDOW_LENGTH,
+    CCO_BUTTON_WINDOW_OFFSET,
+    CCO_RELAY_CLOSED_DIGIT,
+    CCO_RELAY_OPEN_DIGIT,
     DimmerLevelMessage,
     GrafikEyeSceneMessage,
     HomeworksMessage,
@@ -42,6 +46,7 @@ from .messages import (
     MessageType,
     SivoiaSceneMessage,
     UnknownMessage,
+    cco_relay_digit_to_state,
 )
 from .protocol import (
     MessageParser,
@@ -64,6 +69,12 @@ __all__ = [
     "MessageType",
     "SivoiaSceneMessage",
     "UnknownMessage",
+    # CCO relay window (CCO modules only — not keypad LEDs)
+    "CCO_BUTTON_WINDOW_LENGTH",
+    "CCO_BUTTON_WINDOW_OFFSET",
+    "CCO_RELAY_CLOSED_DIGIT",
+    "CCO_RELAY_OPEN_DIGIT",
+    "cco_relay_digit_to_state",
     # Protocol utilities
     "MessageParser",
     "normalize_address",

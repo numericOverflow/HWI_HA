@@ -6,10 +6,16 @@ within the 24-digit KLS string.
 The button window is at 0-indexed positions 9-16 (1-indexed positions 10-17).
 For button N (1-8), read from index = 9 + (N-1).
 
-Digit semantics (verified via telnet to Lutron processor):
-    2 = ON (relay closed, LED flashing)
-    1 = OFF (relay open, LED solid)
-    0, 3 = OFF (unknown/flash)
+Digit semantics for the CCO relay window (L232/cco_kls_state.htm, and
+verified via telnet to a Lutron processor). These apply to CCO modules ONLY
+— keypad LED digits use the different kls_mon.htm meanings:
+    2 = ON (relay closed)
+    1 = OFF (relay open) — the RESTING value; an idle relay reports 1, not 0
+    0 = UNDOCUMENTED & UNDISCOVERED -> unknown (None)
+    3 = not defined for the relay window -> unknown (None)
+
+A CCO relay latches, so an undecodable digit must surface as None
+("unknown"), never as a fabricated OFF.
 """
 
 import pytest
@@ -121,6 +127,50 @@ class TestSampleKLSLines:
             assert kls.get_cco_state(button) == expected_state
 
 
+class TestDocumentedWorkedExamples:
+    """The two worked examples from L232/cco_kls_state.htm, verbatim.
+
+    Both use module [01:05:03] and show the relay window resting at all-1s,
+    with exactly one digit moving to 2 when that relay closes.
+    """
+
+    def _states(self, kls_string):
+        parser = MessageParser()
+        messages = parser.feed(f"KLS, [01:05:03], {kls_string}\r\n".encode())
+        msg = messages[0]
+        return {relay: msg.get_cco_relay_state(relay) for relay in range(1, 9)}
+
+    def test_example_1_relay_1_sequence(self):
+        """Relay 1 is digit position 10 (index 9)."""
+        # Start: relay 1 off
+        states = self._states("000000000111111110000000")
+        assert all(state is False for state in states.values())
+
+        # Relay 1 turned ON by keypad command, broadcast by HWI
+        states = self._states("000000000211111110000000")
+        assert states[1] is True
+        assert all(states[relay] is False for relay in range(2, 9))
+
+        # Relay 1 turned OFF again
+        states = self._states("000000000111111110000000")
+        assert states[1] is False
+
+    def test_example_2_relay_2_sequence(self):
+        """Relay 2 is digit position 11 (index 10); relay 1 stays open at 1."""
+        states = self._states("000000000111111110000000")
+        assert states[2] is False
+
+        # Relay 2 ON — only that digit moves
+        states = self._states("000000000121111110000000")
+        assert states[2] is True
+        assert states[1] is False
+        assert all(states[relay] is False for relay in range(3, 9))
+
+        # Relay 2 OFF
+        states = self._states("000000000111111110000000")
+        assert states[2] is False
+
+
 class TestMessageParserKLS:
     """Test KLS parsing through MessageParser."""
 
@@ -221,30 +271,58 @@ class TestPartialFrames:
 class TestEdgeCases:
     """Edge case tests."""
 
-    def test_button_0_returns_false(self):
+    def test_button_0_returns_none(self):
+        """Relay number below range is not a relay — unknown, not OFF."""
         kls = KLSState(address="[02:06:03]", led_states=[1] * 24)
-        assert kls.get_cco_state(0) is False
+        assert kls.get_cco_state(0) is None
 
-    def test_button_9_returns_false(self):
+    def test_button_9_returns_none(self):
+        """Relay number above range is not a relay — unknown, not OFF."""
         kls = KLSState(address="[02:06:03]", led_states=[1] * 24)
-        assert kls.get_cco_state(9) is False
+        assert kls.get_cco_state(9) is None
 
-    def test_all_zeros_means_off(self):
+    def test_all_zeros_means_unknown(self):
+        """Digit 0 is undocumented for the relay window, so it decodes to None.
+
+        An all-zero relay window is the signature of a wrong window offset;
+        reporting OFF here would hide that misconfiguration forever.
+        """
         kls = KLSState(address="[02:06:03]", led_states=[0] * 24)
         for button in range(1, 9):
-            assert kls.get_cco_state(button) is False
+            assert kls.get_cco_state(button) is None
 
     def test_window_all_ones_means_off(self):
+        """Digit 1 is the resting value: relay open = OFF."""
         led_states = [0] * 9 + [1] * 8 + [0] * 7
         kls = KLSState(address="[02:06:03]", led_states=led_states)
         for button in range(1, 9):
             assert kls.get_cco_state(button) is False
 
-    def test_digit_3_flash2_means_off(self):
+    def test_digit_3_means_unknown(self):
+        """Digit 3 is Flash2 for keypad LEDs but undefined for relays."""
         led_states = [0] * 9 + [3] * 8 + [0] * 7
         kls = KLSState(address="[02:06:03]", led_states=led_states)
         for button in range(1, 9):
-            assert kls.get_cco_state(button) is False
+            assert kls.get_cco_state(button) is None
+
+    def test_index_past_end_of_string_returns_none(self):
+        """A short KLS payload must not decode as OFF."""
+        kls = KLSState(address="[02:06:03]", led_states=[1] * 10)
+        assert kls.get_cco_relay_digit(1) == 1
+        assert kls.get_cco_state(1) is False
+        assert kls.get_cco_relay_digit(8) is None
+        assert kls.get_cco_state(8) is None
+
+    def test_inverted_device_leaves_unknown_unknown(self):
+        """Inversion must not turn unknown into a confident state."""
+        device = CCODevice(
+            address=CCOAddress(2, 6, 3, 6),
+            name="Inverted",
+            entity_type=CCOEntityType.SWITCH,
+            inverted=True,
+        )
+        assert device.interpret_state(0) is None
+        assert device.interpret_state(3) is None
 
     def test_stale_state_detection(self):
         kls = KLSState(

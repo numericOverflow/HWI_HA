@@ -85,9 +85,22 @@ class HomeworksCCOFan(CoordinatorEntity[HomeworksCoordinator], FanEntity):
         }
 
     @property
-    def is_on(self) -> bool:
-        """Return True if the fan is on."""
+    def is_on(self) -> bool | None:
+        """Return True if the fan is on, or None if not yet known.
+
+        None (shown as "unknown") means the processor has not yet reported
+        this relay's position. A CCO relay latches, so there is no safe
+        state to assume in the meantime.
+        """
         return self.coordinator.get_cco_state(self._device.address)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return CCO address and relay feedback details."""
+        return {
+            **self._attr_extra_state_attributes,
+            **self.coordinator.get_cco_diagnostics(self._device.address),
+        }
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -113,13 +126,11 @@ class HomeworksCCOFan(CoordinatorEntity[HomeworksCoordinator], FanEntity):
         """Register for coordinator updates when added to hass."""
         await super().async_added_to_hass()
 
-        # Ensure the CCO device is registered with the coordinator
+        # Ensure the CCO device is registered with the coordinator. The
+        # coordinator pre-registers module addresses from config and sweeps
+        # them on the first refresh, so no per-entity RKLS is needed —
+        # one request per module, not per relay.
         self.coordinator.register_cco_device(self._device)
-
-        # Request initial state
-        await self.coordinator.async_request_keypad_led_states(
-            self._device.address.to_kls_address()
-        )
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister CCO device when removed from hass."""

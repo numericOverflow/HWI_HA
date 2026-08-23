@@ -190,6 +190,10 @@ class TestCoordinatorKLSProcessing:
                 coordinator.hass = MagicMock()
                 coordinator._cco_devices = {}
                 coordinator._cco_states = {}
+                coordinator._cco_relay_digits = {}
+                coordinator._cco_state_sources = {}
+                coordinator._cco_pending_commands = {}
+                coordinator._kls_last_seen = {}
                 coordinator._keypad_led_states = {}
                 coordinator._kls_window_offset = 9
                 coordinator._kls_poll_addresses = set()
@@ -232,6 +236,10 @@ class TestCoordinatorKLSProcessing:
                 coordinator.hass = MagicMock()
                 coordinator._cco_devices = {}
                 coordinator._cco_states = {}
+                coordinator._cco_relay_digits = {}
+                coordinator._cco_state_sources = {}
+                coordinator._cco_pending_commands = {}
+                coordinator._kls_last_seen = {}
                 coordinator._keypad_led_states = {}
                 coordinator._kls_window_offset = 8  # Non-default offset
                 coordinator._kls_poll_addresses = set()

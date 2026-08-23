@@ -193,6 +193,42 @@ class TestDiagnostics:
         # Structural assertion — actual test verifies against real output
         assert len(expected_sections) >= 3
 
+    async def test_cco_and_kls_diagnostics_fields(self):
+        """CCO unknown count and per-module KLS ages are reported.
+
+        These are the operator-facing signal that a window offset is wrong or
+        that a module has stopped answering — a relay stuck at unknown is
+        otherwise indistinguishable from one that is legitimately quiet.
+        """
+        from unittest.mock import AsyncMock, MagicMock
+
+        from custom_components.homeworks_hwi.diagnostics import (
+            async_get_config_entry_diagnostics,
+        )
+        from custom_components.homeworks_hwi.models import ControllerHealth
+
+        coordinator = MagicMock()
+        coordinator.health = ControllerHealth()
+        coordinator.cco_device_count = 3
+        coordinator.cco_state_count = 3
+        coordinator.cco_unknown_count = 2
+        coordinator.kls_poll_address_count = 1
+        coordinator.keypad_led_state_count = 1
+        coordinator.kls_last_seen_ages = MagicMock(
+            return_value={"[01:05:03]": 4.2}
+        )
+        coordinator.dimmer_address_count = 0
+        coordinator.dimmer_state_count = 0
+
+        entry = MagicMock()
+        entry.options = {"controller_id": "test"}
+        entry.runtime_data = MagicMock(coordinator=coordinator)
+
+        result = await async_get_config_entry_diagnostics(MagicMock(), entry)
+
+        assert result["cco_state_summary"]["unknown_count"] == 2
+        assert result["kls_cache_info"]["last_kls_age_s"] == {"[01:05:03]": 4.2}
+
 
 # =============================================================================
 # Platform Constants Tests

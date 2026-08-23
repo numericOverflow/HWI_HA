@@ -71,8 +71,51 @@ CCO_BUTTON_WINDOW_LENGTH = 8  # Number of buttons in window
 # modules specifically, Lutron uses FLASHING LED (digit 2) to indicate
 # the relay is CLOSED/energized, and SOLID LED (digit 1) to indicate
 # the relay is OPEN/de-energized. This was verified empirically via
-# telnet to a live HWI processor (2026-06-26). DO NOT "fix" this to 1.
+# telnet to a live HWI processor (2026-06-26) and is documented in
+# L232/cco_kls_state.htm. DO NOT "fix" this to 1.
 CCO_RELAY_CLOSED_DIGIT = 2
+
+# KLS digit that indicates a CCO relay is OPEN (device OFF).
+# Per L232/cco_kls_state.htm this is the RESTING value: "an idle relay
+# reports 1, not Off". Digit 0 is explicitly UNDOCUMENTED & UNDISCOVERED
+# for the relay window and has never been observed on a real module, so
+# it must NOT be treated as OFF — see cco_relay_digit_to_state().
+CCO_RELAY_OPEN_DIGIT = 1
+
+# These digit meanings apply ONLY to the relay window of a KLS string
+# addressed to a CCO module. Keypad LEDs keep the kls_mon.htm meanings
+# (0=Off, 1=On, 2=Flash1, 3=Flash2), which are the OPPOSITE sense for
+# digit 1. Relay position and LED state share the same underlying
+# register, so the same digit means different things depending on
+# whether the module is a CCO or a keypad.
+
+
+def cco_relay_digit_to_state(digit: int) -> bool | None:
+    """Interpret a raw KLS relay-window digit as a CCO relay position.
+
+    This is the single source of truth for CCO digit semantics. It applies
+    only to digits inside the relay window of a CCO module's KLS string —
+    keypad LED digits use the kls_mon.htm meanings instead.
+
+    Args:
+        digit: Raw digit from the relay window of a KLS string.
+
+    Returns:
+        True if the relay is closed (energized, device ON).
+        False if the relay is open (de-energized, device OFF).
+        None if the digit has no documented meaning — currently 0 and 3.
+        Callers must surface None as "unknown", never as OFF: a CCO relay
+        is latching, so guessing a default is wrong roughly half the time.
+
+    A window of all-zeros is the signature of a misconfigured window
+    offset pointing outside the relay region. Returning None there makes
+    that fail visibly instead of reporting every relay as confidently off.
+    """
+    if digit == CCO_RELAY_CLOSED_DIGIT:
+        return True
+    if digit == CCO_RELAY_OPEN_DIGIT:
+        return False
+    return None
 
 
 @dataclass(frozen=True)
@@ -81,30 +124,39 @@ class KLSMessage(HomeworksMessage):
 
     Format: KLS, [pp:ll:aa], <24-digit led states>
 
-    Each digit represents an LED state:
-    - 0 = Off/Unknown
-    - 1 = On (solid LED; for CCO: relay OPEN/OFF)
-    - 2 = Flash1 (for CCO: relay CLOSED/ON)
-    - 3 = Flash2
+    The same message serves two kinds of module, and the digits mean
+    DIFFERENT things depending on which sent it.
 
-    For CCO devices, the 8 relay states are in a specific window within
-    the 24-digit string. Default window is positions 10-17 (1-indexed),
-    which corresponds to 0-indexed positions 9-16.
+    On a keypad (L232/kls_mon.htm) every digit is an LED state:
+    - 0 = Off
+    - 1 = On
+    - 2 = Flash 1
+    - 3 = Flash 2
+    Use get_led_state() for this.
 
-    Example:
+    On a CCO module (L232/cco_kls_state.htm) the 8 relay positions occupy
+    digit positions 10-17 (1-indexed) = indices 9-16 (0-indexed), and
+    within that window the digits are repurposed:
+    - 1 = relay OPEN (de-energized, device OFF) — the resting value
+    - 2 = relay CLOSED (energized, device ON)
+    - 0 = undocumented, never observed
+    Use get_cco_relay_state() / get_cco_relay_digit() for this. Note that
+    digit 1 means ON for a keypad LED but OFF for a CCO relay.
+
+    Example — CCO module:
         KLS, [01:05:03], 000000000121111110000000
                          ^^^^^^^^^        ^^^^^^^^
                          ignored   12111111  ignored
-                                   └─ 8-button window (indices 9-16)
+                                   └─ 8-relay window (indices 9-16)
 
-        Button 1 = index 9  = 1 (OFF, solid LED)
-        Button 2 = index 10 = 2 (ON, relay closed)
-        Button 3 = index 11 = 1 (OFF)
-        Button 4 = index 12 = 1 (OFF)
-        Button 5 = index 13 = 1 (OFF)
-        Button 6 = index 14 = 1 (OFF)
-        Button 7 = index 15 = 1 (OFF)
-        Button 8 = index 16 = 1 (OFF)
+        Relay 1 = index 9  = 1 (OFF, relay open)
+        Relay 2 = index 10 = 2 (ON, relay closed)
+        Relay 3 = index 11 = 1 (OFF)
+        Relay 4 = index 12 = 1 (OFF)
+        Relay 5 = index 13 = 1 (OFF)
+        Relay 6 = index 14 = 1 (OFF)
+        Relay 7 = index 15 = 1 (OFF)
+        Relay 8 = index 16 = 1 (OFF)
     """
 
     address: str  # Normalized [pp:ll:aa] format
@@ -120,24 +172,54 @@ class KLSMessage(HomeworksMessage):
             return self.led_states[position - 1]
         return 0
 
+    def get_cco_relay_digit(
+        self,
+        relay: int,
+        window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
+    ) -> int | None:
+        """Get the raw relay-window digit for a CCO relay.
+
+        Returns the digit uninterpreted so callers can distinguish a
+        documented value from one with no known meaning. Use
+        cco_relay_digit_to_state() to interpret it.
+
+        Args:
+            relay: Relay number (1-8)
+            window_offset: 0-indexed start of the 8-relay window (default: 9)
+
+        Returns:
+            The raw digit, or None if the relay number is out of range or
+            the window offset places the relay past the end of the string.
+        """
+        if not (1 <= relay <= CCO_BUTTON_WINDOW_LENGTH):
+            return None
+
+        index = window_offset + (relay - 1)
+
+        if index >= len(self.led_states):
+            return None
+
+        return self.led_states[index]
+
     def get_cco_relay_state(
         self,
         relay: int,
         window_offset: int = CCO_BUTTON_WINDOW_OFFSET,
-    ) -> bool:
-        """Get CCO relay state from the button window.
+    ) -> bool | None:
+        """Get CCO relay state from the relay window.
 
         The CCO relay states are embedded in a specific 8-digit window
         within the 24-digit KLS string. By default, this window starts
         at 0-indexed position 9 (1-indexed position 10).
 
         Args:
-            relay: Relay/button number (1-8)
-            window_offset: 0-indexed start of the 8-button window (default: 9)
+            relay: Relay number (1-8)
+            window_offset: 0-indexed start of the 8-relay window (default: 9)
 
         Returns:
-            True if relay is closed/ON (digit == CCO_RELAY_CLOSED_DIGIT)
-            False otherwise
+            True if the relay is closed (ON), False if open (OFF), or None
+            if the position is unreadable or the digit has no documented
+            meaning. None means "unknown" and must not be shown as OFF.
 
         Example:
             For KLS string "000000000121111110000000":
@@ -146,15 +228,10 @@ class KLSMessage(HomeworksMessage):
             For KLS string "000000000111111110000000":
             - Relay 2 → index = 9 + (2-1) = 10 → digit '1' → False (OFF)
         """
-        if not (1 <= relay <= CCO_BUTTON_WINDOW_LENGTH):
-            return False
-
-        index = window_offset + (relay - 1)
-
-        if index >= len(self.led_states):
-            return False
-
-        return self.led_states[index] == CCO_RELAY_CLOSED_DIGIT
+        digit = self.get_cco_relay_digit(relay, window_offset)
+        if digit is None:
+            return None
+        return cco_relay_digit_to_state(digit)
 
 
 @dataclass(frozen=True)

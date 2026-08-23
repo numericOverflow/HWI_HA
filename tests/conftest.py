@@ -285,6 +285,10 @@ def mock_coordinator():
     # State caches
     coordinator._cco_states = {}
     coordinator._cco_devices = {}
+    coordinator._cco_relay_digits = {}
+    coordinator._cco_state_sources = {}
+    coordinator._cco_pending_commands = {}
+    coordinator._kls_last_seen = {}
     coordinator._dimmer_states = {}
     coordinator._keypad_led_states = {}
     coordinator._kls_poll_addresses = set()
@@ -300,9 +304,22 @@ def mock_coordinator():
     coordinator.register_dimmer = MagicMock()
     coordinator.unregister_dimmer = MagicMock()
     coordinator.register_kls_poll_address = MagicMock()
-    coordinator.get_cco_state = MagicMock(return_value=False)
+    # None = unknown, matching a freshly registered CCO relay that has had no
+    # KLS feedback yet. Tests that need a definite state override this.
+    coordinator.get_cco_state = MagicMock(return_value=None)
+    coordinator.get_cco_diagnostics = MagicMock(
+        return_value={
+            "kls_window_offset": 9,
+            "kls_index": 9,
+            "kls_raw_digit": None,
+            "state_source": "unknown",
+        }
+    )
     coordinator.get_dimmer_level = MagicMock(return_value=0)
-    coordinator.get_keypad_led_states = MagicMock(return_value=[0] * 24)
+    # Returns None when no KLS has been seen for the keypad yet; tests that
+    # need LED values override this with an explicit list.
+    coordinator.get_keypad_led_states = MagicMock(return_value=None)
+    coordinator.register_button_callback = MagicMock(return_value=MagicMock())
     coordinator.async_cco_close = AsyncMock(return_value=True)
     coordinator.async_cco_open = AsyncMock(return_value=True)
     coordinator.async_fade_dim = AsyncMock(return_value=True)

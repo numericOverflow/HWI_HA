@@ -97,6 +97,36 @@ class TestMessageParser:
             assert msg.source == source
             assert msg.button == 5
 
+    def test_parse_without_spaces_after_commas(self):
+        """Spaces after commas are insignificant (L232/command_formatting.htm).
+
+        Parsing must key off the comma alone, not ", " — otherwise a processor
+        emitting compact frames would drop every button press into UnknownMessage.
+        """
+        parser = MessageParser()
+
+        messages = parser.feed(b"KBP,[01:04:04],1\r\n")
+        assert len(messages) == 1
+        msg = messages[0]
+        assert isinstance(msg, ButtonEventMessage)
+        assert msg.address == "[01:04:04]"
+        assert msg.button == 1
+        assert msg.event_type == ButtonEventType.PRESSED
+
+        parser.reset()
+        messages = parser.feed(b"KLS,[02:06:03],000000000222112110000000\r\n")
+        assert isinstance(messages[0], KLSMessage)
+        assert messages[0].address == "[02:06:03]"
+
+    def test_parse_with_extra_whitespace(self):
+        """Padded fields parse identically to compact ones."""
+        parser = MessageParser()
+
+        messages = parser.feed(b"KBH,   [01:04:04] ,  7 \r\n")
+        assert len(messages) == 1
+        assert messages[0].button == 7
+        assert messages[0].event_type == ButtonEventType.HOLD
+
     def test_parse_kes_message(self):
         parser = MessageParser()
 
@@ -231,12 +261,15 @@ class TestKLSButtonWindow:
             assert msg.get_cco_relay_state(button) == expected_state
 
     def test_button_out_of_range(self):
+        """Relay numbers outside 1-8 are unknown, not OFF."""
         parser = MessageParser()
         data = b"KLS, [02:06:03], 000000000111111110000000\r\n"
         msg = parser.feed(data)[0]
 
-        assert msg.get_cco_relay_state(0) is False
-        assert msg.get_cco_relay_state(9) is False
+        assert msg.get_cco_relay_state(0) is None
+        assert msg.get_cco_relay_state(9) is None
+        assert msg.get_cco_relay_digit(0) is None
+        assert msg.get_cco_relay_digit(9) is None
 
 
 class TestCommandBuilders:

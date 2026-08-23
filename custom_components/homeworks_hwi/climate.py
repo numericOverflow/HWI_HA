@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from homeassistant.components.climate import (
     ClimateEntity,
@@ -93,15 +94,31 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
         }
 
     @property
-    def hvac_mode(self) -> HVACMode:
-        """Return current HVAC mode (heat when on, off when off)."""
+    def hvac_mode(self) -> HVACMode | None:
+        """Return current HVAC mode (heat when on, off when off).
+
+        Returns None when the processor has not yet reported this relay's
+        position. A CCO relay latches, so OFF must not be assumed —
+        reporting OFF for a relay that is actually closed would show heating
+        as idle while it runs.
+        """
         is_on = self.coordinator.get_cco_state(self._device.address)
+        if is_on is None:
+            return None
         return HVACMode.HEAT if is_on else HVACMode.OFF
 
     @property
     def current_temperature(self) -> float | None:
         """Return None as this is an on/off only device with no temperature sensor."""
         return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return CCO address and relay feedback details."""
+        return {
+            **self._attr_extra_state_attributes,
+            **self.coordinator.get_cco_diagnostics(self._device.address),
+        }
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -129,13 +146,11 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
         """Register for coordinator updates when added to hass."""
         await super().async_added_to_hass()
 
-        # Ensure the CCO device is registered with the coordinator
+        # Ensure the CCO device is registered with the coordinator. The
+        # coordinator pre-registers module addresses from config and sweeps
+        # them on the first refresh, so no per-entity RKLS is needed —
+        # one request per module, not per relay.
         self.coordinator.register_cco_device(self._device)
-
-        # Request initial state
-        await self.coordinator.async_request_keypad_led_states(
-            self._device.address.to_kls_address()
-        )
 
     async def async_will_remove_from_hass(self) -> None:
         """Unregister CCO device when removed from hass."""

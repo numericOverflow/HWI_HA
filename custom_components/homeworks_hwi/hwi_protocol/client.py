@@ -35,8 +35,9 @@ RECONNECT_DELAY_MIN = 1.0
 RECONNECT_DELAY_MAX = 60.0
 RECONNECT_DELAY_MULTIPLIER = 2.0
 
-# Callback type
+# Callback types
 MessageCallback = Callable[[AnyMessage], None]
+ReconnectCallback = Callable[[], None]
 
 
 class HomeworksClient:
@@ -64,6 +65,7 @@ class HomeworksClient:
         port: int,
         callback: MessageCallback | None = None,
         credentials: str | None = None,
+        reconnect_callback: ReconnectCallback | None = None,
     ) -> None:
         """Initialize client.
 
@@ -72,10 +74,15 @@ class HomeworksClient:
             port: Controller port
             callback: Function to call with parsed messages
             credentials: Login credentials (password or "user, password")
+            reconnect_callback: Called after the read loop re-establishes the
+                connection and re-subscribes to monitoring. Fires without
+                waiting for inbound traffic, so state can be re-synced on a
+                system that is otherwise silent.
         """
         self._transport = HomeworksTransport(host, port, credentials)
         self._parser = MessageParser()
         self._callback = callback
+        self._reconnect_callback = reconnect_callback
 
         self._running = False
         self._read_task: asyncio.Task | None = None
@@ -180,6 +187,14 @@ class HomeworksClient:
                     self._connected_at = datetime.now(tz=timezone.utc)
                     self._reconnect_delay = RECONNECT_DELAY_MIN
                     _LOGGER.info("Connected to controller")
+                    # Announce immediately. Relays may have moved while we
+                    # were away, and on a quiet system no message may arrive
+                    # for a long time — the listener needs to re-query now.
+                    if self._reconnect_callback:
+                        try:
+                            self._reconnect_callback()
+                        except Exception:  # noqa: BLE001
+                            _LOGGER.exception("Reconnect callback error")
                 except HomeworksException as err:
                     _LOGGER.warning("Connection failed: %s", err)
                     if self._running:

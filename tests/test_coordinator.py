@@ -28,11 +28,16 @@ from custom_components.homeworks_hwi.models import (
     CCOEntityType,
     normalize_address,
 )
-from custom_components.homeworks_hwi.hwi_protocol.messages import CCO_RELAY_CLOSED_DIGIT
-
-# The opposite digit (relay open = device OFF)
-CCO_RELAY_OPEN_DIGIT = 1 if CCO_RELAY_CLOSED_DIGIT == 2 else 2
+from custom_components.homeworks_hwi.hwi_protocol.messages import (
+    CCO_RELAY_CLOSED_DIGIT,
+    CCO_RELAY_OPEN_DIGIT,
+)
 from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
+
+# A relay-window digit with no documented meaning. Digit 0 is explicitly
+# "UNDOCUMENTED & UNDISCOVERED" per L232/cco_kls_state.htm, so it must decode
+# to unknown rather than OFF.
+CCO_RELAY_UNDOCUMENTED_DIGIT = 0
 
 
 def _make_bare_coordinator():
@@ -41,6 +46,10 @@ def _make_bare_coordinator():
         coord = HomeworksCoordinator.__new__(HomeworksCoordinator)
         coord._cco_devices = {}
         coord._cco_states = {}
+        coord._cco_relay_digits = {}
+        coord._cco_state_sources = {}
+        coord._cco_pending_commands = {}
+        coord._kls_last_seen = {}
         coord._kls_poll_addresses = set()
         coord._keypad_led_states = {}
         coord._dimmer_states = {}
@@ -53,8 +62,88 @@ def _make_bare_coordinator():
         coord._poll_count = 0
         coord._client = None
         coord.hass = MagicMock()
+        # Monotonic clock used for KLS timestamps and command-mismatch ages.
+        coord.hass.loop.time = MagicMock(return_value=1000.0)
         coord.async_set_updated_data = MagicMock()
         return coord
+
+
+# =============================================================================
+# Poll Address Pre-registration Tests
+# =============================================================================
+
+
+class TestPreregisterPollAddresses:
+    """Tests for seeding KLS poll addresses from config before first refresh.
+
+    Entities only register in async_added_to_hass, which runs after
+    async_config_entry_first_refresh(), so without pre-registration the
+    startup sweep would send nothing and every CCO would sit unknown until a
+    later poll tick (L232/cco_kls_state.htm implementation note 2).
+    """
+
+    def _coord_with_options(self, options):
+        coord = _make_bare_coordinator()
+        coord.config_entry = MagicMock()
+        coord.config_entry.options = options
+        coord._preregister_poll_addresses_from_options()
+        return coord
+
+    def test_cco_addresses_preregistered(self):
+        coord = self._coord_with_options(
+            {"cco_devices": [{"addr": "[02:06:03]"}]}
+        )
+
+        assert coord._kls_poll_addresses == {"[02:06:03]"}
+
+    def test_relay_suffix_stripped(self):
+        """Polling is per module address, so any ",relay" suffix is dropped."""
+        coord = self._coord_with_options(
+            {"cco_devices": [{"addr": "[02:06:03],6"}]}
+        )
+
+        assert coord._kls_poll_addresses == {"[02:06:03]"}
+
+    def test_one_address_per_module(self):
+        """8 relays on one board produce a single RKLS target, not eight."""
+        coord = self._coord_with_options(
+            {
+                "cco_devices": [
+                    {"addr": f"2:6:3,{relay}"} for relay in range(1, 9)
+                ]
+            }
+        )
+
+        assert coord._kls_poll_addresses == {"[02:06:03]"}
+
+    def test_keypads_preregistered_alongside_ccos(self):
+        coord = self._coord_with_options(
+            {
+                "cco_devices": [{"addr": "2:6:3,1"}],
+                "keypads": [{"addr": "2:6:4"}],
+            }
+        )
+
+        assert coord._kls_poll_addresses == {"[02:06:03]", "[02:06:04]"}
+
+    def test_missing_and_unparsable_addresses_skipped(self):
+        """A bad entry must not abort pre-registration of the good ones."""
+        coord = self._coord_with_options(
+            {
+                "cco_devices": [
+                    {},
+                    {"addr": "not-an-address"},
+                    {"addr": "2:6:3,1"},
+                ]
+            }
+        )
+
+        assert coord._kls_poll_addresses == {"[02:06:03]"}
+
+    def test_no_options_is_safe(self):
+        coord = self._coord_with_options({})
+
+        assert coord._kls_poll_addresses == set()
 
 
 # =============================================================================
@@ -73,8 +162,22 @@ class TestCCODeviceRegistration:
 
         assert device.address.unique_key in coord._cco_devices
         assert device.address.unique_key in coord._cco_states
-        assert coord._cco_states[device.address.unique_key] is False
+        # Unknown, not False: a CCO relay latches and holds its position
+        # across power loss, so "off" would be a guess.
+        assert coord._cco_states[device.address.unique_key] is None
+        assert coord._cco_state_sources[device.address.unique_key] == "unknown"
         assert "[02:06:03]" in coord._kls_poll_addresses
+
+    def test_register_cco_device_preserves_known_state(self, cco_device_factory):
+        """Re-registering must not wipe a state already learned from KLS."""
+        coord = _make_bare_coordinator()
+        device = cco_device_factory(button=6)
+        coord.register_cco_device(device)
+        coord._cco_states[device.address.unique_key] = True
+
+        coord.register_cco_device(device)
+
+        assert coord._cco_states[device.address.unique_key] is True
 
     def test_register_multiple_cco_devices_same_address(self, cco_device_factory):
         """Multiple CCO devices on same keypad address share KLS polling."""
@@ -206,16 +309,64 @@ class TestKLSStateEngine:
         assert coord._cco_states[device.address.unique_key] is False
 
     def test_kls_update_no_change_no_notification(self):
-        """No state change → no notification to listeners."""
+        """Identical repeat KLS → no notification to listeners.
+
+        Notification is driven by "did anything change", where "anything" is
+        either a derived CCO state or the raw LED string (LED binary sensors
+        need the latter even on keypads with no CCO devices). A repeat of the
+        exact same KLS changes neither.
+        """
         coord, device = self._make_coordinator_with_device(button=6)
 
-        # Default state is False (OFF). Sending OPEN digit keeps it OFF = no change.
         led_states = [0] * 24
         led_states[14] = CCO_RELAY_OPEN_DIGIT
+
+        # First KLS is new LED data, so it does notify.
+        coord._handle_kls_update("[02:06:03]", led_states)
+        coord.async_set_updated_data.assert_called_once()
+
+        # Identical repeat: neither CCO state nor LED string changed.
+        coord.async_set_updated_data.reset_mock()
+        coord._handle_kls_update("[02:06:03]", list(led_states))
+
+        coord.async_set_updated_data.assert_not_called()
+
+    def test_kls_update_led_change_without_cco_change_notifies(self):
+        """An LED-only change notifies so LED binary sensors get written.
+
+        A keypad LED can change (scene tracked by the processor moved) while no
+        CCO relay state changes at all. LED sensors must still be updated on the
+        pushed KLS rather than waiting for the next poll.
+        """
+        coord, device = self._make_coordinator_with_device(button=6)
+
+        led_states = [0] * 24
+        led_states[14] = CCO_RELAY_OPEN_DIGIT  # device now known OFF
+        coord._handle_kls_update("[02:06:03]", led_states)
+        coord.async_set_updated_data.reset_mock()
+
+        # Flip LED 1 (index 0) — outside the CCO button window, so no CCO change.
+        led_states_2 = list(led_states)
+        led_states_2[0] = 1
+        coord._handle_kls_update("[02:06:03]", led_states_2)
+
+        assert coord._cco_states[device.address.unique_key] is False
+        coord.async_set_updated_data.assert_called_once()
+
+    def test_get_keypad_led_states_unknown_returns_none(self):
+        """A keypad with no KLS seen yet is unknown, not fabricated all-off."""
+        coord = _make_bare_coordinator()
+
+        assert coord.get_keypad_led_states("[02:06:03]") is None
+
+    def test_get_keypad_led_states_returns_cached(self):
+        """After a KLS, the cached LED list is returned for the normalized address."""
+        coord = _make_bare_coordinator()
+        led_states = [0] * 24
+        led_states[3] = 2
         coord._handle_kls_update("[02:06:03]", led_states)
 
-        # State was already False (default), so no change notification
-        coord.async_set_updated_data.assert_not_called()
+        assert coord.get_keypad_led_states("[2:6:3]") == led_states
 
     def test_kls_update_unrelated_address_ignored(self):
         """KLS update for unregistered address does not affect registered devices."""
@@ -227,7 +378,7 @@ class TestKLSStateEngine:
         # Different address
         coord._handle_kls_update("[02:06:99]", led_states)
 
-        assert coord._cco_states[device.address.unique_key] is False
+        assert coord._cco_states[device.address.unique_key] is None
 
     def test_kls_update_multiple_devices_same_address(self):
         """KLS update correctly updates multiple devices on same keypad."""
@@ -251,6 +402,164 @@ class TestKLSStateEngine:
 
         assert coord._cco_states[dev1.address.unique_key] is True
         assert coord._cco_states[dev2.address.unique_key] is False
+
+
+class TestCCOUnknownState:
+    """Tests that an undecodable relay digit surfaces as unknown, not OFF."""
+
+    def _coord_with_device(self, button=6):
+        coord = _make_bare_coordinator()
+        device = CCODevice(
+            address=CCOAddress(processor=2, link=6, address=3, button=button),
+            name="Test",
+            entity_type=CCOEntityType.SWITCH,
+        )
+        coord.register_cco_device(device)
+        return coord, device
+
+    def test_fresh_device_state_is_unknown(self):
+        """Before any KLS, get_cco_state returns None."""
+        coord, device = self._coord_with_device()
+
+        assert coord.get_cco_state(device.address) is None
+
+    def test_undocumented_digit_stays_unknown(self):
+        """An all-zero relay window must not be read as OFF.
+
+        This is the signature of a wrong window offset; coercing it to OFF
+        produced a rock-solid fake "off" that never self-corrected.
+        """
+        coord, device = self._coord_with_device()
+        led_states = [0] * 24  # index 14 = 0 = undocumented
+
+        coord._handle_kls_update("[02:06:03]", led_states)
+
+        assert coord.get_cco_state(device.address) is None
+        assert coord._cco_state_sources[device.address.unique_key] == "unknown"
+        assert coord._cco_relay_digits[device.address.unique_key] == 0
+
+    def test_known_state_reverting_to_undocumented_digit_becomes_unknown(self):
+        """A digit that stops being decodable clears the previously known state."""
+        coord, device = self._coord_with_device()
+        led_states_on = [0] * 24
+        led_states_on[14] = CCO_RELAY_CLOSED_DIGIT
+        coord._handle_kls_update("[02:06:03]", led_states_on)
+        assert coord.get_cco_state(device.address) is True
+
+        led_states_bad = [0] * 24
+        led_states_bad[14] = 3  # Flash2 for a keypad LED; undefined for a relay
+        coord._handle_kls_update("[02:06:03]", led_states_bad)
+
+        assert coord.get_cco_state(device.address) is None
+
+    def test_cco_unknown_count(self):
+        """cco_unknown_count reports only the endpoints still awaiting KLS."""
+        coord = _make_bare_coordinator()
+        dev1 = CCODevice(
+            address=CCOAddress(2, 6, 3, 4), name="Dev4", entity_type=CCOEntityType.SWITCH
+        )
+        dev2 = CCODevice(
+            address=CCOAddress(2, 6, 3, 6), name="Dev6", entity_type=CCOEntityType.SWITCH
+        )
+        coord.register_cco_device(dev1)
+        coord.register_cco_device(dev2)
+        assert coord.cco_unknown_count == 2
+
+        led_states = [0] * 24
+        led_states[12] = CCO_RELAY_CLOSED_DIGIT  # relay 4 only
+        coord._handle_kls_update("[02:06:03]", led_states)
+
+        assert coord.cco_unknown_count == 1
+
+    def test_get_cco_diagnostics(self):
+        """Diagnostics expose the offset, index, raw digit, and state source."""
+        coord, device = self._coord_with_device(button=6)
+        led_states = [0] * 24
+        led_states[14] = CCO_RELAY_CLOSED_DIGIT
+        coord._handle_kls_update("[02:06:03]", led_states)
+
+        diag = coord.get_cco_diagnostics(device.address)
+
+        assert diag["kls_window_offset"] == 9
+        assert diag["kls_index"] == 14
+        assert diag["kls_raw_digit"] == CCO_RELAY_CLOSED_DIGIT
+        assert diag["state_source"] == "kls"
+
+    def test_kls_last_seen_ages(self):
+        """Only addresses that have answered appear, aged from the loop clock."""
+        coord = _make_bare_coordinator()
+        coord.hass.loop.time.return_value = 1000.0
+        coord._handle_kls_update("[02:06:03]", [0] * 24)
+
+        coord.hass.loop.time.return_value = 1012.5
+        ages = coord.kls_last_seen_ages()
+
+        assert ages == {"[02:06:03]": 12.5}
+
+
+class TestCCOCommandMismatch:
+    """Tests for optimistic state and command/feedback disagreement."""
+
+    def _coord_with_device(self, button=6):
+        coord = _make_bare_coordinator()
+        device = CCODevice(
+            address=CCOAddress(processor=2, link=6, address=3, button=button),
+            name="Test",
+            entity_type=CCOEntityType.SWITCH,
+        )
+        coord.register_cco_device(device)
+        return coord, device
+
+    def test_optimistic_state_recorded(self):
+        """Commanding a relay sets an optimistic state pending confirmation."""
+        coord, device = self._coord_with_device()
+
+        coord._record_optimistic_state(device.address.unique_key, True)
+
+        assert coord.get_cco_state(device.address) is True
+        assert coord._cco_state_sources[device.address.unique_key] == "optimistic"
+        assert device.address.unique_key in coord._cco_pending_commands
+
+    def test_kls_wins_over_contradicting_command(self, caplog):
+        """Processor feedback overrides our optimistic guess and logs it."""
+        coord, device = self._coord_with_device()
+        coord._record_optimistic_state(device.address.unique_key, True)
+
+        # Processor reports the relay open despite the close command.
+        led_states = [0] * 24
+        led_states[14] = CCO_RELAY_OPEN_DIGIT
+        coord._handle_kls_update("[02:06:03]", led_states)
+
+        assert coord.get_cco_state(device.address) is False
+        assert coord._cco_state_sources[device.address.unique_key] == "kls"
+        assert "reports" in caplog.text
+
+    def test_matching_kls_clears_pending_without_warning(self, caplog):
+        """Confirmation is not a mismatch."""
+        coord, device = self._coord_with_device()
+        coord._record_optimistic_state(device.address.unique_key, True)
+
+        led_states = [0] * 24
+        led_states[14] = CCO_RELAY_CLOSED_DIGIT
+        coord._handle_kls_update("[02:06:03]", led_states)
+
+        assert coord.get_cco_state(device.address) is True
+        assert device.address.unique_key not in coord._cco_pending_commands
+        assert "reports" not in caplog.text
+
+    def test_stale_pending_command_is_not_a_mismatch(self, caplog):
+        """A relay changed at a keypad long after our command is normal."""
+        coord, device = self._coord_with_device()
+        coord._record_optimistic_state(device.address.unique_key, True)
+
+        # Well past CCO_COMMAND_MISMATCH_WINDOW.
+        coord.hass.loop.time.return_value = 1000.0 + 60.0
+        led_states = [0] * 24
+        led_states[14] = CCO_RELAY_OPEN_DIGIT
+        coord._handle_kls_update("[02:06:03]", led_states)
+
+        assert coord.get_cco_state(device.address) is False
+        assert "reports" not in caplog.text
 
 
 # =============================================================================
