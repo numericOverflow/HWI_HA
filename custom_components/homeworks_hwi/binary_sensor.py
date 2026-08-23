@@ -187,11 +187,13 @@ class HomeworksLEDBinarySensor(
     def is_on(self) -> bool | None:
         """Return True if the LED is on.
 
-        LED states: 0=Off, 1=On, 2=Flash1, 3=Flash2
-        We treat Flash as On.
+        LED states (L232/kls_mon.htm): 0=Off, 1=On, 2=Flash1, 3=Flash2.
+        Flash counts as on. Returns None until the first KLS message for
+        this keypad arrives, so the entity reads "unknown" rather than
+        falsely reporting every LED off.
         """
         led_states = self.coordinator.get_keypad_led_states(self._keypad_addr)
-        if not led_states or self._led_number > len(led_states):
+        if led_states is None or self._led_number > len(led_states):
             return None
 
         # LED number is 1-indexed
