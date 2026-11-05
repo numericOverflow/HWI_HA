@@ -149,12 +149,15 @@ class HomeworksTransport:
             return b""
 
         try:
-            return await asyncio.wait_for(
+            data = await asyncio.wait_for(
                 self._reader.read(1024),
                 timeout=READ_TIMEOUT,
             )
         except asyncio.TimeoutError:
             return b""
+        if data:
+            _LOGGER.debug("RX (connect): %r", data)
+        return data
 
     async def _handle_login(self) -> None:
         """Handle login sequence.
@@ -237,7 +240,6 @@ class HomeworksTransport:
             )
             if not data:
                 raise HomeworksConnectionLost("Connection closed by controller")
-            _LOGGER.debug("Received: %s", data)
             return data
         except asyncio.TimeoutError:
             return b""

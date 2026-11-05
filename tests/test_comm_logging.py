@@ -6,6 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from custom_components.homeworks_hwi.hwi_protocol.protocol import MessageParser
 from custom_components.homeworks_hwi.hwi_protocol.transport import HomeworksTransport
 from custom_components.homeworks_hwi.hwi_protocol.transport import redact_command
 from tests.fake_controller import FakeHomeworksController
@@ -112,3 +113,73 @@ class TestLoginLogging:
         assert "TX: <user_redacted>, <password_redacted>" in _messages(debug_log)
         assert USERNAME not in debug_log.text
         assert PASSWORD not in debug_log.text
+
+    async def test_connect_rx_logged(self, debug_log) -> None:
+        """The login prompt and the login response are logged."""
+        controller = FakeHomeworksController(require_login=True)
+        await controller.start()
+        transport = HomeworksTransport(
+            "127.0.0.1", controller.port, credentials="test, test"
+        )
+        try:
+            await transport.connect()
+        finally:
+            await transport.close()
+            await controller.stop()
+
+        messages = _messages(debug_log)
+        assert "RX (connect): b'LOGIN: '" in messages
+        assert "RX (connect): b'login successful\\r\\n'" in messages
+
+
+class TestRxLogging:
+    """Tests for per-line RX logging."""
+
+    async def test_transport_read_does_not_log_chunks(self, debug_log) -> None:
+        """A transport read does not log the raw chunk."""
+        transport = HomeworksTransport("127.0.0.1", 23)
+        reader = MagicMock()
+        reader.read = AsyncMock(return_value=b"DL, [01:01:00:01:01], 50\r\n")
+        transport._reader = reader
+
+        assert await transport.read() == b"DL, [01:01:00:01:01], 50\r\n"
+
+        assert "Received:" not in debug_log.text
+        assert not any(m.startswith("RX") for m in _messages(debug_log))
+
+    def test_complete_line_logged_once(self, debug_log) -> None:
+        """A complete line is logged once."""
+        line = "KLS, [02:06:03], 000000000000000000000000"
+
+        MessageParser().feed(f"{line}\r\n".encode())
+
+        rx_lines = [m for m in _messages(debug_log) if m.startswith("RX: ")]
+        assert rx_lines == [f"RX: {line}"]
+
+    def test_empty_line_not_logged(self, debug_log) -> None:
+        """An empty line is not logged."""
+        MessageParser().feed(b"\r\n")
+
+        assert not any(m.startswith("RX") for m in _messages(debug_log))
+
+    def test_unparseable_line_logged_with_warning(self, debug_log) -> None:
+        """A line that fails to parse is logged and still produces a warning."""
+        MessageParser().feed(b"KLS\xff\r\n")
+
+        assert "RX: KLS\N{REPLACEMENT CHARACTER}" in _messages(debug_log)
+        assert any(
+            record.levelno == logging.WARNING
+            and record.getMessage().startswith("Invalid message encoding")
+            for record in debug_log.records
+        )
+
+    def test_partial_line_logged_on_reset(self, debug_log) -> None:
+        """Unterminated data is logged when the parser is reset."""
+        parser = MessageParser()
+        parser.feed(b"partial")
+
+        assert not any(m.startswith("RX") for m in _messages(debug_log))
+
+        parser.reset()
+
+        assert "RX (discarded partial): b'partial'" in _messages(debug_log)
