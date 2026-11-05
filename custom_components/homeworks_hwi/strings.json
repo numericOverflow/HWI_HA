@@ -375,7 +375,7 @@
             },
             "controller_settings": {
                 "title": "Controller Settings",
-                "description": "Configure protocol-level settings for this controller.",
+                "description": "Configure protocol-level settings for this controller.\n\nTo log all traffic to and from the controller (TX/RX lines) in home-assistant.log: close this dialog, open the three-dot menu on the integration page, and select **Enable debug logging**. Select **Disable debug logging** to stop. Requires an admin user.",
                 "data": {
                     "kls_poll_interval": "KLS poll interval",
                     "kls_window_offset": "KLS button window offset"
