@@ -284,7 +284,6 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
         )
 
     commands = data[CONF_COMMAND]
-    _LOGGER.debug("Send commands: %s", commands)
 
     client = homeworks_data.coordinator.client
     if not client:
@@ -303,7 +302,6 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
             _LOGGER.debug("Sleeping for %s ms", delay)
             await asyncio.sleep(delay / 1000)
         else:
-            _LOGGER.debug("Sending command '%s'", command)
             await client.send_command(command)
 
 
