@@ -2209,7 +2209,7 @@ LIGHT_EDIT: VolDictType = {
             min=0,
             max=20,
             mode=selector.NumberSelectorMode.BOX,
-            step=0.01,
+            step=1,
             unit_of_measurement="s",
         )
     ),

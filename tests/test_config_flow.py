@@ -346,3 +346,21 @@ class TestLegacyMigration:
 
         types = {d["entity_type"] for d in new_options["cco_devices"]}
         assert types == {"switch", "cover", "lock"}
+
+
+# =============================================================================
+# Selector Step Tests
+# =============================================================================
+
+
+def test_light_rate_selector_uses_whole_seconds():
+    """The fade rate moves in 1 s steps; the release delay keeps 0.01 s."""
+    from custom_components.homeworks_hwi.config_flow import BUTTON_EDIT
+    from custom_components.homeworks_hwi.config_flow import LIGHT_EDIT
+    from custom_components.homeworks_hwi.const import CONF_RATE
+    from custom_components.homeworks_hwi.const import CONF_RELEASE_DELAY
+
+    rate = next(v for k, v in LIGHT_EDIT.items() if k == CONF_RATE)
+    assert rate.config["step"] == 1
+    delay = next(v for k, v in BUTTON_EDIT.items() if k == CONF_RELEASE_DELAY)
+    assert delay.config["step"] == 0.01
