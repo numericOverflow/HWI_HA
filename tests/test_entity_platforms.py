@@ -209,6 +209,126 @@ class TestLightDimmer:
         assert isinstance(DEFAULT_FADE_RATE, int)
 
 
+DIMMER_ADDR = "[01:04:01:03:02]"
+
+
+class TestDimmableLightCommands:
+    """Tests for the FADEDIM text that the dimmable light produces."""
+
+    pytestmark = [pytest.mark.requires_ha]
+
+    @pytest.fixture
+    def mock_coordinator(self):
+        """Create a mock coordinator."""
+        coordinator = MagicMock()
+        coordinator.get_dimmer_level = MagicMock(return_value=0)
+        coordinator.async_fade_dim = AsyncMock(return_value=True)
+        return coordinator
+
+    @pytest.fixture
+    def make_light(self, mock_coordinator):
+        """Return a factory for a dimmable light with a given fade rate."""
+        try:
+            from custom_components.homeworks_hwi.light import HomeworksDimmableLight
+        except ImportError:
+            pytest.skip("Requires Home Assistant dependencies")
+
+        def _make(rate=0):
+            return HomeworksDimmableLight(
+                coordinator=mock_coordinator,
+                controller_id="test_ctrl",
+                addr=DIMMER_ADDR,
+                name="Test",
+                rate=rate,
+            )
+
+        return _make
+
+    @staticmethod
+    def _sent(mock_coordinator):
+        from custom_components.homeworks_hwi.hwi_protocol import commands
+
+        return commands.fade_dim(*mock_coordinator.async_fade_dim.call_args.args)
+
+    @pytest.mark.asyncio
+    async def test_brightness_1_stays_on(self, make_light, mock_coordinator):
+        """Brightness 1 sends 1 percent, not 0 (which turned the light off)."""
+        await make_light().async_turn_on(brightness=1)
+        assert self._sent(mock_coordinator) == (
+            f"FADEDIM, 1, 00:00:00, 00:00:00, {DIMMER_ADDR}"
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("brightness", "intensity"),
+        [
+            (2, 1),
+            (3, 1),
+            (127, 49),
+            (128, 50),
+            (171, 67),
+            (254, 99),
+            (255, 100),
+        ],
+    )
+    async def test_brightness_to_intensity(
+        self, make_light, mock_coordinator, brightness, intensity
+    ):
+        """HA brightness maps to whole-percent intensity."""
+        await make_light().async_turn_on(brightness=brightness)
+        assert self._sent(mock_coordinator) == (
+            f"FADEDIM, {intensity}, 00:00:00, 00:00:00, {DIMMER_ADDR}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_brightness_passes_raw_percent(self, make_light, mock_coordinator):
+        """The light passes the unrounded percent; only the builder rounds."""
+        await make_light().async_turn_on(brightness=128)
+        assert mock_coordinator.async_fade_dim.call_args.args[1] == pytest.approx(
+            128 * 100 / 255
+        )
+
+    @pytest.mark.asyncio
+    async def test_turn_on_without_brightness(self, make_light, mock_coordinator):
+        """No brightness and no previous level turns on at 100 percent."""
+        await make_light().async_turn_on()
+        assert self._sent(mock_coordinator) == (
+            f"FADEDIM, 100, 00:00:00, 00:00:00, {DIMMER_ADDR}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_turn_off(self, make_light, mock_coordinator):
+        """Turn off sends intensity 0."""
+        await make_light().async_turn_off()
+        assert self._sent(mock_coordinator) == (
+            f"FADEDIM, 0, 00:00:00, 00:00:00, {DIMMER_ADDR}"
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("rate", "fade"),
+        [
+            (1.0, "00:00:01"),
+            (1.5, "00:00:01"),
+            (0.01, "00:00:01"),
+        ],
+    )
+    async def test_rate_to_fade_time(self, make_light, mock_coordinator, rate, fade):
+        """The fade rate goes out as whole seconds (1.0 used to take ~60 s)."""
+        await make_light(rate).async_turn_on(brightness=171)
+        assert self._sent(mock_coordinator) == (
+            f"FADEDIM, 67, {fade}, 00:00:00, {DIMMER_ADDR}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_transition_ignored(self, make_light, mock_coordinator):
+        """A transition argument does not override the configured rate."""
+        await make_light().async_turn_on(brightness=171, transition=0.5)
+        assert self._sent(mock_coordinator) == (
+            f"FADEDIM, 67, 00:00:00, 00:00:00, {DIMMER_ADDR}"
+        )
+
+
 # =============================================================================
 # Cover-Specific Tests (CCO + RPM + QED)
 # =============================================================================

@@ -54,6 +54,8 @@ CONF_KLS_WINDOW_OFFSET: Final = "kls_window_offset"
 
 # Default values
 DEFAULT_FADE_RATE: Final = 0
+# HA brightness 1-255 maps to L232 intensity 1-100 percent.
+DIMMER_BRIGHTNESS_SCALE: Final = (1, 100)
 DEFAULT_BUTTON_NAME: Final = "Homeworks button"
 DEFAULT_KEYPAD_NAME: Final = "Homeworks keypad"
 DEFAULT_LIGHT_NAME: Final = "Homeworks light"
