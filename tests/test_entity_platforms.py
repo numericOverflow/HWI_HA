@@ -202,10 +202,11 @@ class TestLightDimmer:
         assert round(128 * 100 / 255) == 50
 
     def test_default_fade_rate(self):
-        """Default fade rate is defined."""
+        """Default fade rate matches the processor default of 0 seconds."""
         from custom_components.homeworks_hwi.const import DEFAULT_FADE_RATE
 
-        assert DEFAULT_FADE_RATE == 0.01
+        assert DEFAULT_FADE_RATE == 0
+        assert isinstance(DEFAULT_FADE_RATE, int)
 
 
 # =============================================================================
