@@ -26,7 +26,8 @@
 ### Connection Drops Frequently
 
 1. **Enable debug logging**
-   - Settings > Devices & services > Lutron Homeworks HWI > three-dot menu > **Enable debug logging**
+   - Settings > Devices & services > Lutron Homeworks HWI > three-dot menu at the top right of the page > **Enable debug logging**
+   - Use the page header menu, not the menu next to the gear icon on the hub row. Requires an admin user.
    - Or, to keep logging on across restarts, add to `configuration.yaml` (child loggers inherit the level):
    ```yaml
    logger:

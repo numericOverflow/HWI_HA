@@ -158,7 +158,7 @@ The integration uses these Homeworks commands:
 
 Debug logging writes every line sent to (`TX:`) and received from (`RX:`) the controller to `home-assistant.log`.
 
-To turn it on from the UI, go to **Settings** > **Devices & services** > **Lutron Homeworks HWI**, open the three-dot menu, and select **Enable debug logging**. Select **Disable debug logging** to stop.
+To turn it on from the UI, go to **Settings** > **Devices & services** > **Lutron Homeworks HWI**, open the three-dot menu at the top right of the page (in the page header, not the menu next to the gear icon on the hub row), and select **Enable debug logging**. Select **Disable debug logging** to stop. Requires an admin user.
 
 For logging that stays on across restarts, add to `configuration.yaml`:
 ```yaml
