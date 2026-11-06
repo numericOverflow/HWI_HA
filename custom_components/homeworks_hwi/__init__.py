@@ -38,6 +38,7 @@ from homeassistant.exceptions import ServiceValidationError
 import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 from homeassistant.helpers.service import async_register_admin_service
@@ -284,7 +285,6 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
         )
 
     commands = data[CONF_COMMAND]
-    _LOGGER.debug("Send commands: %s", commands)
 
     client = homeworks_data.coordinator.client
     if not client:
@@ -303,7 +303,6 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
             _LOGGER.debug("Sleeping for %s ms", delay)
             await asyncio.sleep(delay / 1000)
         else:
-            _LOGGER.debug("Sending command '%s'", command)
             await client.send_command(command)
 
 
@@ -323,9 +322,9 @@ def _cleanup_old_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
     entity_registry = async_get_entity_registry(hass)
     entities_to_remove = []
 
-    for entity_entry in list(entity_registry.entities.values()):
-        if entity_entry.config_entry_id != entry.entry_id:
-            continue
+    for entity_entry in er.async_entries_for_config_entry(
+        entity_registry, entry.entry_id
+    ):
         if entity_entry.platform != DOMAIN:
             continue
 
@@ -357,10 +356,9 @@ def _cleanup_orphaned_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
     device_registry = dr.async_get(hass)
     entity_registry = async_get_entity_registry(hass)
 
-    for device_entry in list(device_registry.devices.values()):
-        if entry.entry_id not in device_entry.config_entries:
-            continue
-
+    for device_entry in dr.async_entries_for_config_entry(
+        device_registry, entry.entry_id
+    ):
         is_our_device = any(
             identifier[0] == DOMAIN for identifier in device_entry.identifiers
         )
@@ -368,9 +366,10 @@ def _cleanup_orphaned_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
             continue
 
         # Check if any entities reference this device
-        has_entities = any(
-            entity.device_id == device_entry.id
-            for entity in entity_registry.entities.values()
+        has_entities = bool(
+            er.async_entries_for_device(
+                entity_registry, device_entry.id, include_disabled_entities=True
+            )
         )
         if not has_entities:
             _LOGGER.info(
@@ -615,8 +614,9 @@ async def async_remove_config_entry_device(
 
     has_entities = any(
         entity.device_id == device_entry.id
-        for entity in entity_registry.entities.values()
-        if entity.config_entry_id == entry.entry_id
+        for entity in er.async_entries_for_config_entry(
+            entity_registry, entry.entry_id
+        )
     )
 
     if has_entities:

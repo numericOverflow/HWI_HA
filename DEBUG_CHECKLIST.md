@@ -15,8 +15,9 @@
    - Custom rates require SETBAUD command and dip switch down
 
 3. **Verify credentials**
-   - Try connecting via telnet and entering `LOGIN, <username>, <password>`
+   - Connect via telnet and, at the `LOGIN: ` prompt, type `<username>, <password>`
    - Response should be "login successful"
+   - The L232 command `LOGIN, <password>[, <port address>]` is a different command that logs in processor RS232 ports
 
 4. **Check hardware handshaking**
    - Some adapters don't support hardware handshaking
@@ -25,12 +26,14 @@
 ### Connection Drops Frequently
 
 1. **Enable debug logging**
+   - Settings > Devices & services > Lutron Homeworks HWI > three-dot menu at the top right of the page > **Enable debug logging**
+   - Use the page header menu, not the menu next to the gear icon on the hub row. Requires an admin user.
+   - Or, to keep logging on across restarts, add to `configuration.yaml` (child loggers inherit the level):
    ```yaml
    logger:
      default: info
      logs:
-       custom_components.homeworks: debug
-       custom_components.homeworks.client: debug
+       custom_components.homeworks_hwi: debug
    ```
 
 2. **Check health sensors**
@@ -58,7 +61,7 @@
 
 4. **Test manually via service**
    ```yaml
-   service: homeworks.send_command
+   service: homeworks_hwi.send_command
    data:
      controller_id: lutron_homeworks
      command:
@@ -139,21 +142,21 @@ For CCO devices:
 
 ```yaml
 # Request KLS state
-service: homeworks.send_command
+service: homeworks_hwi.send_command
 data:
   controller_id: lutron_homeworks
   command:
     - "RKLS, [02:06:03]"
 
 # Request dimmer level
-service: homeworks.send_command
+service: homeworks_hwi.send_command
 data:
   controller_id: lutron_homeworks
   command:
     - "RDL, [01:01:00:02:04]"
 
 # Test CCO relay
-service: homeworks.send_command
+service: homeworks_hwi.send_command
 data:
   controller_id: lutron_homeworks
   command:
@@ -162,7 +165,7 @@ data:
     - "CCOOPEN, [02:06:03], 1"
 
 # Get processor info
-service: homeworks.send_command
+service: homeworks_hwi.send_command
 data:
   controller_id: lutron_homeworks
   command:
@@ -176,17 +179,24 @@ data:
 
 ```
 # Successful connection
-Connected to Homeworks controller at 192.168.1.100:23
+Connected to 192.168.1.100:23
+
+# Connect-time data and login (credentials are redacted)
+RX (connect): b'LOGIN: '
+TX: <user_redacted>, <password_redacted>
+
+# Command sent and line received
+TX: RKLS, [02:06:03]
+RX: KLS, [02:06:03], 000000000000000000000000
 
 # KLS update received
-KLS update for [02:06:03]: [0, 0, 0, 0, 0, 1, 0, ...]
+KLS update for [02:06:03]: full=[0,0,0,0,0,1,0,...] window_offset=0
 
-# CCO state change detected
-CCO 2:6:3,6 state changed: False -> True (LED=1)
+# CCO state evaluated
+CCO Garage Door (relay=6 idx=5): digit=1 -> state=True (was False, inverted=False)
 
 # Connection lost
-Connection lost
-Attempting to reconnect...
+Connection lost, will reconnect
 
 # Parse error
 Failed to parse message: <message> - <error>
@@ -198,9 +208,7 @@ Failed to parse message: <message> - <error>
 logger:
   default: info
   logs:
-    custom_components.homeworks: debug
-    custom_components.homeworks.client: debug
-    custom_components.homeworks.coordinator: debug
+    custom_components.homeworks_hwi: debug
 ```
 
 ## Common Problems and Solutions

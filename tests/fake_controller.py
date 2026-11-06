@@ -17,10 +17,16 @@ class FakeHomeworksController:
     - CCOOPEN/CCOCLOSE commands with KLS feedback
     """
 
-    def __init__(self, port: int = 0, require_login: bool = False):
+    def __init__(
+        self,
+        port: int = 0,
+        require_login: bool = False,
+        credentials: bytes = b"test, test",
+    ):
         """Initialize the fake controller."""
         self._port = port
         self._require_login = require_login
+        self._credentials = credentials
         self._server: asyncio.Server | None = None
         self._clients: list[asyncio.StreamWriter] = []
         self._running = False
@@ -107,7 +113,7 @@ class FakeHomeworksController:
 
                 # Wait for credentials
                 data = await reader.readline()
-                if data.strip() == b"test, test":
+                if data.strip() == self._credentials:
                     writer.write(b"login successful\r\n")
                 else:
                     writer.write(b"login incorrect\r\n")

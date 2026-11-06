@@ -101,6 +101,8 @@ class MessageParser:
         while CRLF in self._buffer:
             line, self._buffer = self._buffer.split(CRLF, 1)
             if line:
+                if _LOGGER.isEnabledFor(logging.DEBUG):
+                    _LOGGER.debug("RX: %s", line.decode("utf-8", "replace"))
                 try:
                     msg = self._parse_line(line.decode("utf-8"))
                     if msg:
@@ -114,6 +116,8 @@ class MessageParser:
 
     def reset(self) -> None:
         """Clear the buffer."""
+        if self._buffer:
+            _LOGGER.debug("RX (discarded partial): %r", self._buffer)
         self._buffer = b""
 
     def _parse_line(self, line: str) -> AnyMessage | None:

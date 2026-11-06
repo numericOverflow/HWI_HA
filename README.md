@@ -156,7 +156,11 @@ The integration uses these Homeworks commands:
 
 ### Enable Debug Logging
 
-Add to `configuration.yaml`:
+Debug logging writes every line sent to (`TX:`) and received from (`RX:`) the controller to `home-assistant.log`.
+
+To turn it on from the UI, go to **Settings** > **Devices & services** > **Lutron Homeworks HWI**, open the three-dot menu at the top right of the page (in the page header, not the menu next to the gear icon on the hub row), and select **Enable debug logging**. Select **Disable debug logging** to stop. Requires an admin user.
+
+For logging that stays on across restarts, add to `configuration.yaml`:
 ```yaml
 logger:
   default: info
@@ -164,14 +168,26 @@ logger:
     custom_components.homeworks_hwi: debug
 ```
 
+Example log lines:
+```text
+RX (connect): b'LOGIN: '
+TX: <user_redacted>, <password_redacted>
+TX: RKLS, [02:06:03]
+RX: KLS, [02:06:03], 000000000000000000000000
+```
+
+The log hides the login credentials and the password of `LOGIN` commands.
+
+A level set in YAML on a child logger, for example `custom_components.homeworks_hwi.hwi_protocol.transport: warning`, wins over the level of the parent logger.
+
 ## Services
 
-### `homeworks.send_command`
+### `homeworks_hwi.send_command`
 
 Send raw commands to the processor:
 
 ```yaml
-service: homeworks.send_command
+service: homeworks_hwi.send_command
 data:
   controller_id: lutron_homeworks
   command:

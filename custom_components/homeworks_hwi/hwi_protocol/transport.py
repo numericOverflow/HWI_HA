@@ -34,6 +34,26 @@ CONNECT_TIMEOUT = 10.0
 READ_TIMEOUT = 1.0
 LOGIN_PROMPT_WAIT = 0.2
 
+# Log placeholders that replace credentials
+LOGIN_COMMAND = "LOGIN"
+PASSWORD_PLACEHOLDER = "<password_redacted>"
+USER_PLACEHOLDER = "<user_redacted>"
+
+
+def redact_command(command: str) -> str:
+    """Return the command with the password of an L232 LOGIN command redacted.
+
+    Examples:
+        "LOGIN, secret" -> "LOGIN, <password_redacted>"
+        "LOGIN, secret, 2:7:1" -> "LOGIN, <password_redacted>, 2:7:1"
+        "RKLS, [02:06:03]" -> "RKLS, [02:06:03]"
+    """
+    fields = command.split(",")
+    if len(fields) < 2 or fields[0].strip().upper() != LOGIN_COMMAND:
+        return command
+    fields[1] = f" {PASSWORD_PLACEHOLDER}"
+    return ",".join(fields)
+
 
 class HomeworksTransport:
     """Async transport for Homeworks controller communication.
@@ -129,12 +149,15 @@ class HomeworksTransport:
             return b""
 
         try:
-            return await asyncio.wait_for(
+            data = await asyncio.wait_for(
                 self._reader.read(1024),
                 timeout=READ_TIMEOUT,
             )
         except asyncio.TimeoutError:
             return b""
+        if data:
+            _LOGGER.debug("RX (connect): %r", data)
+        return data
 
     async def _handle_login(self) -> None:
         """Handle login sequence.
@@ -147,7 +170,12 @@ class HomeworksTransport:
             raise HomeworksNoCredentialsProvided("Login required but no credentials")
 
         # Send credentials
-        await self.write(self._credentials)
+        log_as = (
+            f"{USER_PLACEHOLDER}, {PASSWORD_PLACEHOLDER}"
+            if "," in self._credentials
+            else USER_PLACEHOLDER
+        )
+        await self.write(self._credentials, log_as=log_as)
 
         # Read response
         response = await self._read_available()
@@ -162,11 +190,14 @@ class HomeworksTransport:
         if response.startswith(LOGIN_SUCCESSFUL):
             _LOGGER.debug("Login successful")
 
-    async def write(self, command: str) -> bool:
+    async def write(self, command: str, *, log_as: str | None = None) -> bool:
         """Write a command to the controller.
 
         Args:
             command: Command string (without CRLF)
+            log_as: Text to log instead of the command, for example to hide
+                credentials. If None, the command is logged with any LOGIN
+                password redacted.
 
         Returns:
             True if write succeeded, False otherwise
@@ -178,7 +209,9 @@ class HomeworksTransport:
             data = command.encode("utf-8") + CRLF
             self._writer.write(data)
             await self._writer.drain()
-            _LOGGER.debug("Sent: %s", command)
+            _LOGGER.debug(
+                "TX: %s", log_as if log_as is not None else redact_command(command)
+            )
             return True
         except (ConnectionError, OSError) as err:
             _LOGGER.debug("Write failed: %s", err)
@@ -207,7 +240,6 @@ class HomeworksTransport:
             )
             if not data:
                 raise HomeworksConnectionLost("Connection closed by controller")
-            _LOGGER.debug("Received: %s", data)
             return data
         except asyncio.TimeoutError:
             return b""
