@@ -43,6 +43,24 @@ class TestHomeworksClientIntegration:
         assert client.connected is False
 
 
+class TestProtocolClientCommandText:
+    """Tests that the protocol client sends the builder text unchanged."""
+
+    @pytest.mark.asyncio
+    async def test_fade_dim_writes_whole_numbers(self):
+        """FADEDIM reaches the transport with whole numbers and HH:MM:SS."""
+        from custom_components.homeworks_hwi.hwi_protocol.client import HomeworksClient
+
+        client = HomeworksClient("host", 23)
+        client._transport.write = AsyncMock(return_value=True)
+
+        await client.fade_dim("[01:04:01:03:02]", 67.0, 1.0, 0.0)
+
+        client._transport.write.assert_awaited_once_with(
+            "FADEDIM, 67, 00:00:01, 00:00:00, [01:04:01:03:02]"
+        )
+
+
 class TestReconnectAnnouncement:
     """Tests that a reconnect is announced without waiting for traffic.
 
