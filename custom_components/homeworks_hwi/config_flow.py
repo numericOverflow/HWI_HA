@@ -2613,6 +2613,7 @@ class HomeworksConfigFlowHandler(ConfigFlow, domain=DOMAIN):
     """
 
     VERSION = 3
+    MINOR_VERSION = 2
 
     def __init__(self) -> None:
         """Initialize."""
