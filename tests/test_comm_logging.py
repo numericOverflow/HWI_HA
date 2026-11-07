@@ -1,14 +1,18 @@
 """Tests for TX/RX communication logging and credential redaction."""
 
 import logging
-from unittest.mock import AsyncMock
-from unittest.mock import MagicMock
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+)
 
 import pytest
 
 from custom_components.homeworks_hwi.hwi_protocol.protocol import MessageParser
-from custom_components.homeworks_hwi.hwi_protocol.transport import HomeworksTransport
-from custom_components.homeworks_hwi.hwi_protocol.transport import redact_command
+from custom_components.homeworks_hwi.hwi_protocol.transport import (
+    HomeworksTransport,
+    redact_command,
+)
 from tests.fake_controller import FakeHomeworksController
 
 INTEGRATION_LOGGER = "custom_components.homeworks_hwi"

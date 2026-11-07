@@ -46,9 +46,7 @@ class TestBasicConnectivity:
     @pytest.mark.asyncio
     async def test_connect_to_controller(self, controller):
         """Client can connect to the fake controller."""
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", controller.port
-        )
+        reader, writer = await asyncio.open_connection("127.0.0.1", controller.port)
         assert reader is not None
         writer.close()
         await writer.wait_closed()
@@ -58,9 +56,7 @@ class TestBasicConnectivity:
         """Controller accepts multiple simultaneous clients."""
         connections = []
         for _ in range(3):
-            reader, writer = await asyncio.open_connection(
-                "127.0.0.1", controller.port
-            )
+            reader, writer = await asyncio.open_connection("127.0.0.1", controller.port)
             connections.append((reader, writer))
 
         assert len(connections) == 3
@@ -133,9 +129,7 @@ class TestKLSCommands:
     @pytest.mark.asyncio
     async def test_rkls_default_all_zeros(self, controller):
         """RKLS for unknown address returns all zeros."""
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", controller.port
-        )
+        reader, writer = await asyncio.open_connection("127.0.0.1", controller.port)
 
         writer.write(b"RKLS, [02:06:03]\r\n")
         await writer.drain()
@@ -153,11 +147,11 @@ class TestKLSCommands:
     @pytest.mark.asyncio
     async def test_rkls_returns_set_state(self, controller):
         """RKLS returns previously set KLS state."""
-        controller.set_kls_state("[02:06:03]", [0] * 9 + [2, 2, 2, 1, 1, 2, 1, 1] + [0] * 7)
-
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", controller.port
+        controller.set_kls_state(
+            "[02:06:03]", [0] * 9 + [2, 2, 2, 1, 1, 2, 1, 1] + [0] * 7
         )
+
+        reader, writer = await asyncio.open_connection("127.0.0.1", controller.port)
 
         writer.write(b"RKLS, [02:06:03]\r\n")
         await writer.drain()
@@ -183,9 +177,7 @@ class TestCCOCommands:
         """CCOCLOSE sets the button state to ON and broadcasts KLS."""
         controller.set_kls_state("[02:06:03]", [0] * 24)
 
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", controller.port
-        )
+        reader, writer = await asyncio.open_connection("127.0.0.1", controller.port)
 
         writer.write(b"CCOCLOSE, [02:06:03], 6\r\n")
         await writer.drain()
@@ -207,9 +199,7 @@ class TestCCOCommands:
         # First set button 6 to ON
         controller.set_cco_state("[02:06:03]", 6, True)
 
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", controller.port
-        )
+        reader, writer = await asyncio.open_connection("127.0.0.1", controller.port)
 
         writer.write(b"CCOOPEN, [02:06:03], 6\r\n")
         await writer.drain()
@@ -239,9 +229,7 @@ class TestDimmerCommands:
         """RDL returns the current dimmer level."""
         controller.set_dimmer_level("[01:01:00:02:04]", 75)
 
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", controller.port
-        )
+        reader, writer = await asyncio.open_connection("127.0.0.1", controller.port)
 
         writer.write(b"RDL, [01:01:00:02:04]\r\n")
         await writer.drain()
@@ -255,9 +243,7 @@ class TestDimmerCommands:
     @pytest.mark.asyncio
     async def test_fadedim_updates_level(self, controller):
         """FADEDIM sets level and returns DL response."""
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", controller.port
-        )
+        reader, writer = await asyncio.open_connection("127.0.0.1", controller.port)
 
         writer.write(b"FADEDIM, 80, 1, 0, [01:01:00:02:04]\r\n")
         await writer.drain()
@@ -282,9 +268,7 @@ class TestBroadcasts:
         """simulate_kls_change sends KLS to all connected clients."""
         controller.set_kls_state("[02:06:03]", [1] * 24)
 
-        reader, writer = await asyncio.open_connection(
-            "127.0.0.1", controller.port
-        )
+        reader, writer = await asyncio.open_connection("127.0.0.1", controller.port)
 
         # Give connection time to register
         await asyncio.sleep(0.1)

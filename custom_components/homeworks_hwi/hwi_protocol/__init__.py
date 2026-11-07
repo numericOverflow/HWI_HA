@@ -31,13 +31,13 @@ from .exceptions import (
     HomeworksNoCredentialsProvided,
 )
 from .messages import (
-    AnyMessage,
-    ButtonEventMessage,
-    ButtonEventType,
     CCO_BUTTON_WINDOW_LENGTH,
     CCO_BUTTON_WINDOW_OFFSET,
     CCO_RELAY_CLOSED_DIGIT,
     CCO_RELAY_OPEN_DIGIT,
+    AnyMessage,
+    ButtonEventMessage,
+    ButtonEventType,
     DimmerLevelMessage,
     GrafikEyeSceneMessage,
     HomeworksMessage,
@@ -55,35 +55,31 @@ from .protocol import (
 )
 
 __all__ = [
-    # Client
-    "HomeworksClient",
-    # Messages
+    # CCO_* and cco_relay_digit_to_state apply to CCO modules only, not keypad LEDs
+    "CCO_BUTTON_WINDOW_LENGTH",
+    "CCO_BUTTON_WINDOW_OFFSET",
+    "CCO_RELAY_CLOSED_DIGIT",
+    "CCO_RELAY_OPEN_DIGIT",
     "AnyMessage",
     "ButtonEventMessage",
     "ButtonEventType",
     "DimmerLevelMessage",
     "GrafikEyeSceneMessage",
-    "HomeworksMessage",
-    "KeypadEnableMessage",
-    "KLSMessage",
-    "MessageType",
-    "SivoiaSceneMessage",
-    "UnknownMessage",
-    # CCO relay window (CCO modules only — not keypad LEDs)
-    "CCO_BUTTON_WINDOW_LENGTH",
-    "CCO_BUTTON_WINDOW_OFFSET",
-    "CCO_RELAY_CLOSED_DIGIT",
-    "CCO_RELAY_OPEN_DIGIT",
-    "cco_relay_digit_to_state",
-    # Protocol utilities
-    "MessageParser",
-    "normalize_address",
-    "parse_address",
-    # Exceptions
     "HomeworksAuthenticationException",
+    "HomeworksClient",
     "HomeworksConnectionFailed",
     "HomeworksConnectionLost",
     "HomeworksException",
     "HomeworksInvalidCredentialsProvided",
+    "HomeworksMessage",
     "HomeworksNoCredentialsProvided",
+    "KLSMessage",
+    "KeypadEnableMessage",
+    "MessageParser",
+    "MessageType",
+    "SivoiaSceneMessage",
+    "UnknownMessage",
+    "cco_relay_digit_to_state",
+    "normalize_address",
+    "parse_address",
 ]

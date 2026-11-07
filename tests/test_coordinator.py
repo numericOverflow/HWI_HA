@@ -13,26 +13,24 @@ NOTE: These tests require Home Assistant to be installed since the coordinator
 imports from homeassistant.helpers.update_coordinator.
 """
 
-import pytest
 from unittest.mock import (
     AsyncMock,
     MagicMock,
     patch,
-    call,
 )
-from datetime import timedelta
 
-from custom_components.homeworks_hwi.models import (
-    CCOAddress,
-    CCODevice,
-    CCOEntityType,
-    normalize_address,
-)
+import pytest
+
+from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
 from custom_components.homeworks_hwi.hwi_protocol.messages import (
     CCO_RELAY_CLOSED_DIGIT,
     CCO_RELAY_OPEN_DIGIT,
 )
-from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
+from custom_components.homeworks_hwi.models import (
+    CCOAddress,
+    CCODevice,
+    CCOEntityType,
+)
 
 # A relay-window digit with no documented meaning. Digit 0 is explicitly
 # "UNDOCUMENTED & UNDISCOVERED" per L232/cco_kls_state.htm, so it must decode
@@ -90,28 +88,20 @@ class TestPreregisterPollAddresses:
         return coord
 
     def test_cco_addresses_preregistered(self):
-        coord = self._coord_with_options(
-            {"cco_devices": [{"addr": "[02:06:03]"}]}
-        )
+        coord = self._coord_with_options({"cco_devices": [{"addr": "[02:06:03]"}]})
 
         assert coord._kls_poll_addresses == {"[02:06:03]"}
 
     def test_relay_suffix_stripped(self):
         """Polling is per module address, so any ",relay" suffix is dropped."""
-        coord = self._coord_with_options(
-            {"cco_devices": [{"addr": "[02:06:03],6"}]}
-        )
+        coord = self._coord_with_options({"cco_devices": [{"addr": "[02:06:03],6"}]})
 
         assert coord._kls_poll_addresses == {"[02:06:03]"}
 
     def test_one_address_per_module(self):
         """8 relays on one board produce a single RKLS target, not eight."""
         coord = self._coord_with_options(
-            {
-                "cco_devices": [
-                    {"addr": f"2:6:3,{relay}"} for relay in range(1, 9)
-                ]
-            }
+            {"cco_devices": [{"addr": f"2:6:3,{relay}"} for relay in range(1, 9)]}
         )
 
         assert coord._kls_poll_addresses == {"[02:06:03]"}
@@ -316,7 +306,7 @@ class TestKLSStateEngine:
         need the latter even on keypads with no CCO devices). A repeat of the
         exact same KLS changes neither.
         """
-        coord, device = self._make_coordinator_with_device(button=6)
+        coord, _device = self._make_coordinator_with_device(button=6)
 
         led_states = [0] * 24
         led_states[14] = CCO_RELAY_OPEN_DIGIT
@@ -385,10 +375,14 @@ class TestKLSStateEngine:
         coord = _make_bare_coordinator()
 
         dev1 = CCODevice(
-            address=CCOAddress(2, 6, 3, 4), name="Dev4", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 4),
+            name="Dev4",
+            entity_type=CCOEntityType.SWITCH,
         )
         dev2 = CCODevice(
-            address=CCOAddress(2, 6, 3, 6), name="Dev6", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 6),
+            name="Dev6",
+            entity_type=CCOEntityType.SWITCH,
         )
         coord.register_cco_device(dev1)
         coord.register_cco_device(dev2)
@@ -456,10 +450,14 @@ class TestCCOUnknownState:
         """cco_unknown_count reports only the endpoints still awaiting KLS."""
         coord = _make_bare_coordinator()
         dev1 = CCODevice(
-            address=CCOAddress(2, 6, 3, 4), name="Dev4", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 4),
+            name="Dev4",
+            entity_type=CCOEntityType.SWITCH,
         )
         dev2 = CCODevice(
-            address=CCOAddress(2, 6, 3, 6), name="Dev6", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 6),
+            name="Dev6",
+            entity_type=CCOEntityType.SWITCH,
         )
         coord.register_cco_device(dev1)
         coord.register_cco_device(dev2)
@@ -722,6 +720,9 @@ class TestOptimisticUpdates:
 
         client = AsyncMock()
         client.connected = True
+        # KLS address registration is synchronous on HomeworksClient
+        client.register_kls_address = MagicMock()
+        client.unregister_kls_address = MagicMock()
         client.cco_close = AsyncMock(return_value=True)
         client.cco_open = AsyncMock(return_value=True)
         client.motor_cover_up = AsyncMock(return_value=True)

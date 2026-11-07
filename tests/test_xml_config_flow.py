@@ -4,35 +4,37 @@ Tests the config flow steps end-to-end: parsing, area mapping,
 device selection, CCO/CCI classification, and commit logic.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+from homeassistant.const import CONF_NAME
 
 from custom_components.homeworks_hwi.config_flow import (
     _find_existing_by_address,
-    _is_duplicate_by_address,
-    _is_duplicate_cco,
     _is_duplicate_cci,
     _is_duplicate_dimmer,
     _is_duplicate_keypad,
     _is_duplicate_qed_cover,
     _is_duplicate_rpm_cover,
     async_parse_xml,
-    get_xml_cco_classify_schema,
     get_xml_cci_classify_schema,
+    get_xml_cco_classify_schema,
     get_xml_confirm_description_placeholders,
-    validate_xml_area_mapping,
-    validate_xml_cco_classify,
     validate_xml_cci_classify,
+    validate_xml_cco_classify,
     validate_xml_confirm_import,
     validate_xml_device_selection,
 )
 from custom_components.homeworks_hwi.const import (
+    CCO_TYPE_LIGHT,
+    CCO_TYPE_SWITCH,
     CONF_ADDR,
     CONF_AREA,
     CONF_BUTTON_NUMBER,
     CONF_BUTTONS,
     CONF_CCI_DEVICES,
     CONF_CCO_DEVICES,
+    CONF_DEVICE_CLASS,
     CONF_DIMMERS,
     CONF_ENTITY_TYPE,
     CONF_INPUT_NUMBER,
@@ -41,21 +43,7 @@ from custom_components.homeworks_hwi.const import (
     CONF_NUMBER,
     CONF_QED_COVERS,
     CONF_RPM_COVERS,
-    CCO_TYPE_SWITCH,
-    CCO_TYPE_LIGHT,
-    CONF_DEVICE_CLASS,
-    CONF_RELEASE_DELAY,
 )
-from homeassistant.const import CONF_NAME
-from custom_components.homeworks_hwi.xml_import import (
-    XMLImportError,
-    parse_homeworks_xml,
-)
-
-pytestmark = [
-    pytest.mark.asyncio,
-]
-
 
 # === Test XML Fixtures ===
 
@@ -200,11 +188,13 @@ class TestDuplicateDetection:
 
     def test_find_existing_by_address_found(self) -> None:
         """Test finding existing device by address."""
-        handler = _make_handler({
-            CONF_DIMMERS: [
-                {CONF_ADDR: "[01:01:00:02:01]", CONF_NAME: "Light"},
-            ],
-        })
+        handler = _make_handler(
+            {
+                CONF_DIMMERS: [
+                    {CONF_ADDR: "[01:01:00:02:01]", CONF_NAME: "Light"},
+                ],
+            }
+        )
         result = _find_existing_by_address(handler, CONF_DIMMERS, "1:1:0:2:1")
         assert result == 0
 
@@ -216,42 +206,54 @@ class TestDuplicateDetection:
 
     def test_is_duplicate_dimmer(self) -> None:
         """Test dimmer duplicate detection delegates to generic."""
-        handler = _make_handler({
-            CONF_DIMMERS: [{CONF_ADDR: "[01:01:00:02:01]", CONF_NAME: "X"}],
-        })
+        handler = _make_handler(
+            {
+                CONF_DIMMERS: [{CONF_ADDR: "[01:01:00:02:01]", CONF_NAME: "X"}],
+            }
+        )
         assert _is_duplicate_dimmer(handler, "[01:01:00:02:01]") is True
         assert _is_duplicate_dimmer(handler, "[01:01:00:02:02]") is False
 
     def test_is_duplicate_rpm_cover(self) -> None:
         """Test RPM cover duplicate detection."""
-        handler = _make_handler({
-            CONF_RPM_COVERS: [{CONF_ADDR: "[01:01:01:02:01]", CONF_NAME: "C"}],
-        })
+        handler = _make_handler(
+            {
+                CONF_RPM_COVERS: [{CONF_ADDR: "[01:01:01:02:01]", CONF_NAME: "C"}],
+            }
+        )
         assert _is_duplicate_rpm_cover(handler, "[01:01:01:02:01]") is True
         assert _is_duplicate_rpm_cover(handler, "[01:01:01:02:02]") is False
 
     def test_is_duplicate_qed_cover(self) -> None:
         """Test QED cover duplicate detection."""
-        handler = _make_handler({
-            CONF_QED_COVERS: [{CONF_ADDR: "[01:06:01:05]", CONF_NAME: "S"}],
-        })
+        handler = _make_handler(
+            {
+                CONF_QED_COVERS: [{CONF_ADDR: "[01:06:01:05]", CONF_NAME: "S"}],
+            }
+        )
         assert _is_duplicate_qed_cover(handler, "[01:06:01:05]") is True
 
     def test_is_duplicate_keypad(self) -> None:
         """Test keypad duplicate detection."""
-        handler = _make_handler({
-            CONF_KEYPADS: [{CONF_ADDR: "[01:05:01]", CONF_NAME: "K", CONF_BUTTONS: []}],
-        })
+        handler = _make_handler(
+            {
+                CONF_KEYPADS: [
+                    {CONF_ADDR: "[01:05:01]", CONF_NAME: "K", CONF_BUTTONS: []}
+                ],
+            }
+        )
         assert _is_duplicate_keypad(handler, "[01:05:01]") is True
         assert _is_duplicate_keypad(handler, "[01:05:02]") is False
 
     def test_is_duplicate_cci_compound_key(self) -> None:
         """Test CCI duplicate detection uses address + input_number."""
-        handler = _make_handler({
-            CONF_CCI_DEVICES: [
-                {CONF_ADDR: "[01]", CONF_INPUT_NUMBER: 1, CONF_NAME: "I"},
-            ],
-        })
+        handler = _make_handler(
+            {
+                CONF_CCI_DEVICES: [
+                    {CONF_ADDR: "[01]", CONF_INPUT_NUMBER: 1, CONF_NAME: "I"},
+                ],
+            }
+        )
         assert _is_duplicate_cci(handler, "[01]", 1) is True
         assert _is_duplicate_cci(handler, "[01]", 2) is False
 
@@ -275,6 +277,7 @@ class TestAsyncParseXml:
     async def test_invalid_xml_raises_error(self) -> None:
         """Test that invalid XML raises SchemaFlowError."""
         from homeassistant.helpers.schema_config_entry_flow import SchemaFlowError
+
         handler = _make_handler()
         with pytest.raises(SchemaFlowError):
             await async_parse_xml(handler, {"xml_file": "<not valid"})
@@ -282,6 +285,7 @@ class TestAsyncParseXml:
     async def test_non_maximum_raises_error(self) -> None:
         """Test that non-Maximum export raises error."""
         from homeassistant.helpers.schema_config_entry_flow import SchemaFlowError
+
         handler = _make_handler()
         xml = '<?xml version="1.0"?><HWProject><FileType>Minimum</FileType></HWProject>'
         with pytest.raises(SchemaFlowError):
@@ -301,7 +305,12 @@ class TestValidateDeviceSelection:
         handler = _make_handler()
         handler.flow_state["xml_device_list"] = [
             {"type": "DIMMER", "address": "1:1:0:2:1", "name": "L", "room_key": "r"},
-            {"type": "MAINTAINED OUTPUT", "address": "1:5:3:1", "name": "F", "room_key": "r"},
+            {
+                "type": "MAINTAINED OUTPUT",
+                "address": "1:5:3:1",
+                "name": "F",
+                "room_key": "r",
+            },
         ]
         await validate_xml_device_selection(handler, {"devices": ["0", "1"]})
         assert len(handler.flow_state["xml_cco_to_classify"]) == 1
@@ -311,7 +320,13 @@ class TestValidateDeviceSelection:
         """Test that selected CCI devices are collected for classification."""
         handler = _make_handler()
         handler.flow_state["xml_device_list"] = [
-            {"type": "CCI", "address": "1", "name": "Button 1", "room_key": "r", "input_number": 1},
+            {
+                "type": "CCI",
+                "address": "1",
+                "name": "Button 1",
+                "room_key": "r",
+                "input_number": 1,
+            },
         ]
         await validate_xml_device_selection(handler, {"devices": ["0"]})
         assert len(handler.flow_state["xml_cci_to_classify"]) == 1
@@ -353,7 +368,10 @@ class TestCCOClassifySchema:
             {"idx": 0, "address": "1:5:3:1", "name": "Fire"},
         ]
         await validate_xml_cco_classify(handler, {"cco_0": CCO_TYPE_LIGHT})
-        assert handler.flow_state["xml_cco_to_classify"][0]["entity_type"] == CCO_TYPE_LIGHT
+        assert (
+            handler.flow_state["xml_cco_to_classify"][0]["entity_type"]
+            == CCO_TYPE_LIGHT
+        )
 
 
 class TestCCIClassifySchema:
@@ -425,7 +443,12 @@ class TestValidateConfirmImport:
         """Test that selected dimmers are committed to config."""
         handler = _make_handler()
         handler.flow_state["xml_device_list"] = [
-            {"type": "DIMMER", "address": "1:1:0:2:1", "name": "Light", "room_key": "room_1_1"},
+            {
+                "type": "DIMMER",
+                "address": "1:1:0:2:1",
+                "name": "Light",
+                "room_key": "room_1_1",
+            },
         ]
         handler.flow_state["xml_selected_devices"] = ["0"]
         handler.flow_state["xml_area_mapping"] = {"room_1_1": "__create__Kitchen"}
@@ -442,12 +465,22 @@ class TestValidateConfirmImport:
         """Test that CCO devices are committed with classified entity type."""
         handler = _make_handler()
         handler.flow_state["xml_device_list"] = [
-            {"type": "MAINTAINED OUTPUT", "address": "1:5:3:1", "name": "Fire", "room_key": "room_1_1"},
+            {
+                "type": "MAINTAINED OUTPUT",
+                "address": "1:5:3:1",
+                "name": "Fire",
+                "room_key": "room_1_1",
+            },
         ]
         handler.flow_state["xml_selected_devices"] = ["0"]
         handler.flow_state["xml_area_mapping"] = {"room_1_1": "__create__Den"}
         handler.flow_state["xml_cco_to_classify"] = [
-            {"idx": 0, "entity_type": CCO_TYPE_SWITCH, "address": "1:5:3:1", "name": "Fire"},
+            {
+                "idx": 0,
+                "entity_type": CCO_TYPE_SWITCH,
+                "address": "1:5:3:1",
+                "name": "Fire",
+            },
         ]
 
         await validate_xml_confirm_import(handler, {})
@@ -488,7 +521,12 @@ class TestValidateConfirmImport:
         """Test that QED shades are committed."""
         handler = _make_handler()
         handler.flow_state["xml_device_list"] = [
-            {"type": "QED SHADE", "address": "1:6:1:5", "name": "Shade", "room_key": "room_1_2"},
+            {
+                "type": "QED SHADE",
+                "address": "1:6:1:5",
+                "name": "Shade",
+                "room_key": "room_1_2",
+            },
         ]
         handler.flow_state["xml_selected_devices"] = ["0"]
         handler.flow_state["xml_area_mapping"] = {"room_1_2": "__create__Living Room"}
@@ -509,16 +547,26 @@ class TestValidateConfirmImport:
         handler = _make_handler()
         # Original in device_list has raw XML name, NO device_class
         handler.flow_state["xml_device_list"] = [
-            {"type": "CCI", "address": "1", "name": "Button 1", "room_key": "room_2_10",
-             "input_number": 1},
+            {
+                "type": "CCI",
+                "address": "1",
+                "name": "Button 1",
+                "room_key": "room_2_10",
+                "input_number": 1,
+            },
         ]
         handler.flow_state["xml_selected_devices"] = ["0"]
         handler.flow_state["xml_area_mapping"] = {"room_2_10": "__create__Mech"}
         handler.flow_state["xml_cco_to_classify"] = []
         # Classification step wrote to the COPY in xml_cci_to_classify
         handler.flow_state["xml_cci_to_classify"] = [
-            {"idx": 0, "address": "1", "name": "Front Door", "input_number": 1,
-             "device_class": "door"},
+            {
+                "idx": 0,
+                "address": "1",
+                "name": "Front Door",
+                "input_number": 1,
+                "device_class": "door",
+            },
         ]
 
         await validate_xml_confirm_import(handler, {})
@@ -531,8 +579,13 @@ class TestValidateConfirmImport:
         """Test CCI devices committed when no classification step ran."""
         handler = _make_handler()
         handler.flow_state["xml_device_list"] = [
-            {"type": "CCI", "address": "1", "name": "Button 1", "room_key": "room_2_10",
-             "input_number": 1},
+            {
+                "type": "CCI",
+                "address": "1",
+                "name": "Button 1",
+                "room_key": "room_2_10",
+                "input_number": 1,
+            },
         ]
         handler.flow_state["xml_selected_devices"] = ["0"]
         handler.flow_state["xml_area_mapping"] = {"room_2_10": "__create__Mech"}
@@ -547,14 +600,16 @@ class TestValidateConfirmImport:
 
     async def test_duplicate_dimmer_skipped(self) -> None:
         """Test that duplicate dimmers are not re-imported."""
-        handler = _make_handler({
-            CONF_DIMMERS: [{CONF_ADDR: "[01:01:00:02:01]", CONF_NAME: "Existing"}],
-            CONF_CCO_DEVICES: [],
-            CONF_KEYPADS: [],
-            CONF_RPM_COVERS: [],
-            CONF_QED_COVERS: [],
-            CONF_CCI_DEVICES: [],
-        })
+        handler = _make_handler(
+            {
+                CONF_DIMMERS: [{CONF_ADDR: "[01:01:00:02:01]", CONF_NAME: "Existing"}],
+                CONF_CCO_DEVICES: [],
+                CONF_KEYPADS: [],
+                CONF_RPM_COVERS: [],
+                CONF_QED_COVERS: [],
+                CONF_CCI_DEVICES: [],
+            }
+        )
         handler.flow_state["xml_device_list"] = [
             {"type": "DIMMER", "address": "1:1:0:2:1", "name": "Same", "room_key": "r"},
         ]
@@ -594,7 +649,12 @@ class TestValidateConfirmImport:
             mp.setattr(ar, "async_get", lambda hass: mock_reg)
 
             handler.flow_state["xml_device_list"] = [
-                {"type": "DIMMER", "address": "1:1:0:2:1", "name": "L", "room_key": "r"},
+                {
+                    "type": "DIMMER",
+                    "address": "1:1:0:2:1",
+                    "name": "L",
+                    "room_key": "r",
+                },
             ]
             handler.flow_state["xml_selected_devices"] = ["0"]
             handler.flow_state["xml_area_mapping"] = {"r": "living_room"}

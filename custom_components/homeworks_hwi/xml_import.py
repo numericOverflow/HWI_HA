@@ -158,10 +158,7 @@ class ParsedProject:
     def total_keypads(self) -> int:
         """Count all keypads."""
         return sum(
-            1
-            for area in self.areas
-            for room in area.rooms
-            for keypad in room.keypads
+            1 for area in self.areas for room in area.rooms for keypad in room.keypads
         )
 
     @property
@@ -178,10 +175,7 @@ class ParsedProject:
     def total_cci_inputs(self) -> int:
         """Count all CCI inputs."""
         return sum(
-            1
-            for area in self.areas
-            for room in area.rooms
-            for cci in room.cci_inputs
+            1 for area in self.areas for room in area.rooms for cci in room.cci_inputs
         )
 
 
@@ -216,14 +210,20 @@ def parse_homeworks_xml(content: str) -> ParsedProject:
         raise XMLImportError("invalid_xml", str(err)) from err
 
     if root.tag != "HWProject":
-        raise XMLImportError("invalid_xml", f"Root element is '{root.tag}', expected 'HWProject'")
+        raise XMLImportError(
+            "invalid_xml", f"Root element is '{root.tag}', expected 'HWProject'"
+        )
 
     file_type_el = root.find("FileType")
     if file_type_el is None or file_type_el.text != "Maximum":
         raise XMLImportError("not_maximum_export")
 
     project_name_el = root.find("ProjectName")
-    project_name = project_name_el.text if project_name_el is not None and project_name_el.text else "Unknown Project"
+    project_name = (
+        project_name_el.text
+        if project_name_el is not None and project_name_el.text
+        else "Unknown Project"
+    )
 
     project = ParsedProject(project_name=project_name)
 
@@ -301,7 +301,9 @@ def _parse_output(output_el: ET.Element) -> ParsedOutput | None:
     address_el = output_el.find("Address")
     name_el = output_el.find("Name")
 
-    address = address_el.text.strip() if address_el is not None and address_el.text else ""
+    address = (
+        address_el.text.strip() if address_el is not None and address_el.text else ""
+    )
     name = name_el.text.strip() if name_el is not None and name_el.text else ""
 
     if not address:
@@ -323,7 +325,9 @@ def _parse_input_device(device_el: ET.Element, room: ParsedRoom) -> None:
         return
 
     address_el = device_el.find("Address")
-    address = address_el.text.strip() if address_el is not None and address_el.text else ""
+    address = (
+        address_el.text.strip() if address_el is not None and address_el.text else ""
+    )
 
     if device_type == "KEYPAD" and address:
         _parse_keypad(device_el, address, room)
@@ -349,7 +353,9 @@ def _parse_keypad(device_el: ET.Element, address: str, room: ParsedRoom) -> None
     web_name_el = device_el.find("WebKeypadName")
     model_el = device_el.find("Model")
 
-    name = web_name_el.text.strip() if web_name_el is not None and web_name_el.text else ""
+    name = (
+        web_name_el.text.strip() if web_name_el is not None and web_name_el.text else ""
+    )
     model = model_el.text.strip() if model_el is not None and model_el.text else ""
 
     keypad = ParsedKeypad(address=address, name=name, model=model)
@@ -388,7 +394,11 @@ def _parse_button(button_el: ET.Element) -> ParsedButton | None:
         return None
 
     number = int(number_el.text.strip())
-    name = name_el.text.strip() if name_el is not None and name_el.text else f"Button {number}"
+    name = (
+        name_el.text.strip()
+        if name_el is not None and name_el.text
+        else f"Button {number}"
+    )
 
     # Detect LED from DisplayProperties/Type
     has_led = _detect_has_led(button_el)
@@ -455,7 +465,11 @@ def _parse_cci_device(device_el: ET.Element, address: str, room: ParsedRoom) -> 
             continue
 
         input_number = int(number_el.text.strip())
-        name = name_el.text.strip() if name_el is not None and name_el.text else f"CCI Input {input_number}"
+        name = (
+            name_el.text.strip()
+            if name_el is not None and name_el.text
+            else f"CCI Input {input_number}"
+        )
 
         room.cci_inputs.append(
             ParsedCCIInput(

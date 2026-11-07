@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 import logging
+from datetime import datetime
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -26,7 +26,9 @@ PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: HomeworksHWIConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Homeworks health sensors."""
     data = entry.runtime_data
@@ -75,7 +77,7 @@ class HomeworksConnectionSensor(HomeworksHealthSensor):
     """Sensor showing connection status."""
 
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = ["connected", "disconnected"]
+    _attr_options = ["connected", "disconnected"]  # noqa: RUF012 - HA _attr_ pattern
     _attr_entity_registry_enabled_default = True  # This one is enabled by default
     _attr_translation_key = "connection"
 

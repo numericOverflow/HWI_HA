@@ -8,14 +8,8 @@ Covers:
 """
 
 import pytest
-from unittest.mock import (
-    AsyncMock,
-    MagicMock,
-    patch,
-)
 
 from custom_components.homeworks_hwi.models import normalize_address
-
 
 # =============================================================================
 # Keypad LED Binary Sensor Tests
@@ -29,7 +23,7 @@ class TestKeypadLEDBinarySensor:
     A flashing LED is lit, so 1/2/3 are all "on" and only 0 is "off".
     """
 
-    pytestmark = [pytest.mark.requires_ha]
+    pytestmark = pytest.mark.requires_ha
 
     @pytest.fixture
     def led_sensor(self, mock_coordinator):
@@ -59,7 +53,9 @@ class TestKeypadLEDBinarySensor:
             pytest.param(3, True, id="flash2"),
         ],
     )
-    def test_is_on_from_led_value(self, led_sensor, mock_coordinator, led_value, expected):
+    def test_is_on_from_led_value(
+        self, led_sensor, mock_coordinator, led_value, expected
+    ):
         """Any non-zero LED value is on; only 0 is off."""
         led_states = [0] * 24
         led_states[1] = led_value  # LED 2 is 1-indexed → index 1
@@ -223,9 +219,21 @@ class TestHealthSensors:
         ]
         assert len(sensor_types) == 5
 
-    def test_connection_sensor_values(self):
+    def test_connection_sensor_values(self, mock_coordinator):
         """Connection sensor reports connected/disconnected."""
-        assert "connected" != "disconnected"
+        try:
+            from custom_components.homeworks_hwi.sensor import (
+                HomeworksConnectionSensor,
+            )
+        except ImportError:
+            pytest.skip("Requires Home Assistant dependencies")
+
+        sensor = HomeworksConnectionSensor(mock_coordinator, "test")
+        assert sensor.options == ["connected", "disconnected"]
+        mock_coordinator.connected = True
+        assert sensor.native_value == "connected"
+        mock_coordinator.connected = False
+        assert sensor.native_value == "disconnected"
 
     def test_health_counter_sensors_are_integers(self):
         """Counter sensors (reconnect, poll_failure, parse_error) are numeric."""

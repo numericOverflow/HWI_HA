@@ -9,9 +9,6 @@ Terminated with CRLF (handled by transport layer).
 
 from __future__ import annotations
 
-from .protocol import normalize_address
-
-
 # =============================================================================
 # Number formatting (L232 fields take whole numbers only)
 # =============================================================================
@@ -186,6 +183,7 @@ def motor_cover_stop(address: str) -> str:
 CCO_PULSE_STEP_SECONDS = 0.5
 CCO_PULSE_MIN_STEPS = 1
 CCO_PULSE_MAX_STEPS = 245
+
 
 def cco_close(address: str, relay: int) -> str:
     """Build CCOCLOSE command.

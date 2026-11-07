@@ -18,8 +18,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import HomeworksHWIConfigEntry, create_cco_entities_for_type
 from .const import (
-    CONF_CONTROLLER_ID,
     CCO_TYPE_CLIMATE,
+    CONF_CONTROLLER_ID,
     DEFAULT_CLIMATE_NAME,
     DOMAIN,
 )
@@ -32,7 +32,9 @@ PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: HomeworksHWIConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Homeworks CCO relays as climate devices."""
     data = entry.runtime_data
@@ -40,8 +42,14 @@ async def async_setup_entry(
     controller_id = entry.options[CONF_CONTROLLER_ID]
 
     entities = create_cco_entities_for_type(
-        hass, entry, coordinator, controller_id,
-        CCO_TYPE_CLIMATE, CCOEntityType.CLIMATE, HomeworksCCOClimate, DEFAULT_CLIMATE_NAME,
+        hass,
+        entry,
+        coordinator,
+        controller_id,
+        CCO_TYPE_CLIMATE,
+        CCOEntityType.CLIMATE,
+        HomeworksCCOClimate,
+        DEFAULT_CLIMATE_NAME,
     )
 
     if entities:
@@ -58,7 +66,7 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
     State is derived from the central KLS state engine in the coordinator.
     """
 
-    _attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT]
+    _attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT]  # noqa: RUF012 - HA _attr_ pattern
     _attr_supported_features = (
         ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
     )
@@ -77,7 +85,9 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
 
         self._attr_has_entity_name = True
         self._attr_name = None
-        self._attr_unique_id = f"homeworks.{controller_id}.climate.{device.unique_id}.v2"
+        self._attr_unique_id = (
+            f"homeworks.{controller_id}.climate.{device.unique_id}.v2"
+        )
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.climate.{device.address}.v2")},
             name=device.name,

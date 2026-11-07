@@ -8,16 +8,16 @@ HA 2026.1 compliant:
 from __future__ import annotations
 
 import asyncio
+import logging
+import re
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import timedelta
-import logging
-import re
 from typing import Any
-import unicodedata
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
@@ -35,7 +35,6 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.exceptions import ServiceValidationError
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -47,30 +46,24 @@ from homeassistant.util import slugify
 
 from .client import HomeworksClientConfig
 from .const import (
+    CCO_TYPE_COVER,
+    CCO_TYPE_LOCK,
+    CCO_TYPE_SWITCH,
     CONF_ADDR,
     CONF_AREA,
     CONF_BUTTON_NUMBER,
-    CONF_CCI_DEVICES,
     CONF_CCO_DEVICES,
     CONF_CCOS,
     CONF_CONTROLLER_ID,
     CONF_COVERS,
     CONF_DIMMERS,
     CONF_ENTITY_TYPE,
-    CONF_INPUT_NUMBER,
     CONF_INVERTED,
     CONF_KLS_POLL_INTERVAL,
     CONF_KLS_WINDOW_OFFSET,
     CONF_LOCKS,
     CONF_RATE,
     CONF_RELAY_NUMBER,
-    CONF_RPM_COVERS,
-    CCO_TYPE_CLIMATE,
-    CCO_TYPE_COVER,
-    CCO_TYPE_FAN,
-    CCO_TYPE_LIGHT,
-    CCO_TYPE_LOCK,
-    CCO_TYPE_SWITCH,
     DEFAULT_FADE_RATE,
     DEFAULT_KLS_POLL_INTERVAL,
     DEFAULT_KLS_WINDOW_OFFSET,
@@ -300,7 +293,9 @@ async def async_send_command(hass: HomeAssistant, data: Mapping[str, Any]) -> No
     for command in commands:
         if command.lower().startswith("delay"):
             try:
-                delay = max(0, min(int(command.partition(" ")[2]), MAX_COMMAND_DELAY_MS))
+                delay = max(
+                    0, min(int(command.partition(" ")[2]), MAX_COMMAND_DELAY_MS)
+                )
             except (ValueError, IndexError):
                 _LOGGER.warning("Invalid delay command ignored: %s", command)
                 continue
@@ -340,8 +335,11 @@ def _cleanup_old_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
             and not unique_id.endswith(".v2")
         ):
             entities_to_remove.append(entity_entry.entity_id)
-            _LOGGER.debug("Marking for removal: %s (unique_id: %s)",
-                         entity_entry.entity_id, unique_id)
+            _LOGGER.debug(
+                "Marking for removal: %s (unique_id: %s)",
+                entity_entry.entity_id,
+                unique_id,
+            )
 
     for entity_id in entities_to_remove:
         _LOGGER.info("Removing old entity with legacy unique_id: %s", entity_id)
@@ -396,14 +394,10 @@ def _whole_second_fade_rate(rate: float) -> float:
     return float(whole_units(rate))
 
 
-async def async_migrate_entry(
-    hass: HomeAssistant, config_entry: ConfigEntry
-) -> bool:
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Migrate config entry to current version."""
     if config_entry.version == 1:
-        _LOGGER.info(
-            "Migrating config entry %s from v1 to v2", config_entry.entry_id
-        )
+        _LOGGER.info("Migrating config entry %s from v1 to v2", config_entry.entry_id)
         new_options = dict(config_entry.options)
 
         # Convert legacy CCOS → CCO_DEVICES (switches)
@@ -498,7 +492,9 @@ async def async_migrate_entry(
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry) -> bool:
+async def async_setup_entry(
+    hass: HomeAssistant, entry: HomeworksHWIConfigEntry
+) -> bool:
     """Set up Homeworks from a config entry.
 
     Credentials are read from entry.data (secrets).
@@ -632,7 +628,9 @@ def create_cco_entities_for_type(
     return entities
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: HomeworksHWIConfigEntry) -> bool:
+async def async_unload_entry(
+    hass: HomeAssistant, entry: HomeworksHWIConfigEntry
+) -> bool:
     """Unload a config entry."""
     if not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         return False
@@ -655,9 +653,7 @@ async def async_remove_config_entry_device(
 
     has_entities = any(
         entity.device_id == device_entry.id
-        for entity in er.async_entries_for_config_entry(
-            entity_registry, entry.entry_id
-        )
+        for entity in er.async_entries_for_config_entry(entity_registry, entry.entry_id)
     )
 
     if has_entities:

@@ -7,18 +7,16 @@ Covers:
 - Legacy migration: v1 → v2 format conversion
 """
 
-import pytest
+from copy import deepcopy
 from unittest.mock import (
     AsyncMock,
     MagicMock,
     patch,
 )
-from copy import deepcopy
 
-pytestmark = [
-    pytest.mark.requires_ha,
-    pytest.mark.asyncio,
-]
+import pytest
+
+pytestmark = pytest.mark.requires_ha
 
 
 # =============================================================================
@@ -53,12 +51,13 @@ class TestConfigFlowUserStep:
             from custom_components.homeworks_hwi.config_flow import (
                 HomeworksConfigFlowHandler,
             )
-            from custom_components.homeworks_hwi.const import DOMAIN
 
             handler = HomeworksConfigFlowHandler()
             handler.hass = MagicMock()
             handler._async_current_entries = MagicMock(return_value=[])
-            handler.async_create_entry = MagicMock(return_value={"type": "create_entry"})
+            handler.async_create_entry = MagicMock(
+                return_value={"type": "create_entry"}
+            )
             handler.async_set_unique_id = AsyncMock()
 
             # Patch the module-level _try_connection function
@@ -66,7 +65,7 @@ class TestConfigFlowUserStep:
                 "custom_components.homeworks_hwi.config_flow._try_connection",
                 new_callable=AsyncMock,
             ):
-                result = await handler.async_step_user(
+                await handler.async_step_user(
                     user_input={
                         "name": "Test Controller",
                         "host": "192.168.1.100",
@@ -97,7 +96,9 @@ class TestConfigFlowUserStep:
             handler = HomeworksConfigFlowHandler()
             handler.hass = MagicMock()
             handler._async_current_entries = MagicMock(return_value=[])
-            handler.async_show_form = MagicMock(return_value={"type": "form", "errors": {"base": "connection_error"}})
+            handler.async_show_form = MagicMock(
+                return_value={"type": "form", "errors": {"base": "connection_error"}}
+            )
 
             # _try_connection raises SchemaFlowError on failure
             with patch(
@@ -135,7 +136,9 @@ class TestConfigFlowUserStep:
             handler = HomeworksConfigFlowHandler()
             handler.hass = MagicMock()
             handler._async_current_entries = MagicMock(return_value=[existing_entry])
-            handler.async_abort = MagicMock(return_value={"type": "abort", "reason": "already_configured"})
+            handler.async_abort = MagicMock(
+                return_value={"type": "abort", "reason": "already_configured"}
+            )
 
             # No need to patch _try_connection — duplicate check happens before it
             result = await handler.async_step_user(
@@ -355,10 +358,14 @@ class TestLegacyMigration:
 
 def test_light_rate_selector_uses_whole_seconds():
     """The fade rate moves in 1 s steps; the release delay keeps 0.01 s."""
-    from custom_components.homeworks_hwi.config_flow import BUTTON_EDIT
-    from custom_components.homeworks_hwi.config_flow import LIGHT_EDIT
-    from custom_components.homeworks_hwi.const import CONF_RATE
-    from custom_components.homeworks_hwi.const import CONF_RELEASE_DELAY
+    from custom_components.homeworks_hwi.config_flow import (
+        BUTTON_EDIT,
+        LIGHT_EDIT,
+    )
+    from custom_components.homeworks_hwi.const import (
+        CONF_RATE,
+        CONF_RELEASE_DELAY,
+    )
 
     rate = next(v for k, v in LIGHT_EDIT.items() if k == CONF_RATE)
     assert rate.config["step"] == 1

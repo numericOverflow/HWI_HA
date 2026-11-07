@@ -7,20 +7,19 @@ Covers:
 - create_cco_entities_for_type helper function
 """
 
-import pytest
 from unittest.mock import (
-    AsyncMock,
     MagicMock,
-    patch,
 )
-from copy import deepcopy
 
-from custom_components.homeworks_hwi.models import (
-    CCOAddress,
-    CCODevice,
-    CCOEntityType,
-)
+import pytest
+
 from custom_components.homeworks_hwi.const import (
+    CCO_TYPE_CLIMATE,
+    CCO_TYPE_COVER,
+    CCO_TYPE_FAN,
+    CCO_TYPE_LIGHT,
+    CCO_TYPE_LOCK,
+    CCO_TYPE_SWITCH,
     CONF_ADDR,
     CONF_AREA,
     CONF_BUTTON_NUMBER,
@@ -30,17 +29,14 @@ from custom_components.homeworks_hwi.const import (
     CONF_ENTITY_TYPE,
     CONF_INVERTED,
     CONF_RATE,
-    LEGACY_DEFAULT_FADE_RATE,
-    CCO_TYPE_SWITCH,
-    CCO_TYPE_LIGHT,
-    CCO_TYPE_COVER,
-    CCO_TYPE_LOCK,
-    CCO_TYPE_FAN,
-    CCO_TYPE_CLIMATE,
-    MAX_COMMAND_DELAY_MS,
     DOMAIN,
+    LEGACY_DEFAULT_FADE_RATE,
+    MAX_COMMAND_DELAY_MS,
 )
-
+from custom_components.homeworks_hwi.models import (
+    CCOAddress,
+    CCOEntityType,
+)
 
 # =============================================================================
 # send_command Service Tests
@@ -111,9 +107,27 @@ class TestCreateCCOEntitiesForType:
     def test_filters_by_entity_type(self):
         """Only creates entities matching the target type."""
         devices = [
-            {"name": "Switch 1", "addr": "[02:06:03]", "button_number": 1, "entity_type": "switch", "inverted": False},
-            {"name": "Light 1", "addr": "[02:06:03]", "button_number": 2, "entity_type": "light", "inverted": False},
-            {"name": "Switch 2", "addr": "[02:06:03]", "button_number": 3, "entity_type": "switch", "inverted": False},
+            {
+                "name": "Switch 1",
+                "addr": "[02:06:03]",
+                "button_number": 1,
+                "entity_type": "switch",
+                "inverted": False,
+            },
+            {
+                "name": "Light 1",
+                "addr": "[02:06:03]",
+                "button_number": 2,
+                "entity_type": "light",
+                "inverted": False,
+            },
+            {
+                "name": "Switch 2",
+                "addr": "[02:06:03]",
+                "button_number": 3,
+                "entity_type": "switch",
+                "inverted": False,
+            },
         ]
 
         # Count switches
@@ -141,7 +155,9 @@ class TestCreateCCOEntitiesForType:
         }
         # Simulate parsing
         try:
-            CCOAddress.from_string(f"{device_config['addr']},{device_config['button_number']}")
+            CCOAddress.from_string(
+                f"{device_config['addr']},{device_config['button_number']}"
+            )
             assert False, "Should have raised ValueError"
         except (ValueError, KeyError, TypeError):
             pass  # Expected — device would be skipped
@@ -160,12 +176,48 @@ class TestCreateCCOEntitiesForType:
     def test_all_entity_types_handled(self, entity_type, expected_count):
         """Each entity type is filtered correctly."""
         devices = [
-            {"name": "Switch", "addr": "[02:06:03]", "button_number": 1, "entity_type": "switch", "inverted": False},
-            {"name": "Light", "addr": "[02:06:03]", "button_number": 2, "entity_type": "light", "inverted": False},
-            {"name": "Cover", "addr": "[02:06:03]", "button_number": 3, "entity_type": "cover", "inverted": False},
-            {"name": "Lock", "addr": "[02:06:04]", "button_number": 1, "entity_type": "lock", "inverted": False},
-            {"name": "Fan", "addr": "[02:06:04]", "button_number": 2, "entity_type": "fan", "inverted": False},
-            {"name": "Climate", "addr": "[02:06:04]", "button_number": 3, "entity_type": "climate", "inverted": False},
+            {
+                "name": "Switch",
+                "addr": "[02:06:03]",
+                "button_number": 1,
+                "entity_type": "switch",
+                "inverted": False,
+            },
+            {
+                "name": "Light",
+                "addr": "[02:06:03]",
+                "button_number": 2,
+                "entity_type": "light",
+                "inverted": False,
+            },
+            {
+                "name": "Cover",
+                "addr": "[02:06:03]",
+                "button_number": 3,
+                "entity_type": "cover",
+                "inverted": False,
+            },
+            {
+                "name": "Lock",
+                "addr": "[02:06:04]",
+                "button_number": 1,
+                "entity_type": "lock",
+                "inverted": False,
+            },
+            {
+                "name": "Fan",
+                "addr": "[02:06:04]",
+                "button_number": 2,
+                "entity_type": "fan",
+                "inverted": False,
+            },
+            {
+                "name": "Climate",
+                "addr": "[02:06:04]",
+                "button_number": 3,
+                "entity_type": "climate",
+                "inverted": False,
+            },
         ]
 
         filtered = [d for d in devices if d["entity_type"] == entity_type]
@@ -182,7 +234,6 @@ class TestDiagnostics:
 
     def test_redacted_keys_defined(self):
         """Sensitive keys are in the redaction set."""
-        from custom_components.homeworks_hwi.const import DOMAIN
 
         # These should be redacted in diagnostics
         sensitive_keys = {"password", "username", "host"}
@@ -208,7 +259,7 @@ class TestDiagnostics:
         that a module has stopped answering — a relay stuck at unknown is
         otherwise indistinguishable from one that is legitimately quiet.
         """
-        from unittest.mock import AsyncMock, MagicMock
+        from unittest.mock import MagicMock
 
         from custom_components.homeworks_hwi.diagnostics import (
             async_get_config_entry_diagnostics,
@@ -222,9 +273,7 @@ class TestDiagnostics:
         coordinator.cco_unknown_count = 2
         coordinator.kls_poll_address_count = 1
         coordinator.keypad_led_state_count = 1
-        coordinator.kls_last_seen_ages = MagicMock(
-            return_value={"[01:05:03]": 4.2}
-        )
+        coordinator.kls_last_seen_ages = MagicMock(return_value={"[01:05:03]": 4.2})
         coordinator.dimmer_address_count = 0
         coordinator.dimmer_state_count = 0
 
@@ -256,7 +305,7 @@ def _apply_update(entry, **kwargs):
 class TestFadeRateMigration:
     """Tests for the v3.2 step that rewrites dimmer fade rates."""
 
-    pytestmark = [pytest.mark.requires_ha]
+    pytestmark = pytest.mark.requires_ha
 
     @staticmethod
     def _dimmer(**extra):

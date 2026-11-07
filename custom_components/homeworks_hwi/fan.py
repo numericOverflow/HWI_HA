@@ -13,8 +13,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import HomeworksHWIConfigEntry, create_cco_entities_for_type
 from .const import (
-    CONF_CONTROLLER_ID,
     CCO_TYPE_FAN,
+    CONF_CONTROLLER_ID,
     DEFAULT_FAN_NAME,
     DOMAIN,
 )
@@ -27,7 +27,9 @@ PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: HomeworksHWIConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Homeworks CCO relays as fans."""
     data = entry.runtime_data
@@ -35,8 +37,14 @@ async def async_setup_entry(
     controller_id = entry.options[CONF_CONTROLLER_ID]
 
     entities = create_cco_entities_for_type(
-        hass, entry, coordinator, controller_id,
-        CCO_TYPE_FAN, CCOEntityType.FAN, HomeworksCCOFan, DEFAULT_FAN_NAME,
+        hass,
+        entry,
+        coordinator,
+        controller_id,
+        CCO_TYPE_FAN,
+        CCOEntityType.FAN,
+        HomeworksCCOFan,
+        DEFAULT_FAN_NAME,
     )
 
     if entities:

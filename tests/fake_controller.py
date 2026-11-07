@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,7 +88,7 @@ class FakeHomeworksController:
             writer.close()
             try:
                 await writer.wait_closed()
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 - teardown is best effort
                 pass
 
         self._clients.clear()
@@ -135,14 +135,12 @@ class FakeHomeworksController:
                     while b"\r\n" in buffer:
                         command, buffer = buffer.split(b"\r\n", 1)
                         if command:
-                            await self._process_command(
-                                command.decode("utf-8"), writer
-                            )
+                            await self._process_command(command.decode("utf-8"), writer)
 
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
 
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001 - a client error must not stop the server
             _LOGGER.debug("Client error: %s", err)
         finally:
             if writer in self._clients:
@@ -244,7 +242,7 @@ class FakeHomeworksController:
             try:
                 writer.write(message.encode())
                 await writer.drain()
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 - skip clients that already left
                 pass
 
     async def simulate_disconnect(self) -> None:

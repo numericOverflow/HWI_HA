@@ -27,8 +27,8 @@ timestamp of the last activation reported by the processor and whose
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import logging
+from collections.abc import Callable
 
 from homeassistant.components.event import (
     EventDeviceClass,
@@ -99,7 +99,7 @@ class HomeworksButtonEvent(CoordinatorEntity[HomeworksCoordinator], EventEntity)
 
     _attr_has_entity_name = True
     _attr_device_class = EventDeviceClass.BUTTON
-    _attr_event_types = list(BUTTON_EVENT_TYPES)
+    _attr_event_types = list(BUTTON_EVENT_TYPES)  # noqa: RUF012 - HA _attr_ pattern
 
     def __init__(
         self,

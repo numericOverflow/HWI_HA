@@ -9,8 +9,9 @@ the last reported activation.
 presses issued through Home Assistant - which is why those stay "unknown".
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 pytestmark = pytest.mark.requires_ha
 
@@ -181,7 +182,9 @@ class TestEventPlatformSetup:
         }
 
         added = []
-        await async_setup_entry(mock_hass, entry, lambda entities: added.extend(entities))
+        await async_setup_entry(
+            mock_hass, entry, lambda entities: added.extend(entities)
+        )
 
         assert len(added) == 3
         assert {e.unique_id for e in added} == {
@@ -191,7 +194,9 @@ class TestEventPlatformSetup:
         }
 
     @pytest.mark.asyncio
-    async def test_setup_without_keypads_adds_nothing(self, mock_hass, mock_coordinator):
+    async def test_setup_without_keypads_adds_nothing(
+        self, mock_hass, mock_coordinator
+    ):
         """No configured keypads means no entities and no add_entities call."""
         try:
             from custom_components.homeworks_hwi.event import async_setup_entry

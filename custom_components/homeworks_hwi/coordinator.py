@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable
 from datetime import timedelta
-import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -161,7 +161,9 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._button_callbacks: dict[str, list[Callable[[str, int, str], None]]] = {}
 
         # CCI state change callbacks
-        self._cci_callbacks: dict[tuple[int, int, int, int], list[Callable[[bool], None]]] = {}
+        self._cci_callbacks: dict[
+            tuple[int, int, int, int], list[Callable[[bool], None]]
+        ] = {}
 
         # Seed poll addresses from config so the very first refresh already
         # sweeps them. Entities register themselves in async_added_to_hass,
@@ -185,9 +187,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._add_validated_poll_address(addr, "CCO")
 
         for keypad in options.get(CONF_KEYPADS, []):
-            self._add_validated_poll_address(
-                str(keypad.get(CONF_ADDR) or ""), "keypad"
-            )
+            self._add_validated_poll_address(str(keypad.get(CONF_ADDR) or ""), "keypad")
 
         if self._kls_poll_addresses:
             _LOGGER.debug(
@@ -335,8 +335,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Remove KLS poll address only if no other CCO device shares it
         kls_addr = address.to_kls_address()
         still_needed = any(
-            d.address.to_kls_address() == kls_addr
-            for d in self._cco_devices.values()
+            d.address.to_kls_address() == kls_addr for d in self._cco_devices.values()
         )
         if not still_needed:
             self._kls_poll_addresses.discard(kls_addr)
@@ -517,7 +516,10 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Poll dimmer states periodically (every Nth cycle) to catch
         # missed DL monitoring messages after silent subscription drops
         self._poll_count += 1
-        if self._dimmer_addresses and self._poll_count % DIMMER_POLL_EVERY_N_CYCLES == 0:
+        if (
+            self._dimmer_addresses
+            and self._poll_count % DIMMER_POLL_EVERY_N_CYCLES == 0
+        ):
             await self._poll_dimmer_states()
 
         return {"connected": True, "poll_count": self._poll_count}
@@ -537,7 +539,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await self._client.request_keypad_led_states(address)
                 # Small delay between requests
                 await asyncio.sleep(0.1)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - keep polling other addresses
                 _LOGGER.warning("Failed to poll KLS for %s: %s", address, err)
 
     async def _poll_dimmer_states(self) -> None:
@@ -549,7 +551,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             try:
                 await self._client.request_dimmer_level(address)
                 await asyncio.sleep(0.05)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - keep polling other dimmers
                 _LOGGER.warning("Failed to poll dimmer %s: %s", address, err)
 
     @callback
@@ -748,12 +750,10 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         for cb in callbacks:
             try:
                 cb(normalized, button, event_type)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - one bad callback must not block others
                 _LOGGER.error("Button callback error: %s", err)
 
-    def _handle_cci_button_event(
-        self, address: str, button: int, state: bool
-    ) -> None:
+    def _handle_cci_button_event(self, address: str, button: int, state: bool) -> None:
         """Handle a CCI state change from button event.
 
         CCIs emulate keypads. When the physical key is:
@@ -800,7 +800,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for cb in callbacks:
                 try:
                     cb(state)
-                except Exception as err:
+                except Exception as err:  # noqa: BLE001 - one bad callback must not block others
                     _LOGGER.error("CCI callback error: %s", err)
 
             # Notify coordinator listeners
@@ -868,9 +868,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Send physical CCO open command."""
         if not self._client:
             return False
-        return await self._client.cco_open(
-            address.to_command_address(), address.button
-        )
+        return await self._client.cco_open(address.to_command_address(), address.button)
 
     async def async_fade_dim(
         self,

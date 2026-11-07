@@ -32,7 +32,9 @@ PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: HomeworksHWIConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Homeworks buttons."""
     data = entry.runtime_data

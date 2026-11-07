@@ -23,12 +23,12 @@ from . import (
     resolve_area_name,
 )
 from .const import (
+    CCO_TYPE_LIGHT,
     CONF_ADDR,
     CONF_AREA,
     CONF_CONTROLLER_ID,
     CONF_DIMMERS,
     CONF_RATE,
-    CCO_TYPE_LIGHT,
     DEFAULT_FADE_RATE,
     DEFAULT_LIGHT_NAME,
     DIMMER_BRIGHTNESS_SCALE,
@@ -49,7 +49,9 @@ PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: HomeworksHWIConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Homeworks lights."""
     data = entry.runtime_data
@@ -71,8 +73,14 @@ async def async_setup_entry(
 
     # CCO-based on/off lights
     cco_lights = create_cco_entities_for_type(
-        hass, entry, coordinator, controller_id,
-        CCO_TYPE_LIGHT, CCOEntityType.LIGHT, HomeworksCCOLight, DEFAULT_LIGHT_NAME,
+        hass,
+        entry,
+        coordinator,
+        controller_id,
+        CCO_TYPE_LIGHT,
+        CCOEntityType.LIGHT,
+        HomeworksCCOLight,
+        DEFAULT_LIGHT_NAME,
     )
     entities.extend(cco_lights)
 
@@ -88,7 +96,7 @@ class HomeworksDimmableLight(CoordinatorEntity[HomeworksCoordinator], LightEntit
     """
 
     _attr_color_mode = ColorMode.BRIGHTNESS
-    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}  # noqa: RUF012 - HA _attr_ pattern
 
     def __init__(
         self,
@@ -184,7 +192,7 @@ class HomeworksCCOLight(CoordinatorEntity[HomeworksCoordinator], LightEntity):
     """
 
     _attr_color_mode = ColorMode.ONOFF
-    _attr_supported_color_modes = {ColorMode.ONOFF}
+    _attr_supported_color_modes = {ColorMode.ONOFF}  # noqa: RUF012 - HA _attr_ pattern
 
     def __init__(
         self,
@@ -199,7 +207,9 @@ class HomeworksCCOLight(CoordinatorEntity[HomeworksCoordinator], LightEntity):
 
         self._attr_has_entity_name = True
         self._attr_name = None
-        self._attr_unique_id = f"homeworks.{controller_id}.ccolight.{device.unique_id}.v2"
+        self._attr_unique_id = (
+            f"homeworks.{controller_id}.ccolight.{device.unique_id}.v2"
+        )
         device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{controller_id}.ccolight.{device.address}.v2")},
             name=device.name,

@@ -2,6 +2,7 @@
 
 import pytest
 
+from custom_components.homeworks_hwi.const import DEFAULT_RAISE_LOWER_RELEASE_DELAY
 from custom_components.homeworks_hwi.xml_import import (
     MAX_XML_SIZE,
     ParsedProject,
@@ -9,8 +10,6 @@ from custom_components.homeworks_hwi.xml_import import (
     get_cco_address_parts,
     parse_homeworks_xml,
 )
-from custom_components.homeworks_hwi.const import DEFAULT_RAISE_LOWER_RELEASE_DELAY
-
 
 # === Minimal valid XML for testing ===
 
@@ -293,7 +292,9 @@ class TestXMLParserValidation:
     def test_wrong_root_element(self) -> None:
         """Test that wrong root element raises error."""
         with pytest.raises(XMLImportError) as exc_info:
-            parse_homeworks_xml("<SomeOtherRoot><FileType>Maximum</FileType></SomeOtherRoot>")
+            parse_homeworks_xml(
+                "<SomeOtherRoot><FileType>Maximum</FileType></SomeOtherRoot>"
+            )
         assert exc_info.value.error_key == "invalid_xml"
 
     def test_not_maximum_export(self) -> None:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
 
 from .hwi_protocol.messages import (
@@ -40,7 +40,7 @@ class CCOAddress:
     button: int
 
     @classmethod
-    def from_string(cls, addr_str: str) -> "CCOAddress":
+    def from_string(cls, addr_str: str) -> CCOAddress:
         """Parse CCO address from string format.
 
         Accepts formats:
@@ -109,7 +109,7 @@ class DimmerAddress:
     parts: list[int]
 
     @classmethod
-    def from_string(cls, addr_str: str) -> "DimmerAddress":
+    def from_string(cls, addr_str: str) -> DimmerAddress:
         """Parse dimmer address from string."""
         addr_str = addr_str.strip("[]")
         parts = [int(p) for p in addr_str.split(":")]
@@ -226,7 +226,7 @@ class KLSState:
 
     address: str  # Normalized [pp:ll:aa] format
     led_states: list[int]  # 24 integers (0-3)
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def get_button_state(self, button: int) -> int:
         """Get raw LED state for a specific button (1-24).
@@ -299,12 +299,12 @@ class ControllerHealth:
 
     def record_message(self) -> None:
         """Record that a message was received."""
-        self.last_message_time = datetime.now(timezone.utc)
+        self.last_message_time = datetime.now(UTC)
 
     def record_kls(self) -> None:
         """Record that a KLS message was received."""
-        self.last_kls_time = datetime.now(timezone.utc)
-        self.last_message_time = datetime.now(timezone.utc)
+        self.last_kls_time = datetime.now(UTC)
+        self.last_message_time = datetime.now(UTC)
 
     def record_reconnect(self) -> None:
         """Record a reconnection event."""
@@ -322,7 +322,7 @@ class ControllerHealth:
 
 
 try:
-    from .hwi_protocol.protocol import normalize_address  # noqa: F401 — re-exported
+    from .hwi_protocol.protocol import normalize_address
 except ImportError:
     from hwi_protocol.protocol import normalize_address  # noqa: F401 — standalone test mode
 

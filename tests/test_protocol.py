@@ -3,19 +3,18 @@
 import pytest
 
 from custom_components.homeworks_hwi.hwi_protocol import (
-    MessageParser,
-    normalize_address,
-    parse_address,
-    KLSMessage,
-    DimmerLevelMessage,
     ButtonEventMessage,
     ButtonEventType,
-    KeypadEnableMessage,
+    DimmerLevelMessage,
     GrafikEyeSceneMessage,
+    KLSMessage,
+    MessageParser,
     SivoiaSceneMessage,
     UnknownMessage,
+    commands,
+    normalize_address,
+    parse_address,
 )
-from custom_components.homeworks_hwi.hwi_protocol import commands
 
 
 class TestNormalizeAddress:
@@ -187,7 +186,9 @@ class TestMessageParser:
 
     def test_multiple_messages_in_one_chunk(self):
         parser = MessageParser()
-        data = b"KLS, [02:06:03], 000000000000000000000000\r\nDL, [01:01:00:02:04], 50\r\n"
+        data = (
+            b"KLS, [02:06:03], 000000000000000000000000\r\nDL, [01:01:00:02:04], 50\r\n"
+        )
         messages = parser.feed(data)
 
         assert len(messages) == 2
@@ -240,12 +241,21 @@ class TestKLSButtonWindow:
         msg = parser.feed(data)[0]
 
         # Window: 22211211
-        expected = {1: True, 2: True, 3: True, 4: False,
-                    5: False, 6: True, 7: False, 8: False}
+        expected = {
+            1: True,
+            2: True,
+            3: True,
+            4: False,
+            5: False,
+            6: True,
+            7: False,
+            8: False,
+        }
 
         for button, expected_state in expected.items():
-            assert msg.get_cco_relay_state(button) == expected_state, \
+            assert msg.get_cco_relay_state(button) == expected_state, (
                 f"Button {button}: expected {expected_state}"
+            )
 
     def test_all_8_buttons_sample_2(self):
         """Verify all 8 button states in sample 2."""
@@ -254,8 +264,16 @@ class TestKLSButtonWindow:
         msg = parser.feed(data)[0]
 
         # Window: 22211111
-        expected = {1: True, 2: True, 3: True, 4: False,
-                    5: False, 6: False, 7: False, 8: False}
+        expected = {
+            1: True,
+            2: True,
+            3: True,
+            4: False,
+            5: False,
+            6: False,
+            7: False,
+            8: False,
+        }
 
         for button, expected_state in expected.items():
             assert msg.get_cco_relay_state(button) == expected_state

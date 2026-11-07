@@ -18,17 +18,16 @@ A CCO relay latches, so an undecodable digit must surface as None
 ("unknown"), never as a fabricated OFF.
 """
 
-import pytest
 from datetime import datetime, timedelta
 
+from custom_components.homeworks_hwi.hwi_protocol import KLSMessage, MessageParser
 from custom_components.homeworks_hwi.models import (
-    KLSState,
+    CCO_BUTTON_WINDOW_OFFSET,
     CCOAddress,
     CCODevice,
     CCOEntityType,
-    CCO_BUTTON_WINDOW_OFFSET,
+    KLSState,
 )
-from custom_components.homeworks_hwi.hwi_protocol import KLSMessage, MessageParser
 
 
 class TestButtonWindowExtraction:
@@ -94,20 +93,21 @@ class TestSampleKLSLines:
         kls = KLSState(address="[02:06:03]", led_states=led_states)
 
         expected = {
-            1: True,   # index 9, digit 2
-            2: True,   # index 10, digit 2
-            3: True,   # index 11, digit 2
+            1: True,  # index 9, digit 2
+            2: True,  # index 10, digit 2
+            3: True,  # index 11, digit 2
             4: False,  # index 12, digit 1
             5: False,  # index 13, digit 1
-            6: True,   # index 14, digit 2
+            6: True,  # index 14, digit 2
             7: False,  # index 15, digit 1
             8: False,  # index 16, digit 1
         }
 
         for button, expected_state in expected.items():
             actual = kls.get_cco_state(button)
-            assert actual == expected_state, \
+            assert actual == expected_state, (
                 f"Button {button}: expected {expected_state}, got {actual}"
+            )
 
     def test_sample_2_all_buttons(self):
         """
@@ -119,8 +119,14 @@ class TestSampleKLSLines:
         kls = KLSState(address="[02:06:03]", led_states=led_states)
 
         expected = {
-            1: True, 2: True, 3: True, 4: False,
-            5: False, 6: False, 7: False, 8: False,
+            1: True,
+            2: True,
+            3: True,
+            4: False,
+            5: False,
+            6: False,
+            7: False,
+            8: False,
         }
 
         for button, expected_state in expected.items():

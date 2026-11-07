@@ -11,8 +11,8 @@ All parsing is stateless - just input bytes, output messages.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import Callable
+from collections.abc import Callable
+from datetime import UTC, datetime
 
 from .messages import (
     AnyMessage,
@@ -109,7 +109,7 @@ class MessageParser:
                         messages.append(msg)
                 except UnicodeDecodeError:
                     _LOGGER.warning("Invalid message encoding: %s", line)
-                except Exception as err:
+                except Exception as err:  # noqa: BLE001 - a bad line must not stop parsing
                     _LOGGER.warning("Failed to parse message: %s - %s", line, err)
 
         return messages
@@ -141,7 +141,7 @@ class MessageParser:
             return None
 
         command = parts[0].upper()
-        timestamp = datetime.now(tz=timezone.utc)
+        timestamp = datetime.now(tz=UTC)
 
         # Route to specific parser based on command
         parser = _PARSERS.get(command)
@@ -209,7 +209,7 @@ def _parse_dl(line: str, parts: list[str], ts: datetime) -> DimmerLevelMessage |
 
     address = normalize_address(parts[1])
     try:
-        level = int(round(float(parts[2])))
+        level = round(float(parts[2]))
     except ValueError:
         return None
 

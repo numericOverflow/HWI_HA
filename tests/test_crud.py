@@ -4,9 +4,6 @@ These tests verify that adding, editing, and deleting devices
 correctly updates the options schema, without requiring Home Assistant.
 """
 
-import pytest
-from copy import deepcopy
-
 # Import models and constants (no HA deps)
 from custom_components.homeworks_hwi.hwi_protocol import normalize_address
 
@@ -56,10 +53,34 @@ class TestCCODeviceCRUD:
         options = create_empty_options()
 
         devices = [
-            {"name": "Switch 1", "addr": "[02:06:03]", "button_number": 1, "entity_type": "switch", "inverted": False},
-            {"name": "Light 2", "addr": "[02:06:03]", "button_number": 2, "entity_type": "light", "inverted": False},
-            {"name": "Cover 3", "addr": "[02:06:03]", "button_number": 3, "entity_type": "cover", "inverted": True},
-            {"name": "Lock 4", "addr": "[02:06:04]", "button_number": 1, "entity_type": "lock", "inverted": False},
+            {
+                "name": "Switch 1",
+                "addr": "[02:06:03]",
+                "button_number": 1,
+                "entity_type": "switch",
+                "inverted": False,
+            },
+            {
+                "name": "Light 2",
+                "addr": "[02:06:03]",
+                "button_number": 2,
+                "entity_type": "light",
+                "inverted": False,
+            },
+            {
+                "name": "Cover 3",
+                "addr": "[02:06:03]",
+                "button_number": 3,
+                "entity_type": "cover",
+                "inverted": True,
+            },
+            {
+                "name": "Lock 4",
+                "addr": "[02:06:04]",
+                "button_number": 1,
+                "entity_type": "lock",
+                "inverted": False,
+            },
         ]
 
         for dev in devices:
@@ -72,13 +93,15 @@ class TestCCODeviceCRUD:
     def test_edit_cco_device_name(self):
         """Test editing a CCO device name preserves other fields."""
         options = create_empty_options()
-        options["cco_devices"].append({
-            "name": "Original Name",
-            "addr": "[02:06:03]",
-            "button_number": 6,
-            "entity_type": "switch",
-            "inverted": False,
-        })
+        options["cco_devices"].append(
+            {
+                "name": "Original Name",
+                "addr": "[02:06:03]",
+                "button_number": 6,
+                "entity_type": "switch",
+                "inverted": False,
+            }
+        )
 
         # Edit the name
         options["cco_devices"][0]["name"] = "New Name"
@@ -91,13 +114,15 @@ class TestCCODeviceCRUD:
     def test_edit_cco_device_entity_type(self):
         """Test changing entity type (switch -> light)."""
         options = create_empty_options()
-        options["cco_devices"].append({
-            "name": "Test Device",
-            "addr": "[02:06:03]",
-            "button_number": 6,
-            "entity_type": "switch",
-            "inverted": False,
-        })
+        options["cco_devices"].append(
+            {
+                "name": "Test Device",
+                "addr": "[02:06:03]",
+                "button_number": 6,
+                "entity_type": "switch",
+                "inverted": False,
+            }
+        )
 
         # Change entity type
         options["cco_devices"][0]["entity_type"] = "light"
@@ -107,13 +132,15 @@ class TestCCODeviceCRUD:
     def test_edit_cco_device_inversion(self):
         """Test toggling inversion."""
         options = create_empty_options()
-        options["cco_devices"].append({
-            "name": "Test Device",
-            "addr": "[02:06:03]",
-            "button_number": 6,
-            "entity_type": "switch",
-            "inverted": False,
-        })
+        options["cco_devices"].append(
+            {
+                "name": "Test Device",
+                "addr": "[02:06:03]",
+                "button_number": 6,
+                "entity_type": "switch",
+                "inverted": False,
+            }
+        )
 
         # Toggle inversion
         options["cco_devices"][0]["inverted"] = True
@@ -123,13 +150,15 @@ class TestCCODeviceCRUD:
     def test_edit_cco_device_address_and_button(self):
         """Test changing address and button number."""
         options = create_empty_options()
-        options["cco_devices"].append({
-            "name": "Test Device",
-            "addr": "[02:06:03]",
-            "button_number": 6,
-            "entity_type": "switch",
-            "inverted": False,
-        })
+        options["cco_devices"].append(
+            {
+                "name": "Test Device",
+                "addr": "[02:06:03]",
+                "button_number": 6,
+                "entity_type": "switch",
+                "inverted": False,
+            }
+        )
 
         # Change address and button
         options["cco_devices"][0]["addr"] = "[02:06:04]"
@@ -142,9 +171,27 @@ class TestCCODeviceCRUD:
         """Test deleting a CCO device."""
         options = create_empty_options()
         options["cco_devices"] = [
-            {"name": "Device 1", "addr": "[02:06:03]", "button_number": 1, "entity_type": "switch", "inverted": False},
-            {"name": "Device 2", "addr": "[02:06:03]", "button_number": 2, "entity_type": "light", "inverted": False},
-            {"name": "Device 3", "addr": "[02:06:03]", "button_number": 3, "entity_type": "cover", "inverted": False},
+            {
+                "name": "Device 1",
+                "addr": "[02:06:03]",
+                "button_number": 1,
+                "entity_type": "switch",
+                "inverted": False,
+            },
+            {
+                "name": "Device 2",
+                "addr": "[02:06:03]",
+                "button_number": 2,
+                "entity_type": "light",
+                "inverted": False,
+            },
+            {
+                "name": "Device 3",
+                "addr": "[02:06:03]",
+                "button_number": 3,
+                "entity_type": "cover",
+                "inverted": False,
+            },
         ]
 
         # Delete middle device (index 1)
@@ -158,16 +205,41 @@ class TestCCODeviceCRUD:
         """Test deleting multiple CCO devices."""
         options = create_empty_options()
         options["cco_devices"] = [
-            {"name": "Device 0", "addr": "[02:06:03]", "button_number": 1, "entity_type": "switch", "inverted": False},
-            {"name": "Device 1", "addr": "[02:06:03]", "button_number": 2, "entity_type": "light", "inverted": False},
-            {"name": "Device 2", "addr": "[02:06:03]", "button_number": 3, "entity_type": "cover", "inverted": False},
-            {"name": "Device 3", "addr": "[02:06:03]", "button_number": 4, "entity_type": "lock", "inverted": False},
+            {
+                "name": "Device 0",
+                "addr": "[02:06:03]",
+                "button_number": 1,
+                "entity_type": "switch",
+                "inverted": False,
+            },
+            {
+                "name": "Device 1",
+                "addr": "[02:06:03]",
+                "button_number": 2,
+                "entity_type": "light",
+                "inverted": False,
+            },
+            {
+                "name": "Device 2",
+                "addr": "[02:06:03]",
+                "button_number": 3,
+                "entity_type": "cover",
+                "inverted": False,
+            },
+            {
+                "name": "Device 3",
+                "addr": "[02:06:03]",
+                "button_number": 4,
+                "entity_type": "lock",
+                "inverted": False,
+            },
         ]
 
         # Delete indices 1 and 3 (must delete in reverse order to preserve indices)
         indices_to_delete = {1, 3}
         options["cco_devices"] = [
-            dev for idx, dev in enumerate(options["cco_devices"])
+            dev
+            for idx, dev in enumerate(options["cco_devices"])
             if idx not in indices_to_delete
         ]
 
@@ -179,7 +251,13 @@ class TestCCODeviceCRUD:
         """Test that we can detect duplicate address+button combinations."""
         options = create_empty_options()
         options["cco_devices"] = [
-            {"name": "Device 1", "addr": "[02:06:03]", "button_number": 6, "entity_type": "switch", "inverted": False},
+            {
+                "name": "Device 1",
+                "addr": "[02:06:03]",
+                "button_number": 6,
+                "entity_type": "switch",
+                "inverted": False,
+            },
         ]
 
         # Check for duplicate
@@ -221,11 +299,13 @@ class TestDimmerCRUD:
     def test_edit_dimmer_rate(self):
         """Test editing dimmer fade rate."""
         options = create_empty_options()
-        options["dimmers"].append({
-            "name": "Test Dimmer",
-            "addr": "[01:01:00:02:04]",
-            "rate": 1.0,
-        })
+        options["dimmers"].append(
+            {
+                "name": "Test Dimmer",
+                "addr": "[01:01:00:02:04]",
+                "rate": 1.0,
+            }
+        )
 
         # Edit rate
         options["dimmers"][0]["rate"] = 3.5
@@ -236,11 +316,13 @@ class TestDimmerCRUD:
     def test_edit_dimmer_name(self):
         """Test editing dimmer name."""
         options = create_empty_options()
-        options["dimmers"].append({
-            "name": "Old Name",
-            "addr": "[01:01:00:02:04]",
-            "rate": 1.0,
-        })
+        options["dimmers"].append(
+            {
+                "name": "Old Name",
+                "addr": "[01:01:00:02:04]",
+                "rate": 1.0,
+            }
+        )
 
         options["dimmers"][0]["name"] = "New Name"
 
@@ -274,7 +356,9 @@ class TestDimmerCRUD:
             return False
 
         assert is_duplicate_dimmer("[01:01:00:02:04]") is True
-        assert is_duplicate_dimmer("1:1:0:2:4") is True  # Different format, same address
+        assert (
+            is_duplicate_dimmer("1:1:0:2:4") is True
+        )  # Different format, same address
         assert is_duplicate_dimmer("[01:01:00:02:05]") is False
 
 
@@ -302,19 +386,23 @@ class TestKeypadCRUD:
     def test_add_button_to_keypad(self):
         """Test adding a button to a keypad."""
         options = create_empty_options()
-        options["keypads"].append({
-            "name": "Test Keypad",
-            "addr": "[01:04:10]",
-            "buttons": [],
-        })
+        options["keypads"].append(
+            {
+                "name": "Test Keypad",
+                "addr": "[01:04:10]",
+                "buttons": [],
+            }
+        )
 
         # Add button
-        options["keypads"][0]["buttons"].append({
-            "name": "Scene 1",
-            "number": 1,
-            "led": True,
-            "release_delay": 0.0,
-        })
+        options["keypads"][0]["buttons"].append(
+            {
+                "name": "Scene 1",
+                "number": 1,
+                "led": True,
+                "release_delay": 0.0,
+            }
+        )
 
         assert len(options["keypads"][0]["buttons"]) == 1
         assert options["keypads"][0]["buttons"][0]["name"] == "Scene 1"
@@ -323,13 +411,20 @@ class TestKeypadCRUD:
     def test_edit_keypad_button(self):
         """Test editing a keypad button."""
         options = create_empty_options()
-        options["keypads"].append({
-            "name": "Test Keypad",
-            "addr": "[01:04:10]",
-            "buttons": [
-                {"name": "Button 1", "number": 1, "led": False, "release_delay": 0.0},
-            ],
-        })
+        options["keypads"].append(
+            {
+                "name": "Test Keypad",
+                "addr": "[01:04:10]",
+                "buttons": [
+                    {
+                        "name": "Button 1",
+                        "number": 1,
+                        "led": False,
+                        "release_delay": 0.0,
+                    },
+                ],
+            }
+        )
 
         # Edit button
         options["keypads"][0]["buttons"][0]["name"] = "Scene On"
@@ -342,14 +437,26 @@ class TestKeypadCRUD:
     def test_delete_button_from_keypad(self):
         """Test deleting a button from a keypad."""
         options = create_empty_options()
-        options["keypads"].append({
-            "name": "Test Keypad",
-            "addr": "[01:04:10]",
-            "buttons": [
-                {"name": "Button 1", "number": 1, "led": False, "release_delay": 0.0},
-                {"name": "Button 2", "number": 2, "led": False, "release_delay": 0.0},
-            ],
-        })
+        options["keypads"].append(
+            {
+                "name": "Test Keypad",
+                "addr": "[01:04:10]",
+                "buttons": [
+                    {
+                        "name": "Button 1",
+                        "number": 1,
+                        "led": False,
+                        "release_delay": 0.0,
+                    },
+                    {
+                        "name": "Button 2",
+                        "number": 2,
+                        "led": False,
+                        "release_delay": 0.0,
+                    },
+                ],
+            }
+        )
 
         del options["keypads"][0]["buttons"][0]
 
@@ -364,15 +471,30 @@ class TestKeypadCRUD:
                 "name": "Keypad 1",
                 "addr": "[01:04:10]",
                 "buttons": [
-                    {"name": "Button 1", "number": 1, "led": False, "release_delay": 0.0},
-                    {"name": "Button 2", "number": 2, "led": False, "release_delay": 0.0},
+                    {
+                        "name": "Button 1",
+                        "number": 1,
+                        "led": False,
+                        "release_delay": 0.0,
+                    },
+                    {
+                        "name": "Button 2",
+                        "number": 2,
+                        "led": False,
+                        "release_delay": 0.0,
+                    },
                 ],
             },
             {
                 "name": "Keypad 2",
                 "addr": "[01:04:11]",
                 "buttons": [
-                    {"name": "Button A", "number": 1, "led": True, "release_delay": 0.0},
+                    {
+                        "name": "Button A",
+                        "number": 1,
+                        "led": True,
+                        "release_delay": 0.0,
+                    },
                 ],
             },
         ]
@@ -387,14 +509,26 @@ class TestKeypadCRUD:
     def test_button_number_duplicate_detection(self):
         """Test duplicate button number detection on same keypad."""
         options = create_empty_options()
-        options["keypads"].append({
-            "name": "Test Keypad",
-            "addr": "[01:04:10]",
-            "buttons": [
-                {"name": "Button 1", "number": 1, "led": False, "release_delay": 0.0},
-                {"name": "Button 5", "number": 5, "led": False, "release_delay": 0.0},
-            ],
-        })
+        options["keypads"].append(
+            {
+                "name": "Test Keypad",
+                "addr": "[01:04:10]",
+                "buttons": [
+                    {
+                        "name": "Button 1",
+                        "number": 1,
+                        "led": False,
+                        "release_delay": 0.0,
+                    },
+                    {
+                        "name": "Button 5",
+                        "number": 5,
+                        "led": False,
+                        "release_delay": 0.0,
+                    },
+                ],
+            }
+        )
 
         def is_duplicate_button(keypad_idx: int, number: int) -> bool:
             for btn in options["keypads"][keypad_idx]["buttons"]:
@@ -436,13 +570,15 @@ class TestControllerSettings:
         options["kls_window_offset"] = 10
 
         # Add a device
-        options["cco_devices"].append({
-            "name": "Test",
-            "addr": "[02:06:03]",
-            "button_number": 1,
-            "entity_type": "switch",
-            "inverted": False,
-        })
+        options["cco_devices"].append(
+            {
+                "name": "Test",
+                "addr": "[02:06:03]",
+                "button_number": 1,
+                "entity_type": "switch",
+                "inverted": False,
+            }
+        )
 
         # Settings should still be there
         assert options["kls_poll_interval"] == 15
@@ -606,13 +742,15 @@ CCO,02:06:03,6,Kitchen Light"""
             if device_type in ("CCO", "SWITCH"):
                 button = int(row.get("relay", row.get("button", 1)))
                 cco_type = row.get("type", "").strip().lower() or "switch"
-                devices.append({
-                    "device_type": "CCO",
-                    "address": normalize_address(row["address"].strip()),
-                    "button": button,
-                    "name": row.get("name", "").strip(),
-                    "entity_type": cco_type,
-                })
+                devices.append(
+                    {
+                        "device_type": "CCO",
+                        "address": normalize_address(row["address"].strip()),
+                        "button": button,
+                        "name": row.get("name", "").strip(),
+                        "entity_type": cco_type,
+                    }
+                )
 
         assert len(devices) == 1
         assert devices[0]["name"] == "Kitchen Light"
@@ -641,13 +779,15 @@ CCO,02:06:07,4,Bedroom Light,light"""
             if device_type in ("CCO", "SWITCH"):
                 button = int(row.get("relay", row.get("button", 1)))
                 cco_type = row.get("type", "").strip().lower() or "switch"
-                devices.append({
-                    "device_type": "CCO",
-                    "address": normalize_address(row["address"].strip()),
-                    "button": button,
-                    "name": row.get("name", "").strip(),
-                    "entity_type": cco_type,
-                })
+                devices.append(
+                    {
+                        "device_type": "CCO",
+                        "address": normalize_address(row["address"].strip()),
+                        "button": button,
+                        "name": row.get("name", "").strip(),
+                        "entity_type": cco_type,
+                    }
+                )
 
         assert len(devices) == 5
         assert devices[0]["entity_type"] == "switch"
@@ -672,11 +812,13 @@ LIGHT,01:01:00:02:05,Dining Room"""
         for row in reader:
             device_type = row.get("device_type", "").strip().upper()
             if device_type in ("LIGHT", "DIMMER"):
-                devices.append({
-                    "device_type": "DIMMER",
-                    "address": normalize_address(row["address"].strip()),
-                    "name": row.get("name", "").strip(),
-                })
+                devices.append(
+                    {
+                        "device_type": "DIMMER",
+                        "address": normalize_address(row["address"].strip()),
+                        "name": row.get("name", "").strip(),
+                    }
+                )
 
         assert len(devices) == 2
         assert devices[0]["device_type"] == "DIMMER"
@@ -707,41 +849,51 @@ CLIMATE,02:06:06,3,Thermostat,"""
             if device_type in ("CCO", "SWITCH"):
                 button = int(row.get("relay", row.get("button", 1)))
                 cco_type = row.get("type", "").strip().lower() or "switch"
-                cco_devices.append({
-                    "address": normalize_address(row["address"].strip()),
-                    "button": button,
-                    "name": row.get("name", "").strip(),
-                    "entity_type": cco_type,
-                })
+                cco_devices.append(
+                    {
+                        "address": normalize_address(row["address"].strip()),
+                        "button": button,
+                        "name": row.get("name", "").strip(),
+                        "entity_type": cco_type,
+                    }
+                )
             elif device_type in ("LIGHT", "DIMMER"):
-                dimmers.append({
-                    "address": normalize_address(row["address"].strip()),
-                    "name": row.get("name", "").strip(),
-                })
+                dimmers.append(
+                    {
+                        "address": normalize_address(row["address"].strip()),
+                        "name": row.get("name", "").strip(),
+                    }
+                )
             elif device_type == "COVER":
                 button = int(row.get("relay", row.get("button", 1)))
-                cco_devices.append({
-                    "address": normalize_address(row["address"].strip()),
-                    "button": button,
-                    "name": row.get("name", "").strip(),
-                    "entity_type": "cover",
-                })
+                cco_devices.append(
+                    {
+                        "address": normalize_address(row["address"].strip()),
+                        "button": button,
+                        "name": row.get("name", "").strip(),
+                        "entity_type": "cover",
+                    }
+                )
             elif device_type == "LOCK":
                 button = int(row.get("relay", row.get("button", 1)))
-                cco_devices.append({
-                    "address": normalize_address(row["address"].strip()),
-                    "button": button,
-                    "name": row.get("name", "").strip(),
-                    "entity_type": "lock",
-                })
+                cco_devices.append(
+                    {
+                        "address": normalize_address(row["address"].strip()),
+                        "button": button,
+                        "name": row.get("name", "").strip(),
+                        "entity_type": "lock",
+                    }
+                )
             elif device_type == "CLIMATE":
                 button = int(row.get("relay", row.get("button", 1)))
-                cco_devices.append({
-                    "address": normalize_address(row["address"].strip()),
-                    "button": button,
-                    "name": row.get("name", "").strip(),
-                    "entity_type": "climate",
-                })
+                cco_devices.append(
+                    {
+                        "address": normalize_address(row["address"].strip()),
+                        "button": button,
+                        "name": row.get("name", "").strip(),
+                        "entity_type": "climate",
+                    }
+                )
 
         assert len(cco_devices) == 4
         assert len(dimmers) == 1
@@ -779,13 +931,15 @@ CCO,02:06:03,8,Test3"""
         """Test that duplicate devices are detected during CSV import."""
         # Simulate existing options with a CCO device
         existing_options = create_empty_options()
-        existing_options["cco_devices"].append({
-            "name": "Existing Light",
-            "addr": "[02:06:03]",
-            "button_number": 6,
-            "entity_type": "switch",
-            "inverted": False,
-        })
+        existing_options["cco_devices"].append(
+            {
+                "name": "Existing Light",
+                "addr": "[02:06:03]",
+                "button_number": 6,
+                "entity_type": "switch",
+                "inverted": False,
+            }
+        )
 
         # CSV with same address/button should be detected as duplicate
         csv_content = """device_type,address,relay,name,type
@@ -804,7 +958,9 @@ CCO,02:06:04,6,Different Address,switch"""
             normalized = normalize_address(addr)
             for device in existing_options["cco_devices"]:
                 existing_addr = normalize_address(device["addr"])
-                existing_button = device.get("button_number", device.get("relay_number", 1))
+                existing_button = device.get(
+                    "button_number", device.get("relay_number", 1)
+                )
                 if existing_addr == normalized and existing_button == button:
                     return True
             return False
