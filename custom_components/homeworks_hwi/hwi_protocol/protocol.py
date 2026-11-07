@@ -109,7 +109,7 @@ class MessageParser:
                         messages.append(msg)
                 except UnicodeDecodeError:
                     _LOGGER.warning("Invalid message encoding: %s", line)
-                except Exception as err:
+                except Exception as err:  # noqa: BLE001 - a bad line must not stop parsing
                     _LOGGER.warning("Failed to parse message: %s - %s", line, err)
 
         return messages
@@ -209,7 +209,7 @@ def _parse_dl(line: str, parts: list[str], ts: datetime) -> DimmerLevelMessage |
 
     address = normalize_address(parts[1])
     try:
-        level = int(round(float(parts[2])))
+        level = round(float(parts[2]))
     except ValueError:
         return None
 

@@ -210,7 +210,7 @@ class TestHomeworksQEDCover:
     These tests mock the coordinator to verify entity behavior in isolation.
     """
 
-    pytestmark = [pytest.mark.requires_ha]
+    pytestmark = pytest.mark.requires_ha
 
     @pytest.fixture
     def mock_coordinator(self):

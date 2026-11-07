@@ -305,7 +305,7 @@ def _apply_update(entry, **kwargs):
 class TestFadeRateMigration:
     """Tests for the v3.2 step that rewrites dimmer fade rates."""
 
-    pytestmark = [pytest.mark.requires_ha]
+    pytestmark = pytest.mark.requires_ha
 
     @staticmethod
     def _dimmer(**extra):

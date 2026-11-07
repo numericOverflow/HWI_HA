@@ -251,7 +251,7 @@ class HomeworksTransport:
             try:
                 self._writer.close()
                 await self._writer.wait_closed()
-            except Exception:  # noqa: BLE001
+            except Exception:  # noqa: BLE001, S110 - close is best effort
                 pass
             finally:
                 self._writer = None

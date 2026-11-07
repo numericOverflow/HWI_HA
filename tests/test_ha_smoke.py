@@ -25,7 +25,7 @@ pytestmark = [
 def mock_config_entry():
     """Create a mock config entry."""
     try:
-        from unittest.mock import MagicMock, patch
+        from unittest.mock import MagicMock
 
         from homeassistant.config_entries import ConfigEntry
 
@@ -67,7 +67,7 @@ def mock_config_entry():
 def mock_hass():
     """Create a mock Home Assistant instance."""
     try:
-        from unittest.mock import AsyncMock, MagicMock, patch
+        from unittest.mock import AsyncMock, MagicMock
 
         hass = MagicMock()
         hass.data = {}
@@ -160,9 +160,9 @@ class TestConfigEntrySetup:
     async def test_unload_entry_cleans_up(self, mock_hass, mock_config_entry):
         """Test that unload_entry properly shuts down coordinator."""
         try:
-            from unittest.mock import AsyncMock, MagicMock, PropertyMock
+            from unittest.mock import AsyncMock, MagicMock
 
-            from custom_components.homeworks_hwi import DOMAIN, async_unload_entry
+            from custom_components.homeworks_hwi import async_unload_entry
 
             # Set up mock coordinator
             mock_coordinator = AsyncMock()

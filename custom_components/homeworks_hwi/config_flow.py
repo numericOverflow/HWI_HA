@@ -1340,7 +1340,7 @@ def _find_existing_cco(
             )
             if existing_addr.unique_key == new_addr.unique_key:
                 return i
-    except Exception:
+    except Exception:  # noqa: BLE001, S110 - a bad stored entry means no match
         pass
     return None
 

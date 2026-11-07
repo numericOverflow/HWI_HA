@@ -150,7 +150,7 @@ class HomeworksClient:
             return success
         except HomeworksAuthenticationException:
             raise
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001 - any connect failure reports False
             _LOGGER.error("Failed to connect: %s", err)
             self._health.connected = False
             self._health.record_poll_failure(str(err))

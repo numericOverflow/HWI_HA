@@ -54,7 +54,6 @@ class TestConfigFlowUserStep:
             from custom_components.homeworks_hwi.config_flow import (
                 HomeworksConfigFlowHandler,
             )
-            from custom_components.homeworks_hwi.const import DOMAIN
 
             handler = HomeworksConfigFlowHandler()
             handler.hass = MagicMock()
@@ -69,7 +68,7 @@ class TestConfigFlowUserStep:
                 "custom_components.homeworks_hwi.config_flow._try_connection",
                 new_callable=AsyncMock,
             ):
-                result = await handler.async_step_user(
+                await handler.async_step_user(
                     user_input={
                         "name": "Test Controller",
                         "host": "192.168.1.100",

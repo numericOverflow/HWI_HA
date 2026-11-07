@@ -306,7 +306,7 @@ class TestKLSStateEngine:
         need the latter even on keypads with no CCO devices). A repeat of the
         exact same KLS changes neither.
         """
-        coord, device = self._make_coordinator_with_device(button=6)
+        coord, _device = self._make_coordinator_with_device(button=6)
 
         led_states = [0] * 24
         led_states[14] = CCO_RELAY_OPEN_DIGIT

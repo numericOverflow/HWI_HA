@@ -214,7 +214,7 @@ DIMMER_ADDR = "[01:04:01:03:02]"
 class TestDimmableLightCommands:
     """Tests for the FADEDIM text that the dimmable light produces."""
 
-    pytestmark = [pytest.mark.requires_ha]
+    pytestmark = pytest.mark.requires_ha
 
     @pytest.fixture
     def mock_coordinator(self):

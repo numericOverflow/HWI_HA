@@ -539,7 +539,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await self._client.request_keypad_led_states(address)
                 # Small delay between requests
                 await asyncio.sleep(0.1)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - keep polling other addresses
                 _LOGGER.warning("Failed to poll KLS for %s: %s", address, err)
 
     async def _poll_dimmer_states(self) -> None:
@@ -551,7 +551,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             try:
                 await self._client.request_dimmer_level(address)
                 await asyncio.sleep(0.05)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - keep polling other dimmers
                 _LOGGER.warning("Failed to poll dimmer %s: %s", address, err)
 
     @callback
@@ -750,7 +750,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         for cb in callbacks:
             try:
                 cb(normalized, button, event_type)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - one bad callback must not block others
                 _LOGGER.error("Button callback error: %s", err)
 
     def _handle_cci_button_event(self, address: str, button: int, state: bool) -> None:
@@ -800,7 +800,7 @@ class HomeworksCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for cb in callbacks:
                 try:
                     cb(state)
-                except Exception as err:
+                except Exception as err:  # noqa: BLE001 - one bad callback must not block others
                     _LOGGER.error("CCI callback error: %s", err)
 
             # Notify coordinator listeners

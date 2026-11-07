@@ -96,7 +96,7 @@ class HomeworksDimmableLight(CoordinatorEntity[HomeworksCoordinator], LightEntit
     """
 
     _attr_color_mode = ColorMode.BRIGHTNESS
-    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+    _attr_supported_color_modes = {ColorMode.BRIGHTNESS}  # noqa: RUF012 - HA _attr_ pattern
 
     def __init__(
         self,
@@ -192,7 +192,7 @@ class HomeworksCCOLight(CoordinatorEntity[HomeworksCoordinator], LightEntity):
     """
 
     _attr_color_mode = ColorMode.ONOFF
-    _attr_supported_color_modes = {ColorMode.ONOFF}
+    _attr_supported_color_modes = {ColorMode.ONOFF}  # noqa: RUF012 - HA _attr_ pattern
 
     def __init__(
         self,

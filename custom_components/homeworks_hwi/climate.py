@@ -66,7 +66,7 @@ class HomeworksCCOClimate(CoordinatorEntity[HomeworksCoordinator], ClimateEntity
     State is derived from the central KLS state engine in the coordinator.
     """
 
-    _attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT]
+    _attr_hvac_modes = [HVACMode.OFF, HVACMode.HEAT]  # noqa: RUF012 - HA _attr_ pattern
     _attr_supported_features = (
         ClimateEntityFeature.TURN_ON | ClimateEntityFeature.TURN_OFF
     )

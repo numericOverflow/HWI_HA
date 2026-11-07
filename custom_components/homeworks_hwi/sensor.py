@@ -77,7 +77,7 @@ class HomeworksConnectionSensor(HomeworksHealthSensor):
     """Sensor showing connection status."""
 
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = ["connected", "disconnected"]
+    _attr_options = ["connected", "disconnected"]  # noqa: RUF012 - HA _attr_ pattern
     _attr_entity_registry_enabled_default = True  # This one is enabled by default
     _attr_translation_key = "connection"
 

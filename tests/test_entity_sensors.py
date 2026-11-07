@@ -23,7 +23,7 @@ class TestKeypadLEDBinarySensor:
     A flashing LED is lit, so 1/2/3 are all "on" and only 0 is "off".
     """
 
-    pytestmark = [pytest.mark.requires_ha]
+    pytestmark = pytest.mark.requires_ha
 
     @pytest.fixture
     def led_sensor(self, mock_coordinator):
@@ -219,9 +219,21 @@ class TestHealthSensors:
         ]
         assert len(sensor_types) == 5
 
-    def test_connection_sensor_values(self):
+    def test_connection_sensor_values(self, mock_coordinator):
         """Connection sensor reports connected/disconnected."""
-        assert "connected" != "disconnected"
+        try:
+            from custom_components.homeworks_hwi.sensor import (
+                HomeworksConnectionSensor,
+            )
+        except ImportError:
+            pytest.skip("Requires Home Assistant dependencies")
+
+        sensor = HomeworksConnectionSensor(mock_coordinator, "test")
+        assert sensor.options == ["connected", "disconnected"]
+        mock_coordinator.connected = True
+        assert sensor.native_value == "connected"
+        mock_coordinator.connected = False
+        assert sensor.native_value == "disconnected"
 
     def test_health_counter_sensors_are_integers(self):
         """Counter sensors (reconnect, poll_failure, parse_error) are numeric."""

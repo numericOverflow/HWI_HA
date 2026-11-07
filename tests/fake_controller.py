@@ -88,7 +88,7 @@ class FakeHomeworksController:
             writer.close()
             try:
                 await writer.wait_closed()
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 - teardown is best effort
                 pass
 
         self._clients.clear()
@@ -140,7 +140,7 @@ class FakeHomeworksController:
                 except TimeoutError:
                     continue
 
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001 - a client error must not stop the server
             _LOGGER.debug("Client error: %s", err)
         finally:
             if writer in self._clients:
@@ -242,7 +242,7 @@ class FakeHomeworksController:
             try:
                 writer.write(message.encode())
                 await writer.drain()
-            except Exception:
+            except Exception:  # noqa: BLE001, S110 - skip clients that already left
                 pass
 
     async def simulate_disconnect(self) -> None:
