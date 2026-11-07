@@ -424,8 +424,8 @@ class TestNoDuplicatePolling:
                 coordinator._shutdown_requested = False
                 coordinator._unsub_refresh = None
                 coordinator._unsub_shutdown = None
+                # Debouncer.async_shutdown is a sync @callback in HA
                 coordinator._debounced_refresh = MagicMock()
-                coordinator._debounced_refresh.async_shutdown = AsyncMock()
 
                 await coordinator.async_shutdown()
 

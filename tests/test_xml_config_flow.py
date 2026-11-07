@@ -45,11 +45,6 @@ from custom_components.homeworks_hwi.const import (
     CONF_RPM_COVERS,
 )
 
-pytestmark = [
-    pytest.mark.asyncio,
-]
-
-
 # === Test XML Fixtures ===
 
 SIMPLE_XML = """\

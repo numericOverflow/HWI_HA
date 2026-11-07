@@ -720,6 +720,9 @@ class TestOptimisticUpdates:
 
         client = AsyncMock()
         client.connected = True
+        # KLS address registration is synchronous on HomeworksClient
+        client.register_kls_address = MagicMock()
+        client.unregister_kls_address = MagicMock()
         client.cco_close = AsyncMock(return_value=True)
         client.cco_open = AsyncMock(return_value=True)
         client.motor_cover_up = AsyncMock(return_value=True)

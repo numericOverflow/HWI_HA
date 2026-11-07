@@ -16,10 +16,7 @@ from unittest.mock import (
 
 import pytest
 
-pytestmark = [
-    pytest.mark.requires_ha,
-    pytest.mark.asyncio,
-]
+pytestmark = pytest.mark.requires_ha
 
 
 # =============================================================================
