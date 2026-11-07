@@ -7,20 +7,19 @@ Covers:
 - create_cco_entities_for_type helper function
 """
 
-import pytest
 from unittest.mock import (
-    AsyncMock,
     MagicMock,
-    patch,
 )
-from copy import deepcopy
 
-from custom_components.homeworks_hwi.models import (
-    CCOAddress,
-    CCODevice,
-    CCOEntityType,
-)
+import pytest
+
 from custom_components.homeworks_hwi.const import (
+    CCO_TYPE_CLIMATE,
+    CCO_TYPE_COVER,
+    CCO_TYPE_FAN,
+    CCO_TYPE_LIGHT,
+    CCO_TYPE_LOCK,
+    CCO_TYPE_SWITCH,
     CONF_ADDR,
     CONF_AREA,
     CONF_BUTTON_NUMBER,
@@ -30,17 +29,14 @@ from custom_components.homeworks_hwi.const import (
     CONF_ENTITY_TYPE,
     CONF_INVERTED,
     CONF_RATE,
-    LEGACY_DEFAULT_FADE_RATE,
-    CCO_TYPE_SWITCH,
-    CCO_TYPE_LIGHT,
-    CCO_TYPE_COVER,
-    CCO_TYPE_LOCK,
-    CCO_TYPE_FAN,
-    CCO_TYPE_CLIMATE,
-    MAX_COMMAND_DELAY_MS,
     DOMAIN,
+    LEGACY_DEFAULT_FADE_RATE,
+    MAX_COMMAND_DELAY_MS,
 )
-
+from custom_components.homeworks_hwi.models import (
+    CCOAddress,
+    CCOEntityType,
+)
 
 # =============================================================================
 # send_command Service Tests
@@ -238,7 +234,6 @@ class TestDiagnostics:
 
     def test_redacted_keys_defined(self):
         """Sensitive keys are in the redaction set."""
-        from custom_components.homeworks_hwi.const import DOMAIN
 
         # These should be redacted in diagnostics
         sensitive_keys = {"password", "username", "host"}
@@ -264,7 +259,7 @@ class TestDiagnostics:
         that a module has stopped answering — a relay stuck at unknown is
         otherwise indistinguishable from one that is legitimately quiet.
         """
-        from unittest.mock import AsyncMock, MagicMock
+        from unittest.mock import MagicMock
 
         from custom_components.homeworks_hwi.diagnostics import (
             async_get_config_entry_diagnostics,

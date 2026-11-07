@@ -12,7 +12,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 
-from . import HomeworksData, HomeworksHWIConfigEntry
+from . import HomeworksHWIConfigEntry
 from .const import (
     CONF_CCI_DEVICES,
     CONF_CCO_DEVICES,
@@ -21,7 +21,6 @@ from .const import (
     CONF_KEYPADS,
     CONF_QED_COVERS,
     CONF_RPM_COVERS,
-    DOMAIN,
 )
 
 # Keys to redact from diagnostics

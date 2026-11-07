@@ -4,9 +4,6 @@ These tests verify that adding, editing, and deleting devices
 correctly updates the options schema, without requiring Home Assistant.
 """
 
-import pytest
-from copy import deepcopy
-
 # Import models and constants (no HA deps)
 from custom_components.homeworks_hwi.hwi_protocol import normalize_address
 

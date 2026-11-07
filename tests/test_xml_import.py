@@ -2,6 +2,7 @@
 
 import pytest
 
+from custom_components.homeworks_hwi.const import DEFAULT_RAISE_LOWER_RELEASE_DELAY
 from custom_components.homeworks_hwi.xml_import import (
     MAX_XML_SIZE,
     ParsedProject,
@@ -9,8 +10,6 @@ from custom_components.homeworks_hwi.xml_import import (
     get_cco_address_parts,
     parse_homeworks_xml,
 )
-from custom_components.homeworks_hwi.const import DEFAULT_RAISE_LOWER_RELEASE_DELAY
-
 
 # === Minimal valid XML for testing ===
 

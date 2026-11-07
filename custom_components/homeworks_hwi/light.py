@@ -23,12 +23,12 @@ from . import (
     resolve_area_name,
 )
 from .const import (
+    CCO_TYPE_LIGHT,
     CONF_ADDR,
     CONF_AREA,
     CONF_CONTROLLER_ID,
     CONF_DIMMERS,
     CONF_RATE,
-    CCO_TYPE_LIGHT,
     DEFAULT_FADE_RATE,
     DEFAULT_LIGHT_NAME,
     DIMMER_BRIGHTNESS_SCALE,

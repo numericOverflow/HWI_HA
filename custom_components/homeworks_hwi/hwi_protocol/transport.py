@@ -119,7 +119,7 @@ class HomeworksTransport:
                 asyncio.open_connection(self._host, self._port),
                 timeout=CONNECT_TIMEOUT,
             )
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             raise HomeworksConnectionFailed(
                 f"Connection to {self._host}:{self._port} timed out"
             ) from err
@@ -153,7 +153,7 @@ class HomeworksTransport:
                 self._reader.read(1024),
                 timeout=READ_TIMEOUT,
             )
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return b""
         if data:
             _LOGGER.debug("RX (connect): %r", data)
@@ -241,7 +241,7 @@ class HomeworksTransport:
             if not data:
                 raise HomeworksConnectionLost("Connection closed by controller")
             return data
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return b""
 
     async def close(self) -> None:

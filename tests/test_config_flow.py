@@ -7,13 +7,14 @@ Covers:
 - Legacy migration: v1 → v2 format conversion
 """
 
-import pytest
+from copy import deepcopy
 from unittest.mock import (
     AsyncMock,
     MagicMock,
     patch,
 )
-from copy import deepcopy
+
+import pytest
 
 pytestmark = [
     pytest.mark.requires_ha,
@@ -361,10 +362,14 @@ class TestLegacyMigration:
 
 def test_light_rate_selector_uses_whole_seconds():
     """The fade rate moves in 1 s steps; the release delay keeps 0.01 s."""
-    from custom_components.homeworks_hwi.config_flow import BUTTON_EDIT
-    from custom_components.homeworks_hwi.config_flow import LIGHT_EDIT
-    from custom_components.homeworks_hwi.const import CONF_RATE
-    from custom_components.homeworks_hwi.const import CONF_RELEASE_DELAY
+    from custom_components.homeworks_hwi.config_flow import (
+        BUTTON_EDIT,
+        LIGHT_EDIT,
+    )
+    from custom_components.homeworks_hwi.const import (
+        CONF_RATE,
+        CONF_RELEASE_DELAY,
+    )
 
     rate = next(v for k, v in LIGHT_EDIT.items() if k == CONF_RATE)
     assert rate.config["step"] == 1

@@ -9,23 +9,23 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from .hwi_protocol import (
-    HomeworksAuthenticationException,
-    HomeworksClient as PyHomeworksClient,
-    KLSMessage,
-    DimmerLevelMessage,
+    AnyMessage,
     ButtonEventMessage,
     ButtonEventType,
-    KeypadEnableMessage,
+    DimmerLevelMessage,
     GrafikEyeSceneMessage,
+    HomeworksAuthenticationException,
+    KeypadEnableMessage,
+    KLSMessage,
     SivoiaSceneMessage,
-    AnyMessage,
     normalize_address,
 )
-
+from .hwi_protocol import HomeworksClient as PyHomeworksClient
 from .models import ControllerHealth, KLSState
 
 _LOGGER = logging.getLogger(__name__)

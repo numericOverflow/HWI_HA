@@ -1,11 +1,12 @@
 """Tests for the Homeworks async client."""
 
-import pytest
 from unittest.mock import (
     AsyncMock,
     MagicMock,
     patch,
 )
+
+import pytest
 
 
 @pytest.fixture

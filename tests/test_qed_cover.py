@@ -6,20 +6,18 @@ Tests are split into:
 - Entity tests (requires HA): HomeworksQEDCover behavior
 """
 
-import pytest
-from copy import deepcopy
 from unittest.mock import (
     AsyncMock,
     MagicMock,
-    patch,
 )
+
+import pytest
 
 from custom_components.homeworks_hwi.hwi_protocol import (
-    MessageParser,
     DimmerLevelMessage,
+    MessageParser,
     normalize_address,
 )
-
 
 # =============================================================================
 # Protocol Tests — DL float parsing (no HA deps)

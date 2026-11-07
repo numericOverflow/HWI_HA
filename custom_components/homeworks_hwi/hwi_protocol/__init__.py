@@ -31,13 +31,13 @@ from .exceptions import (
     HomeworksNoCredentialsProvided,
 )
 from .messages import (
-    AnyMessage,
-    ButtonEventMessage,
-    ButtonEventType,
     CCO_BUTTON_WINDOW_LENGTH,
     CCO_BUTTON_WINDOW_OFFSET,
     CCO_RELAY_CLOSED_DIGIT,
     CCO_RELAY_OPEN_DIGIT,
+    AnyMessage,
+    ButtonEventMessage,
+    ButtonEventType,
     DimmerLevelMessage,
     GrafikEyeSceneMessage,
     HomeworksMessage,

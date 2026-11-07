@@ -27,8 +27,8 @@ timestamp of the last activation reported by the processor and whose
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import logging
+from collections.abc import Callable
 
 from homeassistant.components.event import (
     EventDeviceClass,

@@ -3,17 +3,18 @@
 These tests run WITHOUT Home Assistant dependencies.
 """
 
+from datetime import datetime
+
 import pytest
-from datetime import datetime, timedelta
 
 # Direct import from models.py (no HA deps)
 from custom_components.homeworks_hwi.models import (
+    CCO_BUTTON_WINDOW_OFFSET,
     CCOAddress,
     CCODevice,
     CCOEntityType,
-    KLSState,
     ControllerHealth,
-    CCO_BUTTON_WINDOW_OFFSET,
+    KLSState,
     normalize_address,
     parse_kls_address,
 )

@@ -9,9 +9,6 @@ Terminated with CRLF (handled by transport layer).
 
 from __future__ import annotations
 
-from .protocol import normalize_address
-
-
 # =============================================================================
 # Number formatting (L232 fields take whole numbers only)
 # =============================================================================

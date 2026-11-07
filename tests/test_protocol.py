@@ -3,19 +3,18 @@
 import pytest
 
 from custom_components.homeworks_hwi.hwi_protocol import (
-    MessageParser,
-    normalize_address,
-    parse_address,
-    KLSMessage,
-    DimmerLevelMessage,
     ButtonEventMessage,
     ButtonEventType,
-    KeypadEnableMessage,
+    DimmerLevelMessage,
     GrafikEyeSceneMessage,
+    KLSMessage,
+    MessageParser,
     SivoiaSceneMessage,
     UnknownMessage,
+    commands,
+    normalize_address,
+    parse_address,
 )
-from custom_components.homeworks_hwi.hwi_protocol import commands
 
 
 class TestNormalizeAddress:

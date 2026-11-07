@@ -24,12 +24,12 @@ from . import (
     resolve_area_name,
 )
 from .const import (
+    CCO_TYPE_COVER,
     CONF_ADDR,
     CONF_AREA,
     CONF_CONTROLLER_ID,
     CONF_QED_COVERS,
     CONF_RPM_COVERS,
-    CCO_TYPE_COVER,
     DEFAULT_COVER_NAME,
     DEFAULT_QED_COVER_NAME,
     DEFAULT_RPM_COVER_NAME,

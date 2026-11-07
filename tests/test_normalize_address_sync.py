@@ -9,10 +9,10 @@ See: improvements_spec.md Part 6 (normalize_address Triplication)
 
 import pytest
 
-from custom_components.homeworks_hwi.models import normalize_address as models_normalize
 from custom_components.homeworks_hwi.hwi_protocol.protocol import (
     normalize_address as proto_normalize,
 )
+from custom_components.homeworks_hwi.models import normalize_address as models_normalize
 
 
 def _get_commands_normalize():

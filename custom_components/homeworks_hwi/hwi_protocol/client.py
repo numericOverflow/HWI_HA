@@ -13,8 +13,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
-from typing import Callable
+from collections.abc import Callable
+from datetime import UTC, datetime
 
 from . import commands
 from .exceptions import (
@@ -168,7 +168,7 @@ class HomeworksClient:
         try:
             await self._transport.connect()
             await self._subscribe()
-            self._connected_at = datetime.now(tz=timezone.utc)
+            self._connected_at = datetime.now(tz=UTC)
             self._reconnect_delay = RECONNECT_DELAY_MIN
             return True
         except HomeworksAuthenticationException:
@@ -184,7 +184,7 @@ class HomeworksClient:
                 try:
                     await self._transport.connect()
                     await self._subscribe()
-                    self._connected_at = datetime.now(tz=timezone.utc)
+                    self._connected_at = datetime.now(tz=UTC)
                     self._reconnect_delay = RECONNECT_DELAY_MIN
                     _LOGGER.info("Connected to controller")
                     # Announce immediately. Relays may have moved while we
@@ -193,7 +193,7 @@ class HomeworksClient:
                     if self._reconnect_callback:
                         try:
                             self._reconnect_callback()
-                        except Exception:  # noqa: BLE001
+                        except Exception:
                             _LOGGER.exception("Reconnect callback error")
                 except HomeworksException as err:
                     _LOGGER.warning("Connection failed: %s", err)
@@ -211,11 +211,11 @@ class HomeworksClient:
                     messages = self._parser.feed(data)
                     for msg in messages:
                         self._message_count += 1
-                        self._last_message_at = datetime.now(tz=timezone.utc)
+                        self._last_message_at = datetime.now(tz=UTC)
                         if self._callback:
                             try:
                                 self._callback(msg)
-                            except Exception:  # noqa: BLE001
+                            except Exception:
                                 _LOGGER.exception("Callback error")
             except HomeworksConnectionLost:
                 _LOGGER.warning("Connection lost, will reconnect")

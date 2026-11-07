@@ -8,14 +8,8 @@ Covers:
 """
 
 import pytest
-from unittest.mock import (
-    AsyncMock,
-    MagicMock,
-    patch,
-)
 
 from custom_components.homeworks_hwi.models import normalize_address
-
 
 # =============================================================================
 # Keypad LED Binary Sensor Tests

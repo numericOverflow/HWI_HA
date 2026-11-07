@@ -18,17 +18,16 @@ A CCO relay latches, so an undecodable digit must surface as None
 ("unknown"), never as a fabricated OFF.
 """
 
-import pytest
 from datetime import datetime, timedelta
 
+from custom_components.homeworks_hwi.hwi_protocol import KLSMessage, MessageParser
 from custom_components.homeworks_hwi.models import (
-    KLSState,
+    CCO_BUTTON_WINDOW_OFFSET,
     CCOAddress,
     CCODevice,
     CCOEntityType,
-    CCO_BUTTON_WINDOW_OFFSET,
+    KLSState,
 )
-from custom_components.homeworks_hwi.hwi_protocol import KLSMessage, MessageParser
 
 
 class TestButtonWindowExtraction:

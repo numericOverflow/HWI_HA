@@ -8,13 +8,12 @@ HA 2026.1 compliant:
 from __future__ import annotations
 
 import csv
+import logging
 from collections import Counter
 from io import StringIO
-import logging
 from typing import Any, NamedTuple
 
 import voluptuous as vol
-
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -28,11 +27,9 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import callback
-from homeassistant.helpers import (
-    config_validation as cv,
-    entity_registry as er,
-    selector,
-)
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import selector
 from homeassistant.helpers.schema_config_entry_flow import (
     SchemaCommonFlowHandler,
     SchemaFlowError,
@@ -45,15 +42,19 @@ from homeassistant.helpers.typing import VolDictType
 from homeassistant.util import slugify
 
 from .const import (
+    CCO_TYPE_CLIMATE,
+    CCO_TYPE_COVER,
+    CCO_TYPE_FAN,
+    CCO_TYPE_LIGHT,
+    CCO_TYPE_LOCK,
+    CCO_TYPE_SWITCH,
     CONF_ADDR,
     CONF_AREA,
     CONF_BUTTON_NUMBER,
     CONF_BUTTONS,
     CONF_CCI_DEVICES,
     CONF_CCO_DEVICES,
-    CONF_CCOS,
     CONF_CONTROLLER_ID,
-    CONF_COVERS,
     CONF_DEVICE_CLASS,
     CONF_DIMMERS,
     CONF_ENTITY_TYPE,
@@ -64,19 +65,12 @@ from .const import (
     CONF_KLS_POLL_INTERVAL,
     CONF_KLS_WINDOW_OFFSET,
     CONF_LED,
-    CONF_LOCKS,
     CONF_NUMBER,
     CONF_QED_COVERS,
     CONF_RATE,
     CONF_RELAY_NUMBER,
     CONF_RELEASE_DELAY,
     CONF_RPM_COVERS,
-    CCO_TYPE_CLIMATE,
-    CCO_TYPE_COVER,
-    CCO_TYPE_FAN,
-    CCO_TYPE_LIGHT,
-    CCO_TYPE_LOCK,
-    CCO_TYPE_SWITCH,
     DEFAULT_BUTTON_NAME,
     DEFAULT_CCI_NAME,
     DEFAULT_CCO_NAME,
@@ -93,7 +87,6 @@ from .const import (
 )
 from .models import CCOAddress, normalize_address
 from .xml_import import (
-    MAX_XML_SIZE,
     ParsedProject,
     XMLImportError,
     get_cco_address_parts,

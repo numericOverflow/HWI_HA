@@ -11,8 +11,8 @@ All parsing is stateless - just input bytes, output messages.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
-from typing import Callable
+from collections.abc import Callable
+from datetime import UTC, datetime
 
 from .messages import (
     AnyMessage,
@@ -141,7 +141,7 @@ class MessageParser:
             return None
 
         command = parts[0].upper()
-        timestamp = datetime.now(tz=timezone.utc)
+        timestamp = datetime.now(tz=UTC)
 
         # Route to specific parser based on command
         parser = _PARSERS.get(command)

@@ -25,8 +25,9 @@ pytestmark = [
 def mock_config_entry():
     """Create a mock config entry."""
     try:
-        from homeassistant.config_entries import ConfigEntry
         from unittest.mock import MagicMock, patch
+
+        from homeassistant.config_entries import ConfigEntry
 
         entry = MagicMock(spec=ConfigEntry)
         entry.entry_id = "test_entry_id"
@@ -66,7 +67,7 @@ def mock_config_entry():
 def mock_hass():
     """Create a mock Home Assistant instance."""
     try:
-        from unittest.mock import MagicMock, AsyncMock, patch
+        from unittest.mock import AsyncMock, MagicMock, patch
 
         hass = MagicMock()
         hass.data = {}
@@ -85,8 +86,8 @@ class TestIntegrationLoad:
 
     async def test_import_integration(self):
         """Test that the integration module can be imported."""
-        from custom_components.homeworks_hwi import DOMAIN
         from custom_components import homeworks_hwi
+        from custom_components.homeworks_hwi import DOMAIN
 
         assert DOMAIN == "homeworks_hwi"
         assert hasattr(homeworks_hwi, "async_setup_entry")
@@ -120,8 +121,9 @@ class TestConfigEntrySetup:
 
     async def test_setup_entry_creates_data(self, mock_hass, mock_config_entry):
         """Test that async_setup_entry creates coordinator, stores runtime_data, and forwards platforms."""
-        from custom_components.homeworks_hwi import async_setup_entry, DOMAIN
         from unittest.mock import AsyncMock, MagicMock, patch
+
+        from custom_components.homeworks_hwi import async_setup_entry
 
         mock_coordinator = MagicMock()
         mock_coordinator.async_config_entry_first_refresh = AsyncMock()
@@ -158,8 +160,9 @@ class TestConfigEntrySetup:
     async def test_unload_entry_cleans_up(self, mock_hass, mock_config_entry):
         """Test that unload_entry properly shuts down coordinator."""
         try:
-            from custom_components.homeworks_hwi import async_unload_entry, DOMAIN
             from unittest.mock import AsyncMock, MagicMock, PropertyMock
+
+            from custom_components.homeworks_hwi import DOMAIN, async_unload_entry
 
             # Set up mock coordinator
             mock_coordinator = AsyncMock()
@@ -190,13 +193,14 @@ class TestCoordinatorKLSProcessing:
     async def test_kls_state_update(self):
         """Test that KLS updates trigger state changes."""
         try:
+            from unittest.mock import MagicMock, patch
+
             from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
             from custom_components.homeworks_hwi.models import (
                 CCOAddress,
                 CCODevice,
                 CCOEntityType,
             )
-            from unittest.mock import MagicMock, patch
 
             with patch.object(
                 HomeworksCoordinator, "__init__", lambda self, **kwargs: None
@@ -292,13 +296,14 @@ class TestCoordinatorKLSProcessing:
     async def test_configurable_window_offset(self):
         """Test that window offset is configurable."""
         try:
+            from unittest.mock import MagicMock, patch
+
             from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
             from custom_components.homeworks_hwi.models import (
                 CCOAddress,
                 CCODevice,
                 CCOEntityType,
             )
-            from unittest.mock import MagicMock, patch
 
             with patch.object(
                 HomeworksCoordinator, "__init__", lambda self, **kwargs: None
@@ -402,8 +407,9 @@ class TestNoDuplicatePolling:
     async def test_shutdown_cancels_polling(self):
         """Test that async_shutdown stops the client and clears the reference."""
         try:
+            from unittest.mock import AsyncMock, MagicMock, patch
+
             from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
-            from unittest.mock import MagicMock, AsyncMock, patch
 
             with patch.object(
                 HomeworksCoordinator, "__init__", lambda self, **kwargs: None

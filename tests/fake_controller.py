@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Callable
+from collections.abc import Callable
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -137,7 +137,7 @@ class FakeHomeworksController:
                         if command:
                             await self._process_command(command.decode("utf-8"), writer)
 
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     continue
 
         except Exception as err:

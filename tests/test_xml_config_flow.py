@@ -4,35 +4,37 @@ Tests the config flow steps end-to-end: parsing, area mapping,
 device selection, CCO/CCI classification, and commit logic.
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+from homeassistant.const import CONF_NAME
 
 from custom_components.homeworks_hwi.config_flow import (
     _find_existing_by_address,
-    _is_duplicate_by_address,
-    _is_duplicate_cco,
     _is_duplicate_cci,
     _is_duplicate_dimmer,
     _is_duplicate_keypad,
     _is_duplicate_qed_cover,
     _is_duplicate_rpm_cover,
     async_parse_xml,
-    get_xml_cco_classify_schema,
     get_xml_cci_classify_schema,
+    get_xml_cco_classify_schema,
     get_xml_confirm_description_placeholders,
-    validate_xml_area_mapping,
-    validate_xml_cco_classify,
     validate_xml_cci_classify,
+    validate_xml_cco_classify,
     validate_xml_confirm_import,
     validate_xml_device_selection,
 )
 from custom_components.homeworks_hwi.const import (
+    CCO_TYPE_LIGHT,
+    CCO_TYPE_SWITCH,
     CONF_ADDR,
     CONF_AREA,
     CONF_BUTTON_NUMBER,
     CONF_BUTTONS,
     CONF_CCI_DEVICES,
     CONF_CCO_DEVICES,
+    CONF_DEVICE_CLASS,
     CONF_DIMMERS,
     CONF_ENTITY_TYPE,
     CONF_INPUT_NUMBER,
@@ -41,15 +43,6 @@ from custom_components.homeworks_hwi.const import (
     CONF_NUMBER,
     CONF_QED_COVERS,
     CONF_RPM_COVERS,
-    CCO_TYPE_SWITCH,
-    CCO_TYPE_LIGHT,
-    CONF_DEVICE_CLASS,
-    CONF_RELEASE_DELAY,
-)
-from homeassistant.const import CONF_NAME
-from custom_components.homeworks_hwi.xml_import import (
-    XMLImportError,
-    parse_homeworks_xml,
 )
 
 pytestmark = [

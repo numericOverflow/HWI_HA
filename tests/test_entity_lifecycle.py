@@ -6,16 +6,16 @@ Verifies that:
 - Each entity type (CCO, dimmer, CCI, keypad/button) is covered
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
 from custom_components.homeworks_hwi.models import (
     CCOAddress,
     CCODevice,
     CCOEntityType,
-    normalize_address,
 )
-from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
 
 
 def _make_bare_coordinator():

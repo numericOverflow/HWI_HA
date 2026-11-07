@@ -13,8 +13,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from . import HomeworksHWIConfigEntry, create_cco_entities_for_type
 from .const import (
-    CONF_CONTROLLER_ID,
     CCO_TYPE_SWITCH,
+    CONF_CONTROLLER_ID,
     DEFAULT_SWITCH_NAME,
     DOMAIN,
 )

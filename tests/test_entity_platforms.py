@@ -4,19 +4,18 @@ Uses parametrized tests to validate common behavior across all 6 CCO entity type
 plus platform-specific tests for unique features.
 """
 
-import pytest
 from unittest.mock import (
     AsyncMock,
     MagicMock,
-    patch,
 )
+
+import pytest
 
 from custom_components.homeworks_hwi.models import (
     CCOAddress,
     CCODevice,
     CCOEntityType,
 )
-
 
 # =============================================================================
 # Common CCO Entity Behavior (parametrized across all platforms)
@@ -341,9 +340,8 @@ class TestCoverTypes:
         """All cover type constants are defined."""
         from custom_components.homeworks_hwi.const import (
             CCO_TYPE_COVER,
-            DEFAULT_COVER_NAME,
-            DEFAULT_RPM_COVER_NAME,
             DEFAULT_QED_COVER_NAME,
+            DEFAULT_RPM_COVER_NAME,
         )
 
         assert CCO_TYPE_COVER == "cover"

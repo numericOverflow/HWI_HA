@@ -13,26 +13,24 @@ NOTE: These tests require Home Assistant to be installed since the coordinator
 imports from homeassistant.helpers.update_coordinator.
 """
 
-import pytest
 from unittest.mock import (
     AsyncMock,
     MagicMock,
     patch,
-    call,
 )
-from datetime import timedelta
 
-from custom_components.homeworks_hwi.models import (
-    CCOAddress,
-    CCODevice,
-    CCOEntityType,
-    normalize_address,
-)
+import pytest
+
+from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
 from custom_components.homeworks_hwi.hwi_protocol.messages import (
     CCO_RELAY_CLOSED_DIGIT,
     CCO_RELAY_OPEN_DIGIT,
 )
-from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
+from custom_components.homeworks_hwi.models import (
+    CCOAddress,
+    CCODevice,
+    CCOEntityType,
+)
 
 # A relay-window digit with no documented meaning. Digit 0 is explicitly
 # "UNDOCUMENTED & UNDISCOVERED" per L232/cco_kls_state.htm, so it must decode

@@ -9,8 +9,9 @@ the last reported activation.
 presses issued through Home Assistant - which is why those stay "unknown".
 """
 
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
 
 pytestmark = pytest.mark.requires_ha
 

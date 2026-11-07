@@ -8,16 +8,16 @@ HA 2026.1 compliant:
 from __future__ import annotations
 
 import asyncio
+import logging
+import re
+import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import timedelta
-import logging
-import re
 from typing import Any
-import unicodedata
 
+import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_HOST,
@@ -35,7 +35,6 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.exceptions import ServiceValidationError
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -47,6 +46,12 @@ from homeassistant.util import slugify
 
 from .client import HomeworksClientConfig
 from .const import (
+    CCO_TYPE_CLIMATE,
+    CCO_TYPE_COVER,
+    CCO_TYPE_FAN,
+    CCO_TYPE_LIGHT,
+    CCO_TYPE_LOCK,
+    CCO_TYPE_SWITCH,
     CONF_ADDR,
     CONF_AREA,
     CONF_BUTTON_NUMBER,
@@ -65,12 +70,6 @@ from .const import (
     CONF_RATE,
     CONF_RELAY_NUMBER,
     CONF_RPM_COVERS,
-    CCO_TYPE_CLIMATE,
-    CCO_TYPE_COVER,
-    CCO_TYPE_FAN,
-    CCO_TYPE_LIGHT,
-    CCO_TYPE_LOCK,
-    CCO_TYPE_SWITCH,
     DEFAULT_FADE_RATE,
     DEFAULT_KLS_POLL_INTERVAL,
     DEFAULT_KLS_WINDOW_OFFSET,
