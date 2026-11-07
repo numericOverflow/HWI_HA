@@ -111,9 +111,27 @@ class TestCreateCCOEntitiesForType:
     def test_filters_by_entity_type(self):
         """Only creates entities matching the target type."""
         devices = [
-            {"name": "Switch 1", "addr": "[02:06:03]", "button_number": 1, "entity_type": "switch", "inverted": False},
-            {"name": "Light 1", "addr": "[02:06:03]", "button_number": 2, "entity_type": "light", "inverted": False},
-            {"name": "Switch 2", "addr": "[02:06:03]", "button_number": 3, "entity_type": "switch", "inverted": False},
+            {
+                "name": "Switch 1",
+                "addr": "[02:06:03]",
+                "button_number": 1,
+                "entity_type": "switch",
+                "inverted": False,
+            },
+            {
+                "name": "Light 1",
+                "addr": "[02:06:03]",
+                "button_number": 2,
+                "entity_type": "light",
+                "inverted": False,
+            },
+            {
+                "name": "Switch 2",
+                "addr": "[02:06:03]",
+                "button_number": 3,
+                "entity_type": "switch",
+                "inverted": False,
+            },
         ]
 
         # Count switches
@@ -141,7 +159,9 @@ class TestCreateCCOEntitiesForType:
         }
         # Simulate parsing
         try:
-            CCOAddress.from_string(f"{device_config['addr']},{device_config['button_number']}")
+            CCOAddress.from_string(
+                f"{device_config['addr']},{device_config['button_number']}"
+            )
             assert False, "Should have raised ValueError"
         except (ValueError, KeyError, TypeError):
             pass  # Expected — device would be skipped
@@ -160,12 +180,48 @@ class TestCreateCCOEntitiesForType:
     def test_all_entity_types_handled(self, entity_type, expected_count):
         """Each entity type is filtered correctly."""
         devices = [
-            {"name": "Switch", "addr": "[02:06:03]", "button_number": 1, "entity_type": "switch", "inverted": False},
-            {"name": "Light", "addr": "[02:06:03]", "button_number": 2, "entity_type": "light", "inverted": False},
-            {"name": "Cover", "addr": "[02:06:03]", "button_number": 3, "entity_type": "cover", "inverted": False},
-            {"name": "Lock", "addr": "[02:06:04]", "button_number": 1, "entity_type": "lock", "inverted": False},
-            {"name": "Fan", "addr": "[02:06:04]", "button_number": 2, "entity_type": "fan", "inverted": False},
-            {"name": "Climate", "addr": "[02:06:04]", "button_number": 3, "entity_type": "climate", "inverted": False},
+            {
+                "name": "Switch",
+                "addr": "[02:06:03]",
+                "button_number": 1,
+                "entity_type": "switch",
+                "inverted": False,
+            },
+            {
+                "name": "Light",
+                "addr": "[02:06:03]",
+                "button_number": 2,
+                "entity_type": "light",
+                "inverted": False,
+            },
+            {
+                "name": "Cover",
+                "addr": "[02:06:03]",
+                "button_number": 3,
+                "entity_type": "cover",
+                "inverted": False,
+            },
+            {
+                "name": "Lock",
+                "addr": "[02:06:04]",
+                "button_number": 1,
+                "entity_type": "lock",
+                "inverted": False,
+            },
+            {
+                "name": "Fan",
+                "addr": "[02:06:04]",
+                "button_number": 2,
+                "entity_type": "fan",
+                "inverted": False,
+            },
+            {
+                "name": "Climate",
+                "addr": "[02:06:04]",
+                "button_number": 3,
+                "entity_type": "climate",
+                "inverted": False,
+            },
         ]
 
         filtered = [d for d in devices if d["entity_type"] == entity_type]
@@ -222,9 +278,7 @@ class TestDiagnostics:
         coordinator.cco_unknown_count = 2
         coordinator.kls_poll_address_count = 1
         coordinator.keypad_led_state_count = 1
-        coordinator.kls_last_seen_ages = MagicMock(
-            return_value={"[01:05:03]": 4.2}
-        )
+        coordinator.kls_last_seen_ages = MagicMock(return_value={"[01:05:03]": 4.2})
         coordinator.dimmer_address_count = 0
         coordinator.dimmer_state_count = 0
 

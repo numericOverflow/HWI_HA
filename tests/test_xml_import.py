@@ -293,7 +293,9 @@ class TestXMLParserValidation:
     def test_wrong_root_element(self) -> None:
         """Test that wrong root element raises error."""
         with pytest.raises(XMLImportError) as exc_info:
-            parse_homeworks_xml("<SomeOtherRoot><FileType>Maximum</FileType></SomeOtherRoot>")
+            parse_homeworks_xml(
+                "<SomeOtherRoot><FileType>Maximum</FileType></SomeOtherRoot>"
+            )
         assert exc_info.value.error_key == "invalid_xml"
 
     def test_not_maximum_export(self) -> None:

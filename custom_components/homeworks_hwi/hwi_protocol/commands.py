@@ -187,6 +187,7 @@ CCO_PULSE_STEP_SECONDS = 0.5
 CCO_PULSE_MIN_STEPS = 1
 CCO_PULSE_MAX_STEPS = 245
 
+
 def cco_close(address: str, relay: int) -> str:
     """Build CCOCLOSE command.
 

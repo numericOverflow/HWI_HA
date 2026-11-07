@@ -135,9 +135,7 @@ class FakeHomeworksController:
                     while b"\r\n" in buffer:
                         command, buffer = buffer.split(b"\r\n", 1)
                         if command:
-                            await self._process_command(
-                                command.decode("utf-8"), writer
-                            )
+                            await self._process_command(command.decode("utf-8"), writer)
 
                 except asyncio.TimeoutError:
                     continue

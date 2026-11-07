@@ -65,7 +65,9 @@ def cco_address_factory():
     from custom_components.homeworks_hwi.models import CCOAddress
 
     def _make(processor=2, link=6, address=3, button=6):
-        return CCOAddress(processor=processor, link=link, address=address, button=button)
+        return CCOAddress(
+            processor=processor, link=link, address=address, button=button
+        )
 
     return _make
 

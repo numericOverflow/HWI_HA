@@ -149,14 +149,17 @@ class TestCCODeviceLifecycle:
         assert len(coord._cco_devices) == 0
         assert len(coord._cco_states) == 0
 
-    @pytest.mark.parametrize("entity_type", [
-        CCOEntityType.SWITCH,
-        CCOEntityType.LIGHT,
-        CCOEntityType.COVER,
-        CCOEntityType.LOCK,
-        CCOEntityType.FAN,
-        CCOEntityType.CLIMATE,
-    ])
+    @pytest.mark.parametrize(
+        "entity_type",
+        [
+            CCOEntityType.SWITCH,
+            CCOEntityType.LIGHT,
+            CCOEntityType.COVER,
+            CCOEntityType.LOCK,
+            CCOEntityType.FAN,
+            CCOEntityType.CLIMATE,
+        ],
+    )
     def test_all_entity_types_register_identically(self, entity_type):
         """All 6 CCO entity types follow the same registration pattern."""
         coord = _make_bare_coordinator()
@@ -441,7 +444,9 @@ class TestSharedKLSAddressCleanup:
         """KLS address stays in poll set while at least one device uses it."""
         coord = _make_bare_coordinator()
         dev1 = CCODevice(
-            address=CCOAddress(2, 6, 3, 1), name="Dev1", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 1),
+            name="Dev1",
+            entity_type=CCOEntityType.SWITCH,
         )
         dev2 = CCODevice(
             address=CCOAddress(2, 6, 3, 6), name="Dev2", entity_type=CCOEntityType.LIGHT
@@ -460,9 +465,21 @@ class TestSharedKLSAddressCleanup:
         """Switch + Cover + Fan on same keypad all share one KLS address."""
         coord = _make_bare_coordinator()
         devices = [
-            CCODevice(address=CCOAddress(2, 6, 3, 1), name="Switch", entity_type=CCOEntityType.SWITCH),
-            CCODevice(address=CCOAddress(2, 6, 3, 2), name="Cover", entity_type=CCOEntityType.COVER),
-            CCODevice(address=CCOAddress(2, 6, 3, 3), name="Fan", entity_type=CCOEntityType.FAN),
+            CCODevice(
+                address=CCOAddress(2, 6, 3, 1),
+                name="Switch",
+                entity_type=CCOEntityType.SWITCH,
+            ),
+            CCODevice(
+                address=CCOAddress(2, 6, 3, 2),
+                name="Cover",
+                entity_type=CCOEntityType.COVER,
+            ),
+            CCODevice(
+                address=CCOAddress(2, 6, 3, 3),
+                name="Fan",
+                entity_type=CCOEntityType.FAN,
+            ),
         ]
 
         for d in devices:
@@ -482,10 +499,14 @@ class TestSharedKLSAddressCleanup:
         """Removing a device on one keypad doesn't affect another keypad's polling."""
         coord = _make_bare_coordinator()
         dev_a = CCODevice(
-            address=CCOAddress(2, 6, 3, 1), name="Keypad A", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 1),
+            name="Keypad A",
+            entity_type=CCOEntityType.SWITCH,
         )
         dev_b = CCODevice(
-            address=CCOAddress(2, 6, 4, 1), name="Keypad B", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 4, 1),
+            name="Keypad B",
+            entity_type=CCOEntityType.SWITCH,
         )
 
         coord.register_cco_device(dev_a)

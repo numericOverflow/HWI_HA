@@ -149,16 +149,14 @@ class TestQEDCoverCRUD:
         # Check duplicate detection logic
         existing_addr = normalize_address("[01:04:01:01]")
         is_dup = any(
-            normalize_address(c["addr"]) == existing_addr
-            for c in options["qed_covers"]
+            normalize_address(c["addr"]) == existing_addr for c in options["qed_covers"]
         )
         assert is_dup is True
 
         # Non-duplicate
         new_addr = normalize_address("[01:04:01:02]")
         is_dup = any(
-            normalize_address(c["addr"]) == new_addr
-            for c in options["qed_covers"]
+            normalize_address(c["addr"]) == new_addr for c in options["qed_covers"]
         )
         assert is_dup is False
 
@@ -174,7 +172,8 @@ class TestQEDCoverCRUD:
         # Remove index 1
         removed = {"1"}
         new_items = [
-            item for i, item in enumerate(options["qed_covers"])
+            item
+            for i, item in enumerate(options["qed_covers"])
             if str(i) not in removed
         ]
         options["qed_covers"] = new_items

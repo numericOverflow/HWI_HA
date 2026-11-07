@@ -156,8 +156,16 @@ class TestKLSState:
         led_states = [int(c) for c in "000000000222112110000000"]
         kls = KLSState(address="[02:06:03]", led_states=led_states)
 
-        expected = {1: True, 2: True, 3: True, 4: False,
-                    5: False, 6: True, 7: False, 8: False}
+        expected = {
+            1: True,
+            2: True,
+            3: True,
+            4: False,
+            5: False,
+            6: True,
+            7: False,
+            8: False,
+        }
 
         for button, expected_state in expected.items():
             assert kls.get_cco_state(button) == expected_state

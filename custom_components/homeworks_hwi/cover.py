@@ -51,7 +51,9 @@ PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: HomeworksHWIConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Homeworks covers."""
     data = entry.runtime_data
@@ -61,8 +63,14 @@ async def async_setup_entry(
 
     # New-style CCO devices with type=cover
     cco_covers = create_cco_entities_for_type(
-        hass, entry, coordinator, controller_id,
-        CCO_TYPE_COVER, CCOEntityType.COVER, HomeworksCCOCover, DEFAULT_COVER_NAME,
+        hass,
+        entry,
+        coordinator,
+        controller_id,
+        CCO_TYPE_COVER,
+        CCOEntityType.COVER,
+        HomeworksCCOCover,
+        DEFAULT_COVER_NAME,
     )
     entities.extend(cco_covers)
 
@@ -226,7 +234,9 @@ class HomeworksCCOCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity):
 ATTR_LAST_KNOWN_POSITION = "last_known_position"
 
 
-class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, RestoreEntity):
+class HomeworksRPMCover(
+    CoordinatorEntity[HomeworksCoordinator], CoverEntity, RestoreEntity
+):
     """Homeworks RPM motor-based Cover.
 
     For HW-RPM-4M-230 and similar motor modules.
@@ -290,8 +300,10 @@ class HomeworksRPMCover(CoordinatorEntity[HomeworksCoordinator], CoverEntity, Re
             "motor_level": level,
             "motor_state": level_name,
             ATTR_LAST_KNOWN_POSITION: (
-                "closed" if self._last_known_closed is True
-                else "open" if self._last_known_closed is False
+                "closed"
+                if self._last_known_closed is True
+                else "open"
+                if self._last_known_closed is False
                 else "unknown"
             ),
         }

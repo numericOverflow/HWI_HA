@@ -58,7 +58,9 @@ class TestConfigFlowUserStep:
             handler = HomeworksConfigFlowHandler()
             handler.hass = MagicMock()
             handler._async_current_entries = MagicMock(return_value=[])
-            handler.async_create_entry = MagicMock(return_value={"type": "create_entry"})
+            handler.async_create_entry = MagicMock(
+                return_value={"type": "create_entry"}
+            )
             handler.async_set_unique_id = AsyncMock()
 
             # Patch the module-level _try_connection function
@@ -97,7 +99,9 @@ class TestConfigFlowUserStep:
             handler = HomeworksConfigFlowHandler()
             handler.hass = MagicMock()
             handler._async_current_entries = MagicMock(return_value=[])
-            handler.async_show_form = MagicMock(return_value={"type": "form", "errors": {"base": "connection_error"}})
+            handler.async_show_form = MagicMock(
+                return_value={"type": "form", "errors": {"base": "connection_error"}}
+            )
 
             # _try_connection raises SchemaFlowError on failure
             with patch(
@@ -135,7 +139,9 @@ class TestConfigFlowUserStep:
             handler = HomeworksConfigFlowHandler()
             handler.hass = MagicMock()
             handler._async_current_entries = MagicMock(return_value=[existing_entry])
-            handler.async_abort = MagicMock(return_value={"type": "abort", "reason": "already_configured"})
+            handler.async_abort = MagicMock(
+                return_value={"type": "abort", "reason": "already_configured"}
+            )
 
             # No need to patch _try_connection — duplicate check happens before it
             result = await handler.async_step_user(

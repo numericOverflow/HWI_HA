@@ -12,6 +12,7 @@ from unittest.mock import (
 async def fake_controller():
     """Create and start a fake controller."""
     from tests.fake_controller import FakeHomeworksController
+
     controller = FakeHomeworksController(port=0)
     await controller.start()
     yield controller
@@ -114,7 +115,8 @@ class TestReconnectAnnouncement:
         client._handle_message(MagicMock())
 
         restored = [
-            c for c in callback.call_args_list
+            c
+            for c in callback.call_args_list
             if c.args and c.args[0] == HW_CONNECTION_RESTORED
         ]
         assert restored == []
@@ -129,7 +131,9 @@ class TestCoordinatorReconnectSweep:
         from custom_components.homeworks_hwi.client import HW_CONNECTION_RESTORED
         from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
 
-        with patch.object(HomeworksCoordinator, "__init__", lambda self, *a, **kw: None):
+        with patch.object(
+            HomeworksCoordinator, "__init__", lambda self, *a, **kw: None
+        ):
             coord = HomeworksCoordinator.__new__(HomeworksCoordinator)
             coord.hass = MagicMock()
             coord._controller_id = "test"

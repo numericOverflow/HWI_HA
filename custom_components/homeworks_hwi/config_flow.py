@@ -710,7 +710,9 @@ async def get_select_cci_device_schema(handler: SchemaCommonFlowHandler) -> vol.
         {
             vol.Required(CONF_INDEX): vol.In(
                 {
-                    str(i): f"{d.get(CONF_NAME, 'Input')} ({d[CONF_ADDR]}:{d.get(CONF_INPUT_NUMBER, 1)})"
+                    str(
+                        i
+                    ): f"{d.get(CONF_NAME, 'Input')} ({d[CONF_ADDR]}:{d.get(CONF_INPUT_NUMBER, 1)})"
                     for i, d in enumerate(devices)
                 }
             )
@@ -784,7 +786,9 @@ async def get_remove_cci_device_schema(handler: SchemaCommonFlowHandler) -> vol.
         {
             vol.Required(CONF_INDEX): cv.multi_select(
                 {
-                    str(i): f"{d.get(CONF_NAME, 'Input')} ({d[CONF_ADDR]}:{d.get(CONF_INPUT_NUMBER, 1)})"
+                    str(
+                        i
+                    ): f"{d.get(CONF_NAME, 'Input')} ({d[CONF_ADDR]}:{d.get(CONF_INPUT_NUMBER, 1)})"
                     for i, d in enumerate(devices)
                 }
             )
@@ -921,9 +925,7 @@ async def validate_remove_keypad(
         else:
             addr = item[CONF_ADDR]
             for button in item.get(CONF_BUTTONS, []):
-                _remove_keypad_button_entities(
-                    registry, controller_id, addr, button
-                )
+                _remove_keypad_button_entities(registry, controller_id, addr, button)
 
     handler.options[CONF_KEYPADS] = new_items
     return {}
@@ -1090,7 +1092,7 @@ async def async_parse_csv(
         raise SchemaFlowError("csv_too_large")
 
     # Remove BOM (Byte Order Mark) if present - Excel often adds this
-    if content.startswith('\ufeff'):
+    if content.startswith("\ufeff"):
         content = content[1:]
         _LOGGER.debug("Removed BOM from CSV content")
     f = StringIO(content)
@@ -1146,13 +1148,24 @@ async def async_parse_csv(
                 try:
                     button = int(row.get("relay", row.get("button", 1)))
                 except (ValueError, TypeError):
-                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    skipped_rows.append(
+                        f"row {row_count}: non-numeric relay/button value"
+                    )
                     continue
                 # Map type column to entity type, default to switch
-                entity_type = cco_type if cco_type in (
-                    CCO_TYPE_SWITCH, CCO_TYPE_LIGHT, CCO_TYPE_COVER,
-                    CCO_TYPE_LOCK, CCO_TYPE_CLIMATE, CCO_TYPE_FAN
-                ) else CCO_TYPE_SWITCH
+                entity_type = (
+                    cco_type
+                    if cco_type
+                    in (
+                        CCO_TYPE_SWITCH,
+                        CCO_TYPE_LIGHT,
+                        CCO_TYPE_COVER,
+                        CCO_TYPE_LOCK,
+                        CCO_TYPE_CLIMATE,
+                        CCO_TYPE_FAN,
+                    )
+                    else CCO_TYPE_SWITCH
+                )
                 devices.append(
                     DeviceImport(
                         "CCO",
@@ -1178,7 +1191,9 @@ async def async_parse_csv(
                 try:
                     button = int(row.get("relay", row.get("button", 1)))
                 except (ValueError, TypeError):
-                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    skipped_rows.append(
+                        f"row {row_count}: non-numeric relay/button value"
+                    )
                     continue
                 devices.append(
                     DeviceImport(
@@ -1194,7 +1209,9 @@ async def async_parse_csv(
                 try:
                     button = int(row.get("relay", row.get("button", 1)))
                 except (ValueError, TypeError):
-                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    skipped_rows.append(
+                        f"row {row_count}: non-numeric relay/button value"
+                    )
                     continue
                 devices.append(
                     DeviceImport(
@@ -1210,7 +1227,9 @@ async def async_parse_csv(
                 try:
                     button = int(row.get("relay", row.get("button", 1)))
                 except (ValueError, TypeError):
-                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    skipped_rows.append(
+                        f"row {row_count}: non-numeric relay/button value"
+                    )
                     continue
                 devices.append(
                     DeviceImport(
@@ -1226,7 +1245,9 @@ async def async_parse_csv(
                 try:
                     button = int(row.get("relay", row.get("button", 1)))
                 except (ValueError, TypeError):
-                    skipped_rows.append(f"row {row_count}: non-numeric relay/button value")
+                    skipped_rows.append(
+                        f"row {row_count}: non-numeric relay/button value"
+                    )
                     continue
                 devices.append(
                     DeviceImport(
@@ -1241,11 +1262,18 @@ async def async_parse_csv(
             elif device_type == "CCI":
                 # CCI (Contact Closure Input) - binary sensors
                 try:
-                    input_num = int(row.get("input", row.get("relay", row.get("button", 1))))
+                    input_num = int(
+                        row.get("input", row.get("relay", row.get("button", 1)))
+                    )
                 except (ValueError, TypeError):
-                    skipped_rows.append(f"row {row_count}: non-numeric input/relay/button value")
+                    skipped_rows.append(
+                        f"row {row_count}: non-numeric input/relay/button value"
+                    )
                     continue
-                device_class = row.get("device_class", row.get("class", "")).strip().lower() or None
+                device_class = (
+                    row.get("device_class", row.get("class", "")).strip().lower()
+                    or None
+                )
                 devices.append(
                     DeviceImport(
                         "CCI",
@@ -1288,7 +1316,9 @@ async def async_parse_csv(
         raise SchemaFlowError("invalid_csv") from err
 
     if skipped_rows:
-        _LOGGER.warning("CSV import skipped %d rows: %s", len(skipped_rows), "; ".join(skipped_rows))
+        _LOGGER.warning(
+            "CSV import skipped %d rows: %s", len(skipped_rows), "; ".join(skipped_rows)
+        )
 
     if not devices:
         raise SchemaFlowError("no_devices_in_csv")
@@ -1297,12 +1327,16 @@ async def async_parse_csv(
     return {}
 
 
-def _is_duplicate_cco(handler: SchemaCommonFlowHandler, address: str, button: int) -> bool:
+def _is_duplicate_cco(
+    handler: SchemaCommonFlowHandler, address: str, button: int
+) -> bool:
     """Check if a CCO device already exists."""
     return _find_existing_cco(handler, address, button) is not None
 
 
-def _find_existing_cco(handler: SchemaCommonFlowHandler, address: str, button: int) -> int | None:
+def _find_existing_cco(
+    handler: SchemaCommonFlowHandler, address: str, button: int
+) -> int | None:
     """Find existing CCO device index, or None if not found."""
     try:
         new_addr = _validate_cco_address(address, button)
@@ -1346,12 +1380,16 @@ def _find_existing_dimmer(handler: SchemaCommonFlowHandler, address: str) -> int
     return _find_existing_by_address(handler, CONF_DIMMERS, address)
 
 
-def _is_duplicate_cci(handler: SchemaCommonFlowHandler, address: str, input_number: int) -> bool:
+def _is_duplicate_cci(
+    handler: SchemaCommonFlowHandler, address: str, input_number: int
+) -> bool:
     """Check if a CCI device already exists."""
     return _find_existing_cci(handler, address, input_number) is not None
 
 
-def _find_existing_cci(handler: SchemaCommonFlowHandler, address: str, input_number: int) -> int | None:
+def _find_existing_cci(
+    handler: SchemaCommonFlowHandler, address: str, input_number: int
+) -> int | None:
     """Find existing CCI device index, or None if not found."""
     normalized = normalize_address(address)
     for i, device in enumerate(handler.options.get(CONF_CCI_DEVICES, [])):
@@ -1368,7 +1406,9 @@ def _is_duplicate_rpm_cover(handler: SchemaCommonFlowHandler, address: str) -> b
     return _is_duplicate_by_address(handler, CONF_RPM_COVERS, address)
 
 
-def _find_existing_rpm_cover(handler: SchemaCommonFlowHandler, address: str) -> int | None:
+def _find_existing_rpm_cover(
+    handler: SchemaCommonFlowHandler, address: str
+) -> int | None:
     """Find existing RPM cover index, or None if not found."""
     return _find_existing_by_address(handler, CONF_RPM_COVERS, address)
 
@@ -1378,7 +1418,9 @@ def _is_duplicate_qed_cover(handler: SchemaCommonFlowHandler, address: str) -> b
     return _is_duplicate_by_address(handler, CONF_QED_COVERS, address)
 
 
-def _find_existing_qed_cover(handler: SchemaCommonFlowHandler, address: str) -> int | None:
+def _find_existing_qed_cover(
+    handler: SchemaCommonFlowHandler, address: str
+) -> int | None:
     """Find existing QED cover index, or None if not found."""
     return _find_existing_by_address(handler, CONF_QED_COVERS, address)
 
@@ -1435,11 +1477,7 @@ async def get_confirm_import_schema(handler: SchemaCommonFlowHandler) -> vol.Sch
             selections[str(idx)] = label
 
     return vol.Schema(
-        {
-            vol.Optional("devices", default=default_selected): cv.multi_select(
-                selections
-            )
-        }
+        {vol.Optional("devices", default=default_selected): cv.multi_select(selections)}
     )
 
 
@@ -1480,11 +1518,15 @@ async def validate_confirm_import(
             items.append(dimmer_config)
         elif device.device_type == "CCI":
             # Check if duplicate - if so, update the area instead of skipping
-            existing_idx = _find_existing_cci(handler, device.address, device.button or 1)
+            existing_idx = _find_existing_cci(
+                handler, device.address, device.button or 1
+            )
             if existing_idx is not None:
                 # Update existing CCI with new area if provided
                 if device.area:
-                    handler.options[CONF_CCI_DEVICES][existing_idx][CONF_AREA] = device.area
+                    handler.options[CONF_CCI_DEVICES][existing_idx][CONF_AREA] = (
+                        device.area
+                    )
                     _LOGGER.debug(
                         "Updated existing CCI device %s with area=%s",
                         device.name,
@@ -1514,7 +1556,9 @@ async def validate_confirm_import(
             if existing_idx is not None:
                 # Update existing motor cover with new area if provided
                 if device.area:
-                    handler.options[CONF_RPM_COVERS][existing_idx][CONF_AREA] = device.area
+                    handler.options[CONF_RPM_COVERS][existing_idx][CONF_AREA] = (
+                        device.area
+                    )
                     _LOGGER.debug(
                         "Updated existing motor cover %s with area=%s",
                         device.name,
@@ -1539,7 +1583,9 @@ async def validate_confirm_import(
             existing_idx = _find_existing_qed_cover(handler, device.address)
             if existing_idx is not None:
                 if device.area:
-                    handler.options[CONF_QED_COVERS][existing_idx][CONF_AREA] = device.area
+                    handler.options[CONF_QED_COVERS][existing_idx][CONF_AREA] = (
+                        device.area
+                    )
                     _LOGGER.debug(
                         "Updated existing QED cover %s with area=%s",
                         device.name,
@@ -1562,11 +1608,15 @@ async def validate_confirm_import(
         else:
             # CCO device
             # Check if duplicate - if so, update the area instead of skipping
-            existing_idx = _find_existing_cco(handler, device.address, device.button or 1)
+            existing_idx = _find_existing_cco(
+                handler, device.address, device.button or 1
+            )
             if existing_idx is not None:
                 # Update existing device with new area if provided
                 if device.area:
-                    handler.options[CONF_CCO_DEVICES][existing_idx][CONF_AREA] = device.area
+                    handler.options[CONF_CCO_DEVICES][existing_idx][CONF_AREA] = (
+                        device.area
+                    )
                     _LOGGER.debug(
                         "Updated existing CCO device %s with area=%s",
                         device.name,
@@ -1594,7 +1644,9 @@ async def validate_confirm_import(
             }
             if device.area:
                 cco_config[CONF_AREA] = device.area
-                _LOGGER.debug("Added area '%s' to CCO device %s", device.area, device.name)
+                _LOGGER.debug(
+                    "Added area '%s' to CCO device %s", device.area, device.name
+                )
             else:
                 _LOGGER.warning("No area found for CCO device %s", device.name)
             items.append(cco_config)
@@ -1858,11 +1910,7 @@ async def get_xml_device_selection_schema(
         raise SchemaFlowError("no_devices_in_xml")
 
     return vol.Schema(
-        {
-            vol.Optional(
-                "devices", default=default_selected
-            ): cv.multi_select(selections)
-        }
+        {vol.Optional("devices", default=default_selected): cv.multi_select(selections)}
     )
 
 
@@ -1907,12 +1955,12 @@ async def get_xml_cco_classify_schema(
 
     for i, dev in enumerate(cco_devices):
         key = f"cco_{i}"
-        schema_dict[
-            vol.Required(key, default=CCO_TYPE_SWITCH)
-        ] = selector.SelectSelector(
-            selector.SelectSelectorConfig(
-                options=CCO_ENTITY_TYPES,
-                mode=selector.SelectSelectorMode.DROPDOWN,
+        schema_dict[vol.Required(key, default=CCO_TYPE_SWITCH)] = (
+            selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=CCO_ENTITY_TYPES,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
             )
         )
 
@@ -2333,7 +2381,9 @@ DATA_SCHEMA_CONTROLLER_SETTINGS = vol.Schema(
 
 DATA_SCHEMA_ADD_RPM_COVER = vol.Schema(
     {
-        vol.Optional(CONF_NAME, default=DEFAULT_RPM_COVER_NAME): selector.TextSelector(),
+        vol.Optional(
+            CONF_NAME, default=DEFAULT_RPM_COVER_NAME
+        ): selector.TextSelector(),
         vol.Required(CONF_ADDR): selector.TextSelector(),
         vol.Optional(CONF_AREA): selector.AreaSelector(),
     }
@@ -2347,7 +2397,9 @@ DATA_SCHEMA_EDIT_RPM_COVER = vol.Schema(
 
 DATA_SCHEMA_ADD_QED_COVER = vol.Schema(
     {
-        vol.Optional(CONF_NAME, default=DEFAULT_QED_COVER_NAME): selector.TextSelector(),
+        vol.Optional(
+            CONF_NAME, default=DEFAULT_QED_COVER_NAME
+        ): selector.TextSelector(),
         vol.Required(CONF_ADDR): selector.TextSelector(),
         vol.Optional(CONF_AREA): selector.AreaSelector(),
     }

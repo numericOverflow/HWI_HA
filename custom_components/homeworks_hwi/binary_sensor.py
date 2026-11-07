@@ -68,7 +68,9 @@ DEVICE_CLASS_MAP = {
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: HomeworksHWIConfigEntry, async_add_entities: AddEntitiesCallback
+    hass: HomeAssistant,
+    entry: HomeworksHWIConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Homeworks binary sensors."""
     data = entry.runtime_data
@@ -251,10 +253,14 @@ class HomeworksCCIBinarySensor(
         self._attr_has_entity_name = True
         self._attr_name = None
         addr_clean = self._address.replace(":", "_").strip("[]")
-        self._attr_unique_id = f"homeworks.{controller_id}.cci.{addr_clean}_{input_number}.v2"
+        self._attr_unique_id = (
+            f"homeworks.{controller_id}.cci.{addr_clean}_{input_number}.v2"
+        )
         self._attr_device_class = device_class
         device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{controller_id}.cci.{self._address}_{input_number}.v2")},
+            identifiers={
+                (DOMAIN, f"{controller_id}.cci.{self._address}_{input_number}.v2")
+            },
             name=name,
             manufacturer="Lutron",
             model="HomeWorks CCI Input",

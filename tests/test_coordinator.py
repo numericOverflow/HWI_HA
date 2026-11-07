@@ -90,28 +90,20 @@ class TestPreregisterPollAddresses:
         return coord
 
     def test_cco_addresses_preregistered(self):
-        coord = self._coord_with_options(
-            {"cco_devices": [{"addr": "[02:06:03]"}]}
-        )
+        coord = self._coord_with_options({"cco_devices": [{"addr": "[02:06:03]"}]})
 
         assert coord._kls_poll_addresses == {"[02:06:03]"}
 
     def test_relay_suffix_stripped(self):
         """Polling is per module address, so any ",relay" suffix is dropped."""
-        coord = self._coord_with_options(
-            {"cco_devices": [{"addr": "[02:06:03],6"}]}
-        )
+        coord = self._coord_with_options({"cco_devices": [{"addr": "[02:06:03],6"}]})
 
         assert coord._kls_poll_addresses == {"[02:06:03]"}
 
     def test_one_address_per_module(self):
         """8 relays on one board produce a single RKLS target, not eight."""
         coord = self._coord_with_options(
-            {
-                "cco_devices": [
-                    {"addr": f"2:6:3,{relay}"} for relay in range(1, 9)
-                ]
-            }
+            {"cco_devices": [{"addr": f"2:6:3,{relay}"} for relay in range(1, 9)]}
         )
 
         assert coord._kls_poll_addresses == {"[02:06:03]"}
@@ -385,10 +377,14 @@ class TestKLSStateEngine:
         coord = _make_bare_coordinator()
 
         dev1 = CCODevice(
-            address=CCOAddress(2, 6, 3, 4), name="Dev4", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 4),
+            name="Dev4",
+            entity_type=CCOEntityType.SWITCH,
         )
         dev2 = CCODevice(
-            address=CCOAddress(2, 6, 3, 6), name="Dev6", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 6),
+            name="Dev6",
+            entity_type=CCOEntityType.SWITCH,
         )
         coord.register_cco_device(dev1)
         coord.register_cco_device(dev2)
@@ -456,10 +452,14 @@ class TestCCOUnknownState:
         """cco_unknown_count reports only the endpoints still awaiting KLS."""
         coord = _make_bare_coordinator()
         dev1 = CCODevice(
-            address=CCOAddress(2, 6, 3, 4), name="Dev4", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 4),
+            name="Dev4",
+            entity_type=CCOEntityType.SWITCH,
         )
         dev2 = CCODevice(
-            address=CCOAddress(2, 6, 3, 6), name="Dev6", entity_type=CCOEntityType.SWITCH
+            address=CCOAddress(2, 6, 3, 6),
+            name="Dev6",
+            entity_type=CCOEntityType.SWITCH,
         )
         coord.register_cco_device(dev1)
         coord.register_cco_device(dev2)

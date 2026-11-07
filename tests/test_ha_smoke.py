@@ -87,6 +87,7 @@ class TestIntegrationLoad:
         """Test that the integration module can be imported."""
         from custom_components.homeworks_hwi import DOMAIN
         from custom_components import homeworks_hwi
+
         assert DOMAIN == "homeworks_hwi"
         assert hasattr(homeworks_hwi, "async_setup_entry")
         assert hasattr(homeworks_hwi, "async_unload_entry")
@@ -96,6 +97,7 @@ class TestIntegrationLoad:
         try:
             from custom_components.homeworks_hwi import config_flow
             from custom_components.homeworks_hwi.const import DOMAIN
+
             assert hasattr(config_flow, "HomeworksConfigFlowHandler")
             # Domain is registered via ConfigFlow metaclass (domain=DOMAIN)
             # Verify DOMAIN constant matches expected value
@@ -107,6 +109,7 @@ class TestIntegrationLoad:
         """Test that coordinator can be imported."""
         try:
             from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
+
             assert HomeworksCoordinator is not None
         except ImportError as e:
             pytest.skip(f"Cannot import coordinator: {e}")
@@ -128,13 +131,17 @@ class TestConfigEntrySetup:
         mock_coordinator.register_kls_poll_address = MagicMock()
         mock_coordinator.async_shutdown = AsyncMock()
 
-        with patch(
-            "custom_components.homeworks_hwi.HomeworksCoordinator",
-            return_value=mock_coordinator,
-        ), patch(
-            "custom_components.homeworks_hwi._cleanup_orphaned_devices",
-        ), patch(
-            "custom_components.homeworks_hwi._cleanup_old_entities",
+        with (
+            patch(
+                "custom_components.homeworks_hwi.HomeworksCoordinator",
+                return_value=mock_coordinator,
+            ),
+            patch(
+                "custom_components.homeworks_hwi._cleanup_orphaned_devices",
+            ),
+            patch(
+                "custom_components.homeworks_hwi._cleanup_old_entities",
+            ),
         ):
             result = await async_setup_entry(mock_hass, mock_config_entry)
 
@@ -164,7 +171,9 @@ class TestConfigEntrySetup:
             mock_config_entry.runtime_data = mock_runtime_data
 
             # async_unload_platforms must succeed
-            mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+            mock_hass.config_entries.async_unload_platforms = AsyncMock(
+                return_value=True
+            )
 
             result = await async_unload_entry(mock_hass, mock_config_entry)
 
@@ -182,10 +191,16 @@ class TestCoordinatorKLSProcessing:
         """Test that KLS updates trigger state changes."""
         try:
             from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
-            from custom_components.homeworks_hwi.models import CCOAddress, CCODevice, CCOEntityType
+            from custom_components.homeworks_hwi.models import (
+                CCOAddress,
+                CCODevice,
+                CCOEntityType,
+            )
             from unittest.mock import MagicMock, patch
 
-            with patch.object(HomeworksCoordinator, "__init__", lambda self, **kwargs: None):
+            with patch.object(
+                HomeworksCoordinator, "__init__", lambda self, **kwargs: None
+            ):
                 coordinator = HomeworksCoordinator.__new__(HomeworksCoordinator)
                 coordinator.hass = MagicMock()
                 coordinator._cco_devices = {}
@@ -212,12 +227,62 @@ class TestCoordinatorKLSProcessing:
                 coordinator.register_cco_device(device)
 
                 # KLS with button 6 ON (LED=2 at index 14)
-                led_states = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0]
+                led_states = [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    1,
+                    1,
+                    2,
+                    2,
+                    2,
+                    2,
+                    2,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                ]
                 coordinator._handle_kls_update("[02:06:03]", led_states)
                 assert coordinator._cco_states[address.unique_key] is True
 
                 # KLS with button 6 OFF (LED=1 at index 14)
-                led_states = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 1, 2, 2, 0, 0, 0, 0, 0, 0, 0]
+                led_states = [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    1,
+                    1,
+                    2,
+                    2,
+                    1,
+                    2,
+                    2,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                ]
                 coordinator._handle_kls_update("[02:06:03]", led_states)
                 assert coordinator._cco_states[address.unique_key] is False
 
@@ -228,10 +293,16 @@ class TestCoordinatorKLSProcessing:
         """Test that window offset is configurable."""
         try:
             from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
-            from custom_components.homeworks_hwi.models import CCOAddress, CCODevice, CCOEntityType
+            from custom_components.homeworks_hwi.models import (
+                CCOAddress,
+                CCODevice,
+                CCOEntityType,
+            )
             from unittest.mock import MagicMock, patch
 
-            with patch.object(HomeworksCoordinator, "__init__", lambda self, **kwargs: None):
+            with patch.object(
+                HomeworksCoordinator, "__init__", lambda self, **kwargs: None
+            ):
                 coordinator = HomeworksCoordinator.__new__(HomeworksCoordinator)
                 coordinator.hass = MagicMock()
                 coordinator._cco_devices = {}
@@ -258,7 +329,32 @@ class TestCoordinatorKLSProcessing:
                 coordinator.register_cco_device(device)
 
                 # With offset 8, button 1 is at index 8
-                led_states = [0, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+                led_states = [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    2,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                ]
                 coordinator._handle_kls_update("[02:06:03]", led_states)
 
                 assert coordinator._cco_states[address.unique_key] is True
@@ -287,13 +383,17 @@ class TestCredentialStorage:
         secrets = {"host", "port", "username", "password"}
 
         for key in secrets:
-            assert key not in expected_options_keys, f"Secret '{key}' should not be in options"
+            assert key not in expected_options_keys, (
+                f"Secret '{key}' should not be in options"
+            )
 
         # Verify non-secrets should NOT be in data
         non_secrets = {"cco_devices", "dimmers", "keypads", "controller_id"}
 
         for key in non_secrets:
-            assert key not in expected_data_keys, f"Non-secret '{key}' should not be in data"
+            assert key not in expected_data_keys, (
+                f"Non-secret '{key}' should not be in data"
+            )
 
 
 class TestNoDuplicatePolling:
@@ -305,7 +405,9 @@ class TestNoDuplicatePolling:
             from custom_components.homeworks_hwi.coordinator import HomeworksCoordinator
             from unittest.mock import MagicMock, AsyncMock, patch
 
-            with patch.object(HomeworksCoordinator, "__init__", lambda self, **kwargs: None):
+            with patch.object(
+                HomeworksCoordinator, "__init__", lambda self, **kwargs: None
+            ):
                 coordinator = HomeworksCoordinator.__new__(HomeworksCoordinator)
 
                 mock_client = AsyncMock()

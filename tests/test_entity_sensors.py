@@ -59,7 +59,9 @@ class TestKeypadLEDBinarySensor:
             pytest.param(3, True, id="flash2"),
         ],
     )
-    def test_is_on_from_led_value(self, led_sensor, mock_coordinator, led_value, expected):
+    def test_is_on_from_led_value(
+        self, led_sensor, mock_coordinator, led_value, expected
+    ):
         """Any non-zero LED value is on; only 0 is off."""
         led_states = [0] * 24
         led_states[1] = led_value  # LED 2 is 1-indexed → index 1
