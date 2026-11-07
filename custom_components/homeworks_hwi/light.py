@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util.color import brightness_to_value
 
 from . import (
     HomeworksHWIConfigEntry,
@@ -30,6 +31,7 @@ from .const import (
     CCO_TYPE_LIGHT,
     DEFAULT_FADE_RATE,
     DEFAULT_LIGHT_NAME,
+    DIMMER_BRIGHTNESS_SCALE,
     DOMAIN,
 )
 from .coordinator import HomeworksCoordinator
@@ -143,7 +145,9 @@ class HomeworksDimmableLight(CoordinatorEntity[HomeworksCoordinator], LightEntit
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on the light."""
         if ATTR_BRIGHTNESS in kwargs:
-            new_level = int((kwargs[ATTR_BRIGHTNESS] * 100.0) / 255.0)
+            new_level = brightness_to_value(
+                DIMMER_BRIGHTNESS_SCALE, kwargs[ATTR_BRIGHTNESS]
+            )
         elif self._prev_level == 0:
             new_level = 100
         else:

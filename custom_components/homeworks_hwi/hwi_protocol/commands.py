@@ -13,6 +13,53 @@ from .protocol import normalize_address
 
 
 # =============================================================================
+# Number formatting (L232 fields take whole numbers only)
+# =============================================================================
+
+
+# L232 intensity field: whole percent (fadedim.htm:40, flashdim.htm:39).
+INTENSITY_MIN = 0
+INTENSITY_MAX = 100
+# Lowest result of whole_units() for a value of 0 or less.
+MIN_UNITS = 0
+# Lowest result for any raw value above 0 (1 percent or 1 second).
+MIN_NONZERO_UNITS = 1
+# Decimals kept before the fraction is dropped. Removes binary float noise
+# and small math error (28.999999999999996 -> 29, 1.996 -> 2).
+FLOAT_NOISE_DECIMALS = 2
+_SECONDS_PER_MINUTE = 60
+_MINUTES_PER_HOUR = 60
+
+
+def whole_units(value: float) -> int:
+    """Return a value as whole L232 units (percent or seconds).
+
+    The value is rounded to FLOAT_NOISE_DECIMALS, then the fraction is
+    dropped. A raw value above 0 gives at least MIN_NONZERO_UNITS, so a
+    small request never becomes 0. A value of 0 or less gives MIN_UNITS.
+
+    Raises TypeError for None, ValueError for NaN, and OverflowError for
+    infinity.
+    """
+    whole = max(MIN_UNITS, int(round(value, FLOAT_NOISE_DECIMALS)))
+    if value > 0:
+        return max(MIN_NONZERO_UNITS, whole)
+    return whole
+
+
+def _format_intensity(percent: float) -> str:
+    """Return an L232 intensity field: whole percent, clamped to 0-100."""
+    return str(min(INTENSITY_MAX, max(INTENSITY_MIN, whole_units(percent))))
+
+
+def _format_time(seconds: float) -> str:
+    """Return an L232 time field as HH:MM:SS (time_formatting.htm:27-33)."""
+    minutes, secs = divmod(whole_units(seconds), _SECONDS_PER_MINUTE)
+    hours, minutes = divmod(minutes, _MINUTES_PER_HOUR)
+    return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+
+# =============================================================================
 # Dimmer Commands
 # =============================================================================
 
@@ -25,7 +72,9 @@ def fade_dim(
 ) -> str:
     """Build FADEDIM command.
 
-    Fades a dimmer to target intensity.
+    Fades a dimmer to target intensity. Every numeric field is sent as a
+    whole number (see whole_units): intensity in percent 0-100, and both
+    times as HH:MM:SS. Any value above 0 gives at least 1.
 
     Args:
         address: Dimmer address
@@ -36,7 +85,10 @@ def fade_dim(
     Returns:
         Command string
     """
-    return f"FADEDIM, {intensity:.1f}, {fade_time:.1f}, {delay_time:.1f}, {address}"
+    return (
+        f"FADEDIM, {_format_intensity(intensity)}, "
+        f"{_format_time(fade_time)}, {_format_time(delay_time)}, {address}"
+    )
 
 
 def raise_dim(address: str) -> str:
@@ -56,7 +108,10 @@ def stop_dim(address: str) -> str:
 
 def flash_dim(address: str, intensity: float, flash_rate: float = 2.0) -> str:
     """Build FLASHDIM command."""
-    return f"FLASHDIM, {intensity:.1f}, {flash_rate:.1f}, {address}"
+    return (
+        f"FLASHDIM, {_format_intensity(intensity)}, "
+        f"{_format_time(flash_rate)}, {address}"
+    )
 
 
 def stop_flash(address: str) -> str:
@@ -127,6 +182,11 @@ def motor_cover_stop(address: str) -> str:
 # =============================================================================
 
 
+# L232 CCOPULSE pulse field: count of 0.5 s steps, 1-245 (ccopulse.htm:52-61).
+CCO_PULSE_STEP_SECONDS = 0.5
+CCO_PULSE_MIN_STEPS = 1
+CCO_PULSE_MAX_STEPS = 245
+
 def cco_close(address: str, relay: int) -> str:
     """Build CCOCLOSE command.
 
@@ -170,8 +230,9 @@ def cco_pulse(address: str, relay: int, duration_seconds: float) -> str:
     Returns:
         Command string
     """
-    # Convert to 0.5-second increments (1-245)
-    increments = max(1, min(245, int(duration_seconds / 0.5)))
+    # Whole 0.5 s steps; the fraction is dropped (ccopulse.htm:52-61).
+    steps = int(duration_seconds / CCO_PULSE_STEP_SECONDS)
+    increments = max(CCO_PULSE_MIN_STEPS, min(CCO_PULSE_MAX_STEPS, steps))
     return f"CCOPULSE, {address}, {relay}, {increments}"
 
 
@@ -286,13 +347,14 @@ def sivoia_scene_select(address: str, command: str, delay_time: float = 0.0) -> 
     Args:
         address: Sivoia control address
         command: Scene command (1, 2, 3, R, L, C, O, S)
-        delay_time: Delay in seconds
+        delay_time: Delay in seconds, sent as HH:MM:SS. 0 or less leaves
+            the field out.
 
     Returns:
         Command string
     """
     if delay_time > 0:
-        return f"SVSS, {address}, {command}, {delay_time:.1f}"
+        return f"SVSS, {address}, {command}, {_format_time(delay_time)}"
     return f"SVSS, {address}, {command}"
 
 

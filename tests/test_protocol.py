@@ -272,16 +272,150 @@ class TestKLSButtonWindow:
         assert msg.get_cco_relay_digit(9) is None
 
 
+# L232 time fields (fade, delay, flash rate, SVSS delay): seconds -> HH:MM:SS.
+TIME_FIELD_CASES = [
+    (0, "00:00:00"),
+    (0.004, "00:00:01"),
+    (0.01, "00:00:01"),
+    (0.4, "00:00:01"),
+    (0.5, "00:00:01"),
+    (0.99, "00:00:01"),
+    (1.0, "00:00:01"),
+    (1.5, "00:00:01"),
+    (1.99, "00:00:01"),
+    (1.996, "00:00:02"),
+    (2.0, "00:00:02"),
+    (20, "00:00:20"),
+    (59.9, "00:00:59"),
+    (90, "00:01:30"),
+    (3600, "01:00:00"),
+    (-1, "00:00:00"),
+]
+
+
 class TestCommandBuilders:
     """Tests for command builder functions."""
 
     def test_fade_dim(self):
         cmd = commands.fade_dim("[01:01:00:02:04]", 75.0, 2.0, 0.5)
-        assert cmd == "FADEDIM, 75.0, 2.0, 0.5, [01:01:00:02:04]"
+        assert cmd == "FADEDIM, 75, 00:00:02, 00:00:01, [01:01:00:02:04]"
 
     def test_fade_dim_defaults(self):
         cmd = commands.fade_dim("[01:01:00:02:04]", 100.0)
-        assert cmd == "FADEDIM, 100.0, 0.0, 0.0, [01:01:00:02:04]"
+        assert cmd == "FADEDIM, 100, 00:00:00, 00:00:00, [01:01:00:02:04]"
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (0, 0),
+            (0.004, 1),
+            (0.39, 1),
+            (0.996, 1),
+            (1.0, 1),
+            (1.5, 1),
+            (1.99, 1),
+            (1.996, 2),
+            (0.29 * 100, 29),
+            (66.996, 67),
+            (0.1 * 3, 1),
+            (-0.004, 0),
+            (-1, 0),
+            (3600, 3600),
+        ],
+    )
+    def test_whole_units(self, value, expected):
+        result = commands.whole_units(value)
+        assert result == expected
+        assert type(result) is int
+
+    @pytest.mark.parametrize(
+        ("value", "error"),
+        [
+            (None, TypeError),
+            (float("nan"), ValueError),
+            (float("inf"), OverflowError),
+        ],
+    )
+    def test_whole_units_invalid(self, value, error):
+        with pytest.raises(error):
+            commands.whole_units(value)
+
+    @pytest.mark.parametrize(
+        ("intensity", "expected"),
+        [
+            (0, "0"),
+            (0.004, "1"),
+            (0.39, "1"),
+            (0.5, "1"),
+            (0.996, "1"),
+            (1.5, "1"),
+            (66.7, "66"),
+            (67.0, "67"),
+            (67.5, "67"),
+            (99.61, "99"),
+            (100, "100"),
+            (100.4, "100"),
+            (-0.5, "0"),
+        ],
+    )
+    def test_fade_dim_intensity(self, intensity, expected):
+        cmd = commands.fade_dim("[01:01:00:02:04]", intensity, 0, 0)
+        assert cmd == f"FADEDIM, {expected}, 00:00:00, 00:00:00, [01:01:00:02:04]"
+
+    @pytest.mark.parametrize(("seconds", "expected"), TIME_FIELD_CASES)
+    def test_fade_dim_fade_time(self, seconds, expected):
+        cmd = commands.fade_dim("[01:01:00:02:04]", 100, seconds, 0)
+        assert cmd == f"FADEDIM, 100, {expected}, 00:00:00, [01:01:00:02:04]"
+
+    @pytest.mark.parametrize(("seconds", "expected"), TIME_FIELD_CASES)
+    def test_fade_dim_delay_time(self, seconds, expected):
+        cmd = commands.fade_dim("[01:01:00:02:04]", 100, 0, seconds)
+        assert cmd == f"FADEDIM, 100, 00:00:00, {expected}, [01:01:00:02:04]"
+
+    @pytest.mark.parametrize(
+        "args",
+        [
+            (None, 0, 0),
+            (100, None, 0),
+            (100, 0, None),
+        ],
+    )
+    def test_fade_dim_none_raises(self, args):
+        with pytest.raises(TypeError):
+            commands.fade_dim("[01:01:00:02:04]", *args)
+
+    @pytest.mark.parametrize(
+        ("intensity", "fade_time", "delay_time"),
+        [
+            (0.39, 0.01, 1.5),
+            (50.196, 1.5, 2.25),
+            (99.61, 2.25, 0.01),
+        ],
+    )
+    def test_fade_dim_output_has_no_decimal_point(
+        self, intensity, fade_time, delay_time
+    ):
+        cmd = commands.fade_dim("[01:01:00:02:04]", intensity, fade_time, delay_time)
+        assert "." not in cmd.split(", [")[0]
+
+    def test_flash_dim(self):
+        cmd = commands.flash_dim("[01:01:00:02:04]", 67.5, 0.5)
+        assert cmd == "FLASHDIM, 67, 00:00:01, [01:01:00:02:04]"
+        cmd = commands.flash_dim("[01:01:00:02:04]", 100)
+        assert cmd == "FLASHDIM, 100, 00:00:02, [01:01:00:02:04]"
+
+    @pytest.mark.parametrize(
+        ("delay_time", "expected"),
+        [
+            (0, "SVSS, [1:6:1], 2"),
+            (-1, "SVSS, [1:6:1], 2"),
+            (0.004, "SVSS, [1:6:1], 2, 00:00:01"),
+            (0.3, "SVSS, [1:6:1], 2, 00:00:01"),
+            (90, "SVSS, [1:6:1], 2, 00:01:30"),
+        ],
+    )
+    def test_sivoia_scene_select_delay(self, delay_time, expected):
+        assert commands.sivoia_scene_select("[1:6:1]", "2", delay_time) == expected
 
     def test_cco_close(self):
         cmd = commands.cco_close("[02:06:03]", 1)
@@ -294,6 +428,26 @@ class TestCommandBuilders:
     def test_cco_pulse(self):
         cmd = commands.cco_pulse("[02:06:03]", 1, 2.5)
         assert cmd == "CCOPULSE, [02:06:03], 1, 5"
+
+    @pytest.mark.parametrize(
+        ("seconds", "steps"),
+        [
+            (0, 1),
+            (0.3, 1),
+            (0.7, 1),
+            (1.0, 2),
+            (2.5, 5),
+            (200, 245),
+        ],
+    )
+    def test_cco_pulse_steps(self, seconds, steps):
+        cmd = commands.cco_pulse("[02:06:03]", 1, seconds)
+        assert cmd == f"CCOPULSE, [02:06:03], 1, {steps}"
+
+    def test_cco_pulse_constants(self):
+        assert commands.CCO_PULSE_STEP_SECONDS == 0.5
+        assert commands.CCO_PULSE_MIN_STEPS == 1
+        assert commands.CCO_PULSE_MAX_STEPS == 245
 
     def test_keypad_commands(self):
         assert commands.keypad_button_press("[01:04:10]", 3) == "KBP, [01:04:10], 3"

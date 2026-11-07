@@ -21,8 +21,16 @@ from custom_components.homeworks_hwi.models import (
     CCOEntityType,
 )
 from custom_components.homeworks_hwi.const import (
+    CONF_ADDR,
+    CONF_AREA,
+    CONF_BUTTON_NUMBER,
     CONF_CCO_DEVICES,
     CONF_CONTROLLER_ID,
+    CONF_DIMMERS,
+    CONF_ENTITY_TYPE,
+    CONF_INVERTED,
+    CONF_RATE,
+    LEGACY_DEFAULT_FADE_RATE,
     CCO_TYPE_SWITCH,
     CCO_TYPE_LIGHT,
     CCO_TYPE_COVER,
@@ -228,6 +236,216 @@ class TestDiagnostics:
 
         assert result["cco_state_summary"]["unknown_count"] == 2
         assert result["kls_cache_info"]["last_kls_age_s"] == {"[01:05:03]": 4.2}
+
+
+# =============================================================================
+# Config Entry Migration v3.1 -> v3.2 (dimmer fade rates)
+# =============================================================================
+
+
+MIGRATION_DIMMER_ADDR = "[01:04:01:03:02]"
+
+
+def _apply_update(entry, **kwargs):
+    """Mimic async_update_entry by setting the given attributes on the entry."""
+    for key, value in kwargs.items():
+        setattr(entry, key, value)
+    return True
+
+
+class TestFadeRateMigration:
+    """Tests for the v3.2 step that rewrites dimmer fade rates."""
+
+    pytestmark = [pytest.mark.requires_ha]
+
+    @staticmethod
+    def _dimmer(**extra):
+        from homeassistant.const import CONF_NAME
+
+        return {CONF_ADDR: MIGRATION_DIMMER_ADDR, CONF_NAME: "Test", **extra}
+
+    @staticmethod
+    def _make(options, version=3, minor_version=1):
+        hass = MagicMock()
+        hass.config_entries.async_update_entry = MagicMock(side_effect=_apply_update)
+        entry = MagicMock()
+        entry.version = version
+        entry.minor_version = minor_version
+        entry.entry_id = "test_entry"
+        entry.options = options
+        return hass, entry
+
+    @staticmethod
+    async def _migrate(hass, entry):
+        from custom_components.homeworks_hwi import async_migrate_entry
+
+        return await async_migrate_entry(hass, entry)
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("saved", "migrated"),
+        [
+            (0, 0.0),
+            (0.005, 1.0),
+            (0.01, 0.0),
+            (0.02, 1.0),
+            (0.5, 1.0),
+            (0.99, 1.0),
+            (1.0, 1.0),
+            (1.5, 1.0),
+            (2.25, 2.0),
+            (20, 20.0),
+        ],
+    )
+    async def test_rate_migrated(self, saved, migrated):
+        """Each saved rate becomes whole seconds; rewritten values are floats."""
+        options = {
+            CONF_CONTROLLER_ID: "ctrl",
+            CONF_DIMMERS: [self._dimmer(**{CONF_RATE: saved})],
+        }
+        hass, entry = self._make(options)
+
+        assert await self._migrate(hass, entry) is True
+
+        rate = entry.options[CONF_DIMMERS][0][CONF_RATE]
+        assert rate == migrated
+        if saved != migrated:
+            assert type(rate) is float
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("saved", [0, 1.0, 20])
+    async def test_unchanged_rate_kept(self, saved):
+        """A rate that the rule does not change keeps its value and type."""
+        options = {
+            CONF_CONTROLLER_ID: "ctrl",
+            CONF_DIMMERS: [self._dimmer(**{CONF_RATE: saved})],
+        }
+        hass, entry = self._make(options)
+
+        await self._migrate(hass, entry)
+
+        rate = entry.options[CONF_DIMMERS][0][CONF_RATE]
+        assert rate == saved
+        assert type(rate) is type(saved)
+
+    @pytest.mark.asyncio
+    async def test_other_dimmer_keys_kept(self):
+        """Address, name, and area are not changed."""
+        from homeassistant.const import CONF_NAME
+
+        original = self._dimmer(**{CONF_RATE: 1.5, CONF_AREA: "area_1"})
+        options = {CONF_CONTROLLER_ID: "ctrl", CONF_DIMMERS: [original]}
+        hass, entry = self._make(options)
+
+        await self._migrate(hass, entry)
+
+        migrated = entry.options[CONF_DIMMERS][0]
+        for key in (CONF_ADDR, CONF_NAME, CONF_AREA):
+            assert migrated[key] == original[key]
+
+    @pytest.mark.asyncio
+    async def test_original_options_not_mutated(self):
+        """New dimmer dicts are built, so HA can detect the options change."""
+        original = self._dimmer(**{CONF_RATE: LEGACY_DEFAULT_FADE_RATE})
+        options = {CONF_CONTROLLER_ID: "ctrl", CONF_DIMMERS: [original]}
+        hass, entry = self._make(options)
+
+        await self._migrate(hass, entry)
+
+        assert original[CONF_RATE] == 0.01
+        assert options[CONF_DIMMERS][0][CONF_RATE] == 0.01
+
+    @pytest.mark.asyncio
+    async def test_missing_or_bad_rate_kept(self):
+        """A missing or non-numeric rate is left as saved."""
+        no_rate = self._dimmer()
+        bad_rate = self._dimmer(**{CONF_RATE: "x"})
+        options = {CONF_CONTROLLER_ID: "ctrl", CONF_DIMMERS: [no_rate, bad_rate]}
+        hass, entry = self._make(options)
+
+        assert await self._migrate(hass, entry) is True
+
+        assert entry.options[CONF_DIMMERS] == [no_rate, bad_rate]
+
+    @pytest.mark.asyncio
+    async def test_no_dimmers(self):
+        """Options without dimmers stay without the key."""
+        hass, entry = self._make({CONF_CONTROLLER_ID: "ctrl"})
+
+        await self._migrate(hass, entry)
+
+        assert CONF_DIMMERS not in entry.options
+        assert entry.minor_version == 2
+
+    @pytest.mark.asyncio
+    async def test_already_v3_2_skipped(self):
+        """An entry already at v3.2 is not updated."""
+        options = {
+            CONF_CONTROLLER_ID: "ctrl",
+            CONF_DIMMERS: [self._dimmer(**{CONF_RATE: 1.5})],
+        }
+        hass, entry = self._make(options, minor_version=2)
+
+        assert await self._migrate(hass, entry) is True
+
+        hass.config_entries.async_update_entry.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_v2_entry_chains_to_v3_2(self):
+        """A v2 entry runs the v3 and v3.2 steps in one call."""
+        options = {
+            CONF_CONTROLLER_ID: "ctrl",
+            CONF_CCO_DEVICES: [
+                {
+                    CONF_ADDR: "[02:06:03]",
+                    CONF_BUTTON_NUMBER: 1,
+                    CONF_ENTITY_TYPE: CCO_TYPE_SWITCH,
+                    CONF_INVERTED: False,
+                }
+            ],
+            CONF_DIMMERS: [self._dimmer(**{CONF_RATE: LEGACY_DEFAULT_FADE_RATE})],
+        }
+        hass, entry = self._make(options, version=2)
+
+        assert await self._migrate(hass, entry) is True
+
+        assert entry.version == 3
+        assert entry.minor_version == 2
+        assert entry.options[CONF_CCO_DEVICES][0][CONF_INVERTED] is True
+        assert entry.options[CONF_DIMMERS][0][CONF_RATE] == 0.0
+
+    @pytest.mark.asyncio
+    async def test_migration_logs_count(self, caplog):
+        """One info line reports the number of changed dimmers."""
+        options = {
+            CONF_CONTROLLER_ID: "ctrl",
+            CONF_DIMMERS: [
+                self._dimmer(**{CONF_RATE: LEGACY_DEFAULT_FADE_RATE}),
+                self._dimmer(**{CONF_RATE: 1.5}),
+                self._dimmer(**{CONF_RATE: 1.0}),
+            ],
+        }
+        hass, entry = self._make(options)
+
+        with caplog.at_level("INFO", logger="custom_components.homeworks_hwi"):
+            await self._migrate(hass, entry)
+
+        records = [r for r in caplog.records if "v3.2" in r.getMessage()]
+        assert len(records) == 1
+        assert "2 dimmer fade rates" in records[0].getMessage()
+
+    def test_minor_version_constant(self):
+        """The config flow creates entries at v3.2."""
+        from custom_components.homeworks_hwi.config_flow import (
+            HomeworksConfigFlowHandler,
+        )
+
+        assert HomeworksConfigFlowHandler.VERSION == 3
+        assert HomeworksConfigFlowHandler.MINOR_VERSION == 2
+
+    def test_legacy_default_constant(self):
+        """The legacy default fade rate is 0.01."""
+        assert LEGACY_DEFAULT_FADE_RATE == 0.01
 
 
 # =============================================================================

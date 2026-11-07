@@ -62,6 +62,7 @@ from .const import (
     CONF_KLS_POLL_INTERVAL,
     CONF_KLS_WINDOW_OFFSET,
     CONF_LOCKS,
+    CONF_RATE,
     CONF_RELAY_NUMBER,
     CONF_RPM_COVERS,
     CCO_TYPE_CLIMATE,
@@ -70,13 +71,16 @@ from .const import (
     CCO_TYPE_LIGHT,
     CCO_TYPE_LOCK,
     CCO_TYPE_SWITCH,
+    DEFAULT_FADE_RATE,
     DEFAULT_KLS_POLL_INTERVAL,
     DEFAULT_KLS_WINDOW_OFFSET,
     DOMAIN,
+    LEGACY_DEFAULT_FADE_RATE,
     MAX_COMMAND_DELAY_MS,
     SERVICE_SEND_COMMAND,
 )
 from .coordinator import HomeworksCoordinator
+from .hwi_protocol.commands import whole_units
 from .models import (
     CCOAddress,
     CCODevice,
@@ -380,6 +384,18 @@ def _cleanup_orphaned_devices(hass: HomeAssistant, entry: ConfigEntry) -> None:
             device_registry.async_remove_device(device_entry.id)
 
 
+def _whole_second_fade_rate(rate: float) -> float:
+    """Return a saved dimmer fade rate in whole seconds (entry v3.2).
+
+    The old default LEGACY_DEFAULT_FADE_RATE went out as an instant change,
+    so it becomes DEFAULT_FADE_RATE. Every other rate uses the same rule as
+    the command builder (whole_units).
+    """
+    if rate == LEGACY_DEFAULT_FADE_RATE:
+        return float(DEFAULT_FADE_RATE)
+    return float(whole_units(rate))
+
+
 async def async_migrate_entry(
     hass: HomeAssistant, config_entry: ConfigEntry
 ) -> bool:
@@ -452,6 +468,31 @@ async def async_migrate_entry(
             device[CONF_INVERTED] = not device.get(CONF_INVERTED, False)
         hass.config_entries.async_update_entry(
             config_entry, options=new_options, version=3
+        )
+
+    if config_entry.version == 3 and config_entry.minor_version < 2:
+        new_options = dict(config_entry.options)
+        changed = 0
+        if CONF_DIMMERS in new_options:
+            new_dimmers: list[dict[str, Any]] = []
+            for dimmer in new_options[CONF_DIMMERS]:
+                new_dimmer = dict(dimmer)
+                rate = dimmer.get(CONF_RATE)
+                if isinstance(rate, (int, float)):
+                    new_rate = _whole_second_fade_rate(rate)
+                    if new_rate != rate:
+                        new_dimmer[CONF_RATE] = new_rate
+                        changed += 1
+                new_dimmers.append(new_dimmer)
+            new_options[CONF_DIMMERS] = new_dimmers
+        hass.config_entries.async_update_entry(
+            config_entry, options=new_options, minor_version=2
+        )
+        _LOGGER.info(
+            "Migrated config entry %s to v3.2: %d dimmer fade rates "
+            "set to whole seconds",
+            config_entry.entry_id,
+            changed,
         )
 
     return True
