@@ -38,6 +38,7 @@ from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
 from homeassistant.helpers.service import async_register_admin_service
@@ -45,6 +46,7 @@ from homeassistant.helpers.typing import ConfigType
 from homeassistant.util import slugify
 
 from .client import HomeworksClientConfig
+from .clock_sync import ClockSyncManager
 from .const import (
     CCO_TYPE_COVER,
     CCO_TYPE_LOCK,
@@ -113,9 +115,20 @@ class HomeworksData:
 
     coordinator: HomeworksCoordinator
     controller_id: str
+    clock_sync: ClockSyncManager
 
 
 type HomeworksHWIConfigEntry = ConfigEntry[HomeworksData]
+
+
+def controller_device_info(controller_id: str) -> DeviceInfo:
+    """Return the device info of the controller itself."""
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{controller_id}.controller.v2")},
+        name=f"Homeworks Controller ({controller_id})",
+        manufacturer="Lutron",
+        model="HomeWorks Interactive",
+    )
 
 
 def _normalize_whitespace(text: str) -> str:
@@ -536,6 +549,7 @@ async def async_setup_entry(
     entry.runtime_data = HomeworksData(
         coordinator=coordinator,
         controller_id=controller_id,
+        clock_sync=ClockSyncManager(hass, entry, coordinator),
     )
 
     # First refresh connects, subscribes, and polls initial state.
@@ -548,6 +562,7 @@ async def async_setup_entry(
 
     # Set up platforms
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.runtime_data.clock_sync.async_start()
 
     # Remove orphaned devices (devices with no entities after reload)
     _cleanup_orphaned_devices(hass, entry)

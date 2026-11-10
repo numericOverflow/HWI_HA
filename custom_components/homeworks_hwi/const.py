@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Final
 
 DOMAIN: Final = "homeworks_hwi"
@@ -51,6 +52,31 @@ CONF_DEVICE_CLASS: Final = "device_class"
 # Controller settings
 CONF_KLS_POLL_INTERVAL: Final = "kls_poll_interval"
 CONF_KLS_WINDOW_OFFSET: Final = "kls_window_offset"
+
+# Controller clock sync settings
+CONF_CLOCK_SYNC_ENABLED: Final = "clock_sync_enabled"
+DEFAULT_CLOCK_SYNC_ENABLED: Final = False
+CONF_CLOCK_SYNC_TIMEZONE: Final = "clock_sync_timezone"
+CLOCK_SYNC_TZ_AUTO: Final = "auto"
+CONF_CLOCK_SYNC_FREQUENCY: Final = "clock_sync_frequency"
+CLOCK_SYNC_FREQ_WEEKLY: Final = "weekly"
+CLOCK_SYNC_FREQ_MONTHLY_FIRST: Final = "monthly_first"
+CONF_CLOCK_SYNC_WEEKDAY: Final = "clock_sync_weekday"
+DEFAULT_CLOCK_SYNC_WEEKDAY: Final = "sun"
+# The index of each weekday equals date.weekday()
+CLOCK_SYNC_WEEKDAYS: Final = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+CONF_CLOCK_SYNC_TIME: Final = "clock_sync_time"
+DEFAULT_CLOCK_SYNC_TIME: Final = "04:00:00"
+CONF_CLOCK_SYNC_MANAGE_DST: Final = "clock_sync_manage_dst"
+DEFAULT_CLOCK_SYNC_MANAGE_DST: Final = False
+# The slowest observed clock reply was 47 ms
+CLOCK_REPLY_TIMEOUT_S: Final = 2.0
+# Stays above the 1 s phase error of ST (whole seconds only)
+CLOCK_SYNC_RETRY_THRESHOLD_S: Final = 2.0
+CLOCK_SYNC_MAX_RETRIES: Final = 1
+DST_JOB_SETTLE: Final = timedelta(minutes=5)
+DST_SEARCH_HORIZON: Final = timedelta(days=366)
+DST_SEARCH_STEP: Final = timedelta(hours=1)
 
 # Default values
 DEFAULT_FADE_RATE: Final = 0

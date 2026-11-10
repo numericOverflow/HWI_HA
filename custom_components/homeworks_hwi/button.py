@@ -6,13 +6,21 @@ import asyncio
 import logging
 
 from homeassistant.components.button import ButtonEntity
-from homeassistant.const import CONF_NAME
+from homeassistant.const import (
+    CONF_NAME,
+    EntityCategory,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import HomeworksHWIConfigEntry, resolve_area_name
+from . import (
+    HomeworksHWIConfigEntry,
+    controller_device_info,
+    resolve_area_name,
+)
+from .clock_sync import ClockSyncManager
 from .const import (
     CONF_ADDR,
     CONF_AREA,
@@ -63,6 +71,14 @@ async def async_setup_entry(
     if entities:
         _LOGGER.debug("Adding %d button entities", len(entities))
         async_add_entities(entities)
+
+    # Clock buttons always exist, also when the sync schedule is off
+    async_add_entities(
+        [
+            HomeworksClockSyncButton(data.clock_sync, controller_id),
+            HomeworksClockQueryButton(data.clock_sync, controller_id),
+        ]
+    )
 
 
 class HomeworksButton(CoordinatorEntity[HomeworksCoordinator], ButtonEntity):
@@ -132,3 +148,48 @@ class HomeworksButton(CoordinatorEntity[HomeworksCoordinator], ButtonEntity):
         await self.coordinator.async_keypad_button_release(
             self._keypad_addr, self._button_number
         )
+
+
+class HomeworksClockButton(ButtonEntity):
+    """Base class for the controller clock buttons."""
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+
+    def __init__(
+        self, manager: ClockSyncManager, controller_id: str, button_type: str
+    ) -> None:
+        """Initialize the button."""
+        self._manager = manager
+        self._attr_unique_id = f"homeworks.{controller_id}.clock.{button_type}"
+        self._attr_device_info = controller_device_info(controller_id)
+
+
+class HomeworksClockSyncButton(HomeworksClockButton):
+    """Set the controller clock to HA time now."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "sync_controller_clock"
+
+    def __init__(self, manager: ClockSyncManager, controller_id: str) -> None:
+        """Initialize the sync button."""
+        super().__init__(manager, controller_id, "sync")
+
+    async def async_press(self) -> None:
+        """Sync the controller clock."""
+        await self._manager.async_sync(raise_errors=True)
+
+
+class HomeworksClockQueryButton(HomeworksClockButton):
+    """Read the controller clock offset without setting it."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_translation_key = "query_controller_clock"
+
+    def __init__(self, manager: ClockSyncManager, controller_id: str) -> None:
+        """Initialize the query button."""
+        super().__init__(manager, controller_id, "query")
+
+    async def async_press(self) -> None:
+        """Query the controller clock."""
+        await self._manager.async_query()
