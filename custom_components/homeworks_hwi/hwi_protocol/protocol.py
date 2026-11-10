@@ -441,7 +441,9 @@ _CLOCK_PARSERS: tuple[
     ...,
 ] = (
     (
-        re.compile(r"processor time:\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*", re.IGNORECASE),
+        re.compile(
+            r"processor time:\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*", re.IGNORECASE
+        ),
         _parse_processor_time,
     ),
     (

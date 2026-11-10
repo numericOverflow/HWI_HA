@@ -251,9 +251,7 @@ class FakeHomeworksController:
             self.clock = datetime.combine(
                 self.clock.date(), time.fromisoformat(parts[1].strip())
             )
-            await self._write_clock_reply(
-                writer, f"Processor Time: {self.clock:%H:%M}"
-            )
+            await self._write_clock_reply(writer, f"Processor Time: {self.clock:%H:%M}")
 
         elif cmd == "RST2":
             await self._write_clock_reply(
@@ -286,7 +284,9 @@ class FakeHomeworksController:
         """Return the RSD/SD reply for the simulated clock."""
         return f"Processor Date: {self.clock:%A %m/%d/%Y}"
 
-    async def _write_clock_reply(self, writer: asyncio.StreamWriter, reply: str) -> None:
+    async def _write_clock_reply(
+        self, writer: asyncio.StreamWriter, reply: str
+    ) -> None:
         """Write a clock reply, honoring the noise and silent options."""
         if self.clock_silent:
             return
