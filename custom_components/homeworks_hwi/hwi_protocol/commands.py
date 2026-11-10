@@ -9,6 +9,11 @@ Terminated with CRLF (handled by transport layer).
 
 from __future__ import annotations
 
+from datetime import (
+    date,
+    datetime,
+)
+
 # =============================================================================
 # Number formatting (L232 fields take whole numbers only)
 # =============================================================================
@@ -492,6 +497,20 @@ def help_command(command: str | None = None) -> str:
 # Time Clock Commands
 # =============================================================================
 
+# L232 st.htm: 24 h with seconds. sd.htm: 2-digit month and day, 4-digit year.
+CLOCK_TIME_FORMAT = "%H:%M:%S"
+CLOCK_DATE_FORMAT = "%m/%d/%Y"
+
+
+def format_clock_time(value: datetime) -> str:
+    """Return the wall-clock time as HH:MM:SS for ST."""
+    return value.strftime(CLOCK_TIME_FORMAT)
+
+
+def format_clock_date(value: date) -> str:
+    """Return the date as MM/DD/YYYY for SD."""
+    return value.strftime(CLOCK_DATE_FORMAT)
+
 
 def set_time(time_24h: str) -> str:
     """Build ST (Set Time) command.
@@ -530,6 +549,21 @@ def set_date(date: str) -> str:
 def request_date() -> str:
     """Build RSD (Request System Date) command."""
     return "RSD"
+
+
+def request_dst_state() -> str:
+    """Build RDST (Request Daylight Savings Time state) command."""
+    return "RDST"
+
+
+def start_dst() -> str:
+    """Build STARTDST command."""
+    return "STARTDST"
+
+
+def end_dst() -> str:
+    """Build ENDDST command."""
+    return "ENDDST"
 
 
 def timeclock_enable() -> str:

@@ -11,17 +11,28 @@ All parsing is stateless - just input bytes, output messages.
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import (
+    UTC,
+    date,
+    datetime,
+    time,
+)
 
 from .messages import (
     AnyMessage,
     ButtonEventMessage,
     ButtonEventType,
     DimmerLevelMessage,
+    DstChangedMessage,
+    DstManualUnsupportedMessage,
+    DstStateMessage,
     GrafikEyeSceneMessage,
     KeypadEnableMessage,
     KLSMessage,
+    ProcessorDateMessage,
+    ProcessorTimeMessage,
     SivoiaSceneMessage,
     UnknownMessage,
 )
@@ -132,6 +143,12 @@ class MessageParser:
         line = line.strip()
         if not line or line in IGNORED_MESSAGES:
             return None
+
+        # Clock replies have no comma, so match them by prefix first.
+        for pattern, clock_parser in _CLOCK_PARSERS:
+            match = pattern.fullmatch(line)
+            if match:
+                return clock_parser(line, match, datetime.now(tz=UTC))
 
         # Split on commas. The protocol spec (L232/command_formatting.htm)
         # states spaces are insignificant, so do not rely on ", " as the
@@ -313,6 +330,78 @@ def _parse_svs(line: str, parts: list[str], ts: datetime) -> SivoiaSceneMessage 
 
 
 # =============================================================================
+# Clock Reply Parsers (no comma, matched by pattern)
+# =============================================================================
+
+
+def _parse_processor_time(
+    line: str, match: re.Match[str], ts: datetime
+) -> ProcessorTimeMessage:
+    """Parse an ST ack (HH:MM) or RST2 reply (HH:MM:SS).
+
+    Format: Processor Time: HH:MM[:SS]
+    """
+    hour, minute, second = match.groups()
+    # Validate the values; time() raises ValueError for an invalid field.
+    time(int(hour), int(minute), int(second or 0))
+    return ProcessorTimeMessage(
+        raw=line,
+        timestamp=ts,
+        hour=int(hour),
+        minute=int(minute),
+        second=int(second) if second is not None else None,
+    )
+
+
+def _parse_processor_date(
+    line: str, match: re.Match[str], ts: datetime
+) -> ProcessorDateMessage:
+    """Parse an RSD reply or SD ack.
+
+    Format: Processor Date: <Weekday> MM/DD/YYYY
+    """
+    month, day, year = match.groups()
+    return ProcessorDateMessage(
+        raw=line,
+        timestamp=ts,
+        date=date(int(year), int(month), int(day)),
+    )
+
+
+def _parse_dst_state(line: str, match: re.Match[str], ts: datetime) -> DstStateMessage:
+    """Parse an RDST reply.
+
+    Format: DST = True|False
+    """
+    return DstStateMessage(
+        raw=line,
+        timestamp=ts,
+        active=match.group(1).lower() == "true",
+    )
+
+
+def _parse_dst_manual_unsupported(
+    line: str, match: re.Match[str], ts: datetime
+) -> DstManualUnsupportedMessage:
+    """Parse the STARTDST/ENDDST rejection of an automatic-DST database."""
+    return DstManualUnsupportedMessage(raw=line, timestamp=ts)
+
+
+def _parse_dst_changed(
+    line: str, match: re.Match[str], ts: datetime
+) -> DstChangedMessage:
+    """Parse a STARTDST/ENDDST acceptance.
+
+    Format: Daylight Savings Time Started|Ended
+    """
+    return DstChangedMessage(
+        raw=line,
+        timestamp=ts,
+        started=match.group(1).lower() == "started",
+    )
+
+
+# =============================================================================
 # Parser Registry
 # =============================================================================
 
@@ -344,3 +433,34 @@ _PARSERS: dict[str, Callable[[str, list[str], datetime], AnyMessage | None]] = {
     # Sivoia scene
     "SVS": _parse_svs,
 }
+
+# Clock replies, tried in order before the comma split. Hardware strings
+# are in the clock sync design doc and tests/test_clock_protocol.py.
+_CLOCK_PARSERS: tuple[
+    tuple[re.Pattern[str], Callable[[str, re.Match[str], datetime], AnyMessage]],
+    ...,
+] = (
+    (
+        re.compile(r"processor time:\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*", re.IGNORECASE),
+        _parse_processor_time,
+    ),
+    (
+        re.compile(
+            r"processor date:\s*(?:[a-z]+\s+)?(\d{2})/(\d{2})/(\d{4})\s*",
+            re.IGNORECASE,
+        ),
+        _parse_processor_date,
+    ),
+    (
+        re.compile(r"dst\s*=\s*(true|false)\s*", re.IGNORECASE),
+        _parse_dst_state,
+    ),
+    (
+        re.compile(r".*does not support manual dst.*", re.IGNORECASE),
+        _parse_dst_manual_unsupported,
+    ),
+    (
+        re.compile(r"daylight savings time (started|ended)\s*", re.IGNORECASE),
+        _parse_dst_changed,
+    ),
+)

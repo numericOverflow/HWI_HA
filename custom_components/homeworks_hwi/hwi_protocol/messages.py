@@ -8,7 +8,11 @@ and clear structure for parsed protocol messages.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import (
+    UTC,
+    date,
+    datetime,
+)
 from enum import Enum, auto
 
 
@@ -299,6 +303,53 @@ class SivoiaSceneMessage(HomeworksMessage):
 
 
 @dataclass(frozen=True)
+class ProcessorTimeMessage(HomeworksMessage):
+    """ST ack (`HH:MM`, second is None) or RST2 reply (`HH:MM:SS`).
+
+    Format: Processor Time: HH:MM[:SS]
+    """
+
+    hour: int
+    minute: int
+    second: int | None
+
+
+@dataclass(frozen=True)
+class ProcessorDateMessage(HomeworksMessage):
+    """RSD reply and SD ack. The weekday text is ignored.
+
+    Format: Processor Date: <Weekday> MM/DD/YYYY
+    """
+
+    date: date
+
+
+@dataclass(frozen=True)
+class DstStateMessage(HomeworksMessage):
+    """RDST reply.
+
+    Format: DST = True|False
+    """
+
+    active: bool
+
+
+@dataclass(frozen=True)
+class DstManualUnsupportedMessage(HomeworksMessage):
+    """STARTDST/ENDDST rejected because the database has automatic DST."""
+
+
+@dataclass(frozen=True)
+class DstChangedMessage(HomeworksMessage):
+    """STARTDST/ENDDST accepted.
+
+    Format: Daylight Savings Time Started|Ended
+    """
+
+    started: bool
+
+
+@dataclass(frozen=True)
 class UnknownMessage(HomeworksMessage):
     """Unknown or unparsed message."""
 
@@ -313,5 +364,10 @@ AnyMessage = (
     | KeypadEnableMessage
     | GrafikEyeSceneMessage
     | SivoiaSceneMessage
+    | ProcessorTimeMessage
+    | ProcessorDateMessage
+    | DstStateMessage
+    | DstManualUnsupportedMessage
+    | DstChangedMessage
     | UnknownMessage
 )
