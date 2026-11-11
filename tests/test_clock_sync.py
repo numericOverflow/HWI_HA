@@ -1,5 +1,6 @@
 """Tests for the controller clock sync: helpers, manager, HA client, entities."""
 
+import asyncio
 import json
 import logging
 from datetime import (
@@ -39,6 +40,16 @@ from custom_components.homeworks_hwi.const import (
     CLOCK_REPLY_TIMEOUT_S,
     CLOCK_SYNC_FREQ_MONTHLY_FIRST,
     CLOCK_SYNC_FREQ_WEEKLY,
+    CLOCK_SYNC_STATUS_FAILED,
+    CLOCK_SYNC_STATUS_NEVER_SYNCED,
+    CLOCK_SYNC_STATUS_SKIPPED,
+    CLOCK_SYNC_STATUS_SUCCESS,
+    CLOCK_SYNC_STATUS_SYNCING,
+    CLOCK_SYNC_STATUSES,
+    CLOCK_SYNC_TRIGGER_BUTTON,
+    CLOCK_SYNC_TRIGGER_DST_TRANSITION,
+    CLOCK_SYNC_TRIGGER_RECONNECT,
+    CLOCK_SYNC_TRIGGER_SCHEDULED,
     CLOCK_SYNC_TZ_AUTO,
     CLOCK_SYNC_WEEKDAYS,
     CONF_CLOCK_SYNC_ENABLED,
@@ -65,6 +76,8 @@ NOW = datetime(2026, 11, 10, 23, 17, 41, tzinfo=UTC)
 # 01:30 CST, the second pass of the repeated hour in Chicago
 REPEATED_HOUR_SECOND_PASS = datetime(2027, 11, 7, 7, 30, tzinfo=UTC)
 SUNDAY = CLOCK_SYNC_WEEKDAYS.index("sun")
+BUTTON = CLOCK_SYNC_TRIGGER_BUTTON
+SCHEDULED = CLOCK_SYNC_TRIGGER_SCHEDULED
 INTEGRATION_DIR = Path(__file__).parent.parent / "custom_components" / DOMAIN
 
 
@@ -242,7 +255,7 @@ class TestManagerSync:
     async def test_call_order(self, frozen_now):
         """Read, set, read, and set_clock gets a callable."""
         manager, client, _ = _make_manager()
-        await manager.async_sync(raise_errors=True)
+        await manager.async_sync(trigger=BUTTON)
         assert [name for name, _, _ in client.mock_calls] == [
             "read_clock",
             "set_clock",
@@ -253,7 +266,7 @@ class TestManagerSync:
     async def test_disconnected_scheduled_sets_pending(self, frozen_now):
         """A scheduled run while disconnected becomes pending."""
         manager, client, _ = _make_manager(connected=False)
-        await manager.async_sync(raise_errors=False)
+        await manager.async_sync(trigger=SCHEDULED)
         assert manager._pending is True
         client.read_clock.assert_not_awaited()
 
@@ -261,7 +274,7 @@ class TestManagerSync:
         """A button press while disconnected raises not_connected."""
         manager, _, _ = _make_manager(connected=False)
         with pytest.raises(HomeAssistantError) as exc_info:
-            await manager.async_sync(raise_errors=True)
+            await manager.async_sync(trigger=BUTTON)
         assert exc_info.value.translation_key == "not_connected"
         assert manager._pending is False
 
@@ -284,7 +297,7 @@ class TestManagerSync:
             ),
             caplog.at_level(logging.WARNING),
         ):
-            await manager.async_sync(raise_errors=False)
+            await manager.async_sync(trigger=SCHEDULED)
         client.set_clock.assert_not_awaited()
         assert any(
             r.levelno == logging.WARNING and "repeated fall-back hour" in r.message
@@ -301,7 +314,7 @@ class TestManagerSync:
             ),
             pytest.raises(HomeAssistantError) as exc_info,
         ):
-            await manager.async_sync(raise_errors=True)
+            await manager.async_sync(trigger=BUTTON)
         assert exc_info.value.translation_key == "clock_repeated_fall_back_hour"
         client.set_clock.assert_not_awaited()
 
@@ -309,14 +322,14 @@ class TestManagerSync:
         """A post offset of 3 s retries the set once."""
         manager, client, _ = _make_manager()
         client.read_clock.side_effect = [_reading(-492), _reading(3), _reading(3)]
-        await manager.async_sync(raise_errors=True)
+        await manager.async_sync(trigger=BUTTON)
         assert client.set_clock.await_count == 2
 
     async def test_small_post_offset_does_not_retry(self, frozen_now):
         """A post offset of 1 s does not retry."""
         manager, client, _ = _make_manager()
         client.read_clock.side_effect = [_reading(-492), _reading(1)]
-        await manager.async_sync(raise_errors=True)
+        await manager.async_sync(trigger=BUTTON)
         assert client.set_clock.await_count == 1
 
     async def test_manual_dst_rejected_stops_dst_commands(self, frozen_now):
@@ -324,7 +337,7 @@ class TestManagerSync:
         manager, client, _ = _make_manager({CONF_CLOCK_SYNC_MANAGE_DST: True})
         client.read_dst.return_value = True  # Controller DST on, zone off at NOW
         client.send_dst.return_value = False
-        await manager.async_sync(raise_errors=True)
+        await manager.async_sync(trigger=BUTTON)
         client.send_dst.assert_awaited_once_with(
             start=False, timeout=CLOCK_REPLY_TIMEOUT_S
         )
@@ -332,31 +345,31 @@ class TestManagerSync:
 
         client.read_dst.reset_mock()
         client.read_clock.side_effect = [_reading(0), _reading(0)]
-        await manager.async_sync(raise_errors=True)
+        await manager.async_sync(trigger=BUTTON)
         client.read_dst.assert_not_awaited()
 
     async def test_matching_dst_sends_no_command(self, frozen_now):
         """No DST command is sent when RDST matches the zone."""
         manager, client, _ = _make_manager({CONF_CLOCK_SYNC_MANAGE_DST: True})
-        await manager.async_sync(raise_errors=True)
+        await manager.async_sync(trigger=BUTTON)
         client.read_dst.assert_awaited_once()
         client.send_dst.assert_not_awaited()
 
     async def test_manage_dst_off_skips_dst(self, frozen_now):
         """With manage DST off, no DST command is read or sent."""
         manager, client, _ = _make_manager()
-        await manager.async_sync(raise_errors=True)
+        await manager.async_sync(trigger=BUTTON)
         client.read_dst.assert_not_awaited()
         client.send_dst.assert_not_awaited()
 
     async def test_timeout_keeps_values(self, frozen_now):
-        """A reply timeout leaves last_sync and last_offset unchanged."""
+        """A reply timeout leaves synced_at and last_offset unchanged."""
         manager, client, _ = _make_manager()
-        manager.last_sync = NOW - timedelta(days=7)
+        manager.synced_at = NOW - timedelta(days=7)
         manager.last_offset = 4
         client.read_clock.side_effect = HomeworksTimeout("RST2")
-        await manager.async_sync(raise_errors=False)
-        assert manager.last_sync == NOW - timedelta(days=7)
+        await manager.async_sync(trigger=SCHEDULED)
+        assert manager.synced_at == NOW - timedelta(days=7)
         assert manager.last_offset == 4
         assert manager._pending is False
 
@@ -365,32 +378,248 @@ class TestManagerSync:
         manager, client, _ = _make_manager()
         client.read_clock.side_effect = HomeworksTimeout("RST2")
         with pytest.raises(HomeAssistantError) as exc_info:
-            await manager.async_sync(raise_errors=True)
+            await manager.async_sync(trigger=BUTTON)
         assert exc_info.value.translation_key == "clock_reply_timeout"
         assert exc_info.value.translation_placeholders == {"command": "RST2"}
 
     async def test_stores_pre_sync_offset(self, frozen_now):
-        """last_offset is the pre-sync drift and the listeners are told."""
+        """last_offset is the pre-sync drift."""
         manager, _, _ = _make_manager()
-        listener = MagicMock()
-        manager.async_add_listener(listener)
-        await manager.async_sync(raise_errors=True)
+        await manager.async_sync(trigger=BUTTON)
         assert manager.last_offset == -492
-        assert manager.last_sync == NOW
-        listener.assert_called_once()
+        assert manager.synced_at == NOW
 
 
 class TestManagerQuery:
     """async_query reads without setting."""
 
     async def test_query_stores_measured_offset(self, frozen_now):
-        """The measured offset is stored and last_sync does not change."""
+        """The measured offset is stored and the sync status does not change."""
         manager, client, _ = _make_manager()
         client.read_clock.side_effect = [_reading(7)]
         await manager.async_query()
         assert manager.last_offset == 7
-        assert manager.last_sync is None
+        assert manager.status == CLOCK_SYNC_STATUS_NEVER_SYNCED
+        assert manager.status_attributes == dict.fromkeys(STATUS_ATTRIBUTE_NAMES)
         client.set_clock.assert_not_awaited()
+
+
+STATUS_ATTRIBUTE_NAMES = (
+    "synced_at",
+    "last_attempt",
+    "trigger",
+    "offset_before",
+    "offset_after",
+    "last_error",
+)
+
+
+class TestSyncStatus:
+    """The five-state status and its attributes."""
+
+    def test_initial_state(self):
+        """A new manager is never_synced with all attributes None."""
+        manager, _, _ = _make_manager()
+        assert manager.status == CLOCK_SYNC_STATUS_NEVER_SYNCED
+        assert manager.status_attributes == dict.fromkeys(STATUS_ATTRIBUTE_NAMES)
+
+    async def test_syncing_written_before_commands(self, frozen_now):
+        """The listener sees syncing before the first command is sent."""
+        manager, client, _ = _make_manager()
+        seen_at_first_command = []
+        replies = iter([_reading(-492), _reading(0)])
+
+        async def read_clock(**kwargs):
+            seen_at_first_command.append(manager.status)
+            return next(replies)
+
+        client.read_clock.side_effect = read_clock
+        listener_states = []
+        manager.async_add_listener(lambda: listener_states.append(manager.status))
+        await manager.async_sync(trigger=BUTTON)
+        assert seen_at_first_command[0] == CLOCK_SYNC_STATUS_SYNCING
+        assert listener_states == [
+            CLOCK_SYNC_STATUS_SYNCING,
+            CLOCK_SYNC_STATUS_SUCCESS,
+        ]
+
+    async def test_success_attributes(self, frozen_now):
+        """Success sets synced_at, the offsets, and clears last_error."""
+        manager, _, _ = _make_manager()
+        manager.last_error = "old error"
+        await manager.async_sync(trigger=SCHEDULED)
+        assert manager.status == CLOCK_SYNC_STATUS_SUCCESS
+        assert manager.status_attributes == {
+            "synced_at": NOW.isoformat(),
+            "last_attempt": NOW.isoformat(),
+            "trigger": SCHEDULED,
+            "offset_before": -492,
+            "offset_after": 0,
+            "last_error": None,
+        }
+
+    async def test_timeout_failed_keeps_success_values(self, frozen_now):
+        """A timeout after a success is failed and keeps synced_at and offsets."""
+        manager, client, _ = _make_manager()
+        await manager.async_sync(trigger=BUTTON)
+        client.read_clock.side_effect = HomeworksTimeout("RST2")
+        await manager.async_sync(trigger=CLOCK_SYNC_TRIGGER_DST_TRANSITION)
+        assert manager.status == CLOCK_SYNC_STATUS_FAILED
+        assert manager.status_attributes == {
+            "synced_at": NOW.isoformat(),
+            "last_attempt": NOW.isoformat(),
+            "trigger": CLOCK_SYNC_TRIGGER_DST_TRANSITION,
+            "offset_before": -492,
+            "offset_after": 0,
+            "last_error": "No reply to RST2 within 2.0 s",
+        }
+
+    async def test_timeout_button_failed_then_raises(self, frozen_now):
+        """A button timeout writes failed before the error is raised."""
+        manager, client, _ = _make_manager()
+        client.read_clock.side_effect = HomeworksTimeout("RST2")
+        with pytest.raises(HomeAssistantError):
+            await manager.async_sync(trigger=BUTTON)
+        assert manager.status == CLOCK_SYNC_STATUS_FAILED
+
+    @pytest.mark.parametrize("trigger", [SCHEDULED, BUTTON])
+    async def test_not_connected_skipped(self, frozen_now, trigger):
+        """Not connected is skipped, for a scheduled run and a button."""
+        manager, _, _ = _make_manager(connected=False)
+        if trigger == BUTTON:
+            with pytest.raises(HomeAssistantError):
+                await manager.async_sync(trigger=trigger)
+        else:
+            await manager.async_sync(trigger=trigger)
+        assert manager.status == CLOCK_SYNC_STATUS_SKIPPED
+        assert manager.last_error == "Controller not connected"
+        assert manager.trigger == trigger
+        assert manager.synced_at is None
+
+    @pytest.mark.parametrize("trigger", [SCHEDULED, BUTTON])
+    async def test_repeated_hour_skipped(self, trigger):
+        """The repeated fall-back hour is skipped."""
+        manager, _, _ = _make_manager()
+        with patch.object(
+            clock_sync.dt_util, "utcnow", return_value=REPEATED_HOUR_SECOND_PASS
+        ):
+            if trigger == BUTTON:
+                with pytest.raises(HomeAssistantError):
+                    await manager.async_sync(trigger=trigger)
+            else:
+                await manager.async_sync(trigger=trigger)
+        assert manager.status == CLOCK_SYNC_STATUS_SKIPPED
+        assert manager.last_error == "Repeated fall-back hour"
+
+    async def test_unexpected_exception_never_stays_syncing(self, frozen_now):
+        """An unexpected error ends as failed and is raised."""
+        manager, client, _ = _make_manager()
+        client.read_clock.side_effect = RuntimeError("boom")
+        with pytest.raises(RuntimeError):
+            await manager.async_sync(trigger=SCHEDULED)
+        assert manager.status == CLOCK_SYNC_STATUS_FAILED
+        assert manager.last_error == "Unexpected error: boom"
+
+    async def test_cancel_never_stays_syncing(self, frozen_now):
+        """A cancelled run ends as failed."""
+        manager, client, _ = _make_manager()
+        client.read_clock.side_effect = asyncio.CancelledError
+        with pytest.raises(asyncio.CancelledError):
+            await manager.async_sync(trigger=SCHEDULED)
+        assert manager.status == CLOCK_SYNC_STATUS_FAILED
+        assert manager.last_error == "Interrupted"
+
+    @pytest.mark.parametrize(
+        ("start", "trigger"),
+        [
+            ("_handle_time", CLOCK_SYNC_TRIGGER_SCHEDULED),
+            ("_handle_dst_job", CLOCK_SYNC_TRIGGER_DST_TRANSITION),
+        ],
+    )
+    def test_trigger_threaded_from_jobs(self, start, trigger):
+        """The daily and DST jobs pass their trigger to async_sync."""
+        manager, _, _ = _make_manager()
+        with (
+            patch.object(manager, "async_sync", MagicMock()) as async_sync,
+            patch.object(clock_sync, "is_scheduled_day", return_value=True),
+            patch.object(manager, "_arm_dst_job"),
+        ):
+            getattr(manager, start)(NOW)
+        async_sync.assert_called_once_with(trigger=trigger)
+
+    def test_trigger_reconnect(self):
+        """The pending run after a reconnect uses the reconnect trigger."""
+        manager, _, _ = _make_manager()
+        manager._pending = True
+        with patch.object(manager, "async_sync", MagicMock()) as async_sync:
+            manager._handle_coordinator_update()
+        async_sync.assert_called_once_with(trigger=CLOCK_SYNC_TRIGGER_RECONNECT)
+
+
+RESTORED_ATTRIBUTES = {
+    "synced_at": NOW.isoformat(),
+    "last_attempt": NOW.isoformat(),
+    "trigger": "scheduled",
+    "offset_before": -492,
+    "offset_after": 0,
+    "last_error": None,
+}
+
+
+class TestStatusRestore:
+    """restore_status after a restart."""
+
+    def test_restore_success(self):
+        """State and attributes come back."""
+        manager, _, _ = _make_manager()
+        manager.restore_status(CLOCK_SYNC_STATUS_SUCCESS, RESTORED_ATTRIBUTES)
+        assert manager.status == CLOCK_SYNC_STATUS_SUCCESS
+        assert manager.synced_at == NOW
+        assert manager.status_attributes == RESTORED_ATTRIBUTES
+
+    def test_restore_syncing_as_failed(self):
+        """A restart mid-run is restored as failed."""
+        manager, _, _ = _make_manager()
+        manager.restore_status(CLOCK_SYNC_STATUS_SYNCING, RESTORED_ATTRIBUTES)
+        assert manager.status == CLOCK_SYNC_STATUS_FAILED
+        assert manager.last_error == "Interrupted by restart"
+
+    @pytest.mark.parametrize("state", ["unknown", "unavailable"])
+    def test_restore_invalid_keeps_never_synced(self, state):
+        """A state that is not an option is ignored."""
+        manager, _, _ = _make_manager()
+        manager.restore_status(state, {})
+        assert manager.status == CLOCK_SYNC_STATUS_NEVER_SYNCED
+
+    async def test_sensor_restores_from_last_state(self):
+        """The status sensor passes the last state and attributes to the manager."""
+        from homeassistant.core import State
+
+        from custom_components.homeworks_hwi.sensor import (
+            HomeworksClockSyncStatusSensor,
+        )
+
+        manager, _, _ = _make_manager()
+        sensor = HomeworksClockSyncStatusSensor(manager, "test_controller")
+        last_state = State("sensor.x", CLOCK_SYNC_STATUS_SYNCING, RESTORED_ATTRIBUTES)
+        with patch.object(
+            sensor, "async_get_last_state", AsyncMock(return_value=last_state)
+        ):
+            await sensor._async_restore()
+        assert sensor.native_value == CLOCK_SYNC_STATUS_FAILED
+        assert sensor.extra_state_attributes["last_error"] == "Interrupted by restart"
+
+    async def test_sensor_nothing_restored(self):
+        """With no last state the sensor shows never_synced."""
+        from custom_components.homeworks_hwi.sensor import (
+            HomeworksClockSyncStatusSensor,
+        )
+
+        manager, _, _ = _make_manager()
+        sensor = HomeworksClockSyncStatusSensor(manager, "test_controller")
+        with patch.object(sensor, "async_get_last_state", AsyncMock(return_value=None)):
+            await sensor._async_restore()
+        assert sensor.native_value == CLOCK_SYNC_STATUS_NEVER_SYNCED
 
 
 class TestManagerStart:
@@ -497,15 +726,15 @@ def clock_entities(mock_coordinator):
     )
     from custom_components.homeworks_hwi.sensor import (
         HomeworksClockOffsetSensor,
+        HomeworksClockSyncStatusSensor,
         HomeworksConnectionSensor,
-        HomeworksLastClockSyncSensor,
     )
 
     manager = MagicMock()
     manager.async_sync = AsyncMock()
     manager.async_query = AsyncMock()
     entities = {
-        "last_sync": HomeworksLastClockSyncSensor(manager, "test_controller"),
+        "last_sync": HomeworksClockSyncStatusSensor(manager, "test_controller"),
         "offset": HomeworksClockOffsetSensor(manager, "test_controller"),
         "sync": HomeworksClockSyncButton(manager, "test_controller"),
         "query": HomeworksClockQueryButton(manager, "test_controller"),
@@ -551,11 +780,20 @@ class TestClockEntities:
         assert entities["last_sync"].entity_registry_enabled_default is True
         assert entities["offset"].entity_registry_enabled_default is True
 
+    def test_status_sensor_is_enum(self, clock_entities):
+        """The status sensor is an enum with the five states."""
+        from homeassistant.components.sensor import SensorDeviceClass
+
+        status_sensor = clock_entities[0]["last_sync"]
+        assert status_sensor.device_class == SensorDeviceClass.ENUM
+        assert status_sensor.options == list(CLOCK_SYNC_STATUSES)
+        assert status_sensor.translation_key == "last_clock_sync"
+
     async def test_buttons_await_manager(self, clock_entities):
         """Pressing the buttons awaits the manager."""
         entities, _, manager = clock_entities
         await entities["sync"].async_press()
-        manager.async_sync.assert_awaited_once_with(raise_errors=True)
+        manager.async_sync.assert_awaited_once_with(trigger=BUTTON)
         await entities["query"].async_press()
         manager.async_query.assert_awaited_once_with()
 
@@ -600,6 +838,16 @@ def test_new_translation_keys_in_both_files():
         assert {"last_clock_sync", "processor_clock_offset"} <= data["entity"][
             "sensor"
         ].keys()
+        assert data["entity"]["sensor"]["last_clock_sync"]["state"] == {
+            "never_synced": "Never synced",
+            "syncing": "Syncing",
+            "success": "Success",
+            "failed": "Failed",
+            "skipped": "Skipped",
+        }
+        assert set(CLOCK_SYNC_STATUSES) == set(
+            data["entity"]["sensor"]["last_clock_sync"]["state"]
+        )
         assert {"sync_controller_clock", "query_controller_clock"} == data["entity"][
             "button"
         ].keys()

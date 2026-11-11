@@ -78,6 +78,32 @@ DST_JOB_SETTLE: Final = timedelta(minutes=5)
 DST_SEARCH_HORIZON: Final = timedelta(days=366)
 DST_SEARCH_STEP: Final = timedelta(hours=1)
 
+# Controller clock sync status (states of the "Last clock sync" sensor)
+CLOCK_SYNC_STATUS_NEVER_SYNCED: Final = "never_synced"
+CLOCK_SYNC_STATUS_SYNCING: Final = "syncing"
+CLOCK_SYNC_STATUS_SUCCESS: Final = "success"
+CLOCK_SYNC_STATUS_FAILED: Final = "failed"
+CLOCK_SYNC_STATUS_SKIPPED: Final = "skipped"
+CLOCK_SYNC_STATUSES: Final = (
+    CLOCK_SYNC_STATUS_NEVER_SYNCED,
+    CLOCK_SYNC_STATUS_SYNCING,
+    CLOCK_SYNC_STATUS_SUCCESS,
+    CLOCK_SYNC_STATUS_FAILED,
+    CLOCK_SYNC_STATUS_SKIPPED,
+)
+# What started a clock sync attempt
+CLOCK_SYNC_TRIGGER_BUTTON: Final = "button"
+CLOCK_SYNC_TRIGGER_SCHEDULED: Final = "scheduled"
+CLOCK_SYNC_TRIGGER_DST_TRANSITION: Final = "dst_transition"
+CLOCK_SYNC_TRIGGER_RECONNECT: Final = "reconnect"
+# Clock sync status attributes
+ATTR_SYNCED_AT: Final = "synced_at"
+ATTR_LAST_ATTEMPT: Final = "last_attempt"
+ATTR_TRIGGER: Final = "trigger"
+ATTR_OFFSET_BEFORE: Final = "offset_before"
+ATTR_OFFSET_AFTER: Final = "offset_after"
+ATTR_LAST_ERROR: Final = "last_error"
+
 # Default values
 DEFAULT_FADE_RATE: Final = 0
 # Fade rate that older versions saved as the default. It went out as "0.0"

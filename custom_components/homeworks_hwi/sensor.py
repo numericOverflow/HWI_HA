@@ -25,7 +25,10 @@ from . import (
     controller_device_info,
 )
 from .clock_sync import ClockSyncManager
-from .const import CONF_CONTROLLER_ID
+from .const import (
+    CLOCK_SYNC_STATUSES,
+    CONF_CONTROLLER_ID,
+)
 from .coordinator import HomeworksCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -49,7 +52,7 @@ async def async_setup_entry(
         HomeworksReconnectCountSensor(coordinator, controller_id),
         HomeworksPollFailureCountSensor(coordinator, controller_id),
         HomeworksParseErrorCountSensor(coordinator, controller_id),
-        HomeworksLastClockSyncSensor(data.clock_sync, controller_id),
+        HomeworksClockSyncStatusSensor(data.clock_sync, controller_id),
         HomeworksClockOffsetSensor(data.clock_sync, controller_id),
     ]
 
@@ -100,37 +103,42 @@ class HomeworksClockSensor(RestoreSensor):
     async def async_added_to_hass(self) -> None:
         """Restore the last value and follow the manager."""
         await super().async_added_to_hass()
-        last_data = await self.async_get_last_sensor_data()
-        if last_data is not None:
-            self._restore(last_data.native_value)
+        await self._async_restore()
         self.async_on_remove(
             self._manager.async_add_listener(self.async_write_ha_state)
         )
 
-    def _restore(self, value: Any) -> None:
-        """Pass a restored value to the manager."""
+    async def _async_restore(self) -> None:
+        """Pass the restored value to the manager."""
         raise NotImplementedError
 
 
-class HomeworksLastClockSyncSensor(HomeworksClockSensor):
-    """Sensor showing when the controller clock was last synced."""
+class HomeworksClockSyncStatusSensor(HomeworksClockSensor):
+    """Sensor showing the result of the last controller clock sync attempt."""
 
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = list(CLOCK_SYNC_STATUSES)  # noqa: RUF012 - HA _attr_ pattern
     _attr_translation_key = "last_clock_sync"
 
     def __init__(self, manager: ClockSyncManager, controller_id: str) -> None:
-        """Initialize the last clock sync sensor."""
+        """Initialize the clock sync status sensor."""
         super().__init__(manager, controller_id, "last_sync")
 
     @property
-    def native_value(self) -> datetime | None:
-        """Return the time of the last successful sync."""
-        return self._manager.last_sync
+    def native_value(self) -> str:
+        """Return the status of the last sync attempt."""
+        return self._manager.status
 
-    def _restore(self, value: Any) -> None:
-        """Pass a restored sync time to the manager."""
-        if isinstance(value, datetime):
-            self._manager.restore(value, None)
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the details of the last sync attempt."""
+        return self._manager.status_attributes
+
+    async def _async_restore(self) -> None:
+        """Pass the restored status and attributes to the manager."""
+        last_state = await self.async_get_last_state()
+        if last_state is not None:
+            self._manager.restore_status(last_state.state, last_state.attributes)
 
 
 class HomeworksClockOffsetSensor(HomeworksClockSensor):
@@ -150,10 +158,11 @@ class HomeworksClockOffsetSensor(HomeworksClockSensor):
         """Return the pre-sync drift on sync, or the measured offset on query."""
         return self._manager.last_offset
 
-    def _restore(self, value: Any) -> None:
-        """Pass a restored offset to the manager."""
-        if isinstance(value, (int, float)):
-            self._manager.restore(None, float(value))
+    async def _async_restore(self) -> None:
+        """Pass the restored offset to the manager."""
+        last_data = await self.async_get_last_sensor_data()
+        if last_data is not None and isinstance(last_data.native_value, (int, float)):
+            self._manager.restore_offset(float(last_data.native_value))
 
 
 class HomeworksConnectionSensor(HomeworksHealthSensor):

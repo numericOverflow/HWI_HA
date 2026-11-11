@@ -22,6 +22,7 @@ from . import (
 )
 from .clock_sync import ClockSyncManager
 from .const import (
+    CLOCK_SYNC_TRIGGER_BUTTON,
     CONF_ADDR,
     CONF_AREA,
     CONF_BUTTONS,
@@ -177,7 +178,7 @@ class HomeworksClockSyncButton(HomeworksClockButton):
 
     async def async_press(self) -> None:
         """Sync the controller clock."""
-        await self._manager.async_sync(raise_errors=True)
+        await self._manager.async_sync(trigger=CLOCK_SYNC_TRIGGER_BUTTON)
 
 
 class HomeworksClockQueryButton(HomeworksClockButton):

@@ -1161,8 +1161,8 @@ async def get_time_sync_description_placeholders(
     runtime_data = getattr(handler.parent_handler.config_entry, "runtime_data", None)
     if runtime_data is not None:
         manager = runtime_data.clock_sync
-        if manager.last_sync is not None:
-            last_sync = dt_util.as_local(manager.last_sync).isoformat(
+        if manager.synced_at is not None:
+            last_sync = dt_util.as_local(manager.synced_at).isoformat(
                 sep=" ", timespec="seconds"
             )
         if manager.last_offset is not None:

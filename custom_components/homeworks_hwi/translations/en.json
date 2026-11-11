@@ -544,7 +544,14 @@
         },
         "sensor": {
             "last_clock_sync": {
-                "name": "Last clock sync"
+                "name": "Last clock sync",
+                "state": {
+                    "never_synced": "Never synced",
+                    "syncing": "Syncing",
+                    "success": "Success",
+                    "failed": "Failed",
+                    "skipped": "Skipped"
+                }
             },
             "processor_clock_offset": {
                 "name": "Processor clock offset"
