@@ -66,6 +66,7 @@
                     "manage_cci_devices": "Manage CCI inputs (binary sensors)",
                     "manage_keypads": "Manage keypads",
                     "controller_settings": "Controller settings",
+                    "time_sync": "Time Synchronization",
                     "import_csv": "Import devices from CSV",
                     "import_xml": "Import devices from XML (Lutron Designer export)"
                 }
@@ -385,6 +386,26 @@
                     "kls_window_offset": "Starting index of the 8-button window in the 24-digit KLS string (default: 9)"
                 }
             },
+            "time_sync": {
+                "title": "Time Synchronization",
+                "description": "Keep the controller clock in step with Home Assistant. The sync time is Home Assistant local time in 24-hour format.\n\nLast sync: {last_sync}\nLast offset: {last_offset}",
+                "data": {
+                    "clock_sync_timezone": "Timezone",
+                    "clock_sync_enabled": "Enable scheduled sync",
+                    "clock_sync_frequency": "Frequency",
+                    "clock_sync_weekday": "Weekday",
+                    "clock_sync_time": "Sync time",
+                    "clock_sync_manage_dst": "Home Assistant manages DST"
+                },
+                "data_description": {
+                    "clock_sync_timezone": "Zone the controller clock follows. Auto uses the Home Assistant time zone.",
+                    "clock_sync_enabled": "Sync the controller clock on the schedule below. The sync and query buttons work also when this is off.",
+                    "clock_sync_frequency": "Every week, or only on the first chosen weekday of each month.",
+                    "clock_sync_weekday": "Day of the week the sync runs.",
+                    "clock_sync_time": "Home Assistant local time, 24-hour format (HH:MM:SS).",
+                    "clock_sync_manage_dst": "Send STARTDST/ENDDST when the controller DST state differs from the zone, and sync 5 minutes after each DST change. Only for databases with manual DST."
+                }
+            },
             "import_csv": {
                 "title": "Import Devices from CSV",
                 "description": "Paste CSV content with columns: device_type, address, relay/button, name, type (optional), area (optional).\n\nSupported device_type values: CCO, SWITCH, LIGHT, DIMMER, COVER, LOCK, CLIMATE, FAN, MOTOR_COVER, CCI\n\nFor CCO/SWITCH rows, use 'type' column to specify: switch, light, cover, lock, climate, fan\n\nMOTOR_COVER is for RPM motor covers (shades/blinds/curtains).",
@@ -446,7 +467,8 @@
             "xml_too_large": "XML file exceeds maximum size (25MB)",
             "no_devices": "No devices configured. Add devices first.",
             "no_buttons": "No buttons configured on this keypad. Add buttons first.",
-            "connection_error": "Failed to connect to controller"
+            "connection_error": "Failed to connect to controller",
+            "zone_has_no_dst": "This timezone has no DST changes. Turn off \"Home Assistant manages DST\" or choose another timezone."
         }
     },
     "selector": {
@@ -458,6 +480,23 @@
                 "lock": "Lock (lock/unlock)",
                 "climate": "Climate (heat on/off)",
                 "fan": "Fan (on/off)"
+            }
+        },
+        "clock_sync_frequency": {
+            "options": {
+                "weekly": "Weekly",
+                "monthly_first": "Monthly (first chosen weekday)"
+            }
+        },
+        "clock_sync_weekday": {
+            "options": {
+                "mon": "Monday",
+                "tue": "Tuesday",
+                "wed": "Wednesday",
+                "thu": "Thursday",
+                "fri": "Friday",
+                "sat": "Saturday",
+                "sun": "Sunday"
             }
         }
     },
@@ -483,10 +522,40 @@
         },
         "not_connected": {
             "message": "Controller is not connected"
+        },
+        "clock_reply_timeout": {
+            "message": "The controller did not answer {command}."
+        },
+        "clock_read_failed": {
+            "message": "The controller clock could not be read."
+        },
+        "clock_repeated_fall_back_hour": {
+            "message": "Clock sync is not possible during the repeated fall-back hour. Try again after 02:00."
         }
     },
     "entity": {
+        "button": {
+            "sync_controller_clock": {
+                "name": "Sync controller clock"
+            },
+            "query_controller_clock": {
+                "name": "Query controller clock"
+            }
+        },
         "sensor": {
+            "last_clock_sync": {
+                "name": "Last clock sync",
+                "state": {
+                    "never_synced": "Never synced",
+                    "syncing": "Syncing",
+                    "success": "Success",
+                    "failed": "Failed",
+                    "skipped": "Skipped"
+                }
+            },
+            "processor_clock_offset": {
+                "name": "Processor clock offset"
+            },
             "connection": {
                 "name": "Connection status"
             },

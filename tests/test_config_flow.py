@@ -371,3 +371,87 @@ def test_light_rate_selector_uses_whole_seconds():
     assert rate.config["step"] == 1
     delay = next(v for k, v in BUTTON_EDIT.items() if k == CONF_RELEASE_DELAY)
     assert delay.config["step"] == 0.01
+
+
+# =============================================================================
+# Time Synchronization Step Tests
+# =============================================================================
+
+
+def _time_sync_handler():
+    """Return a mocked options handler with HA in America/Chicago."""
+    handler = MagicMock()
+    handler.options = {}
+    hass = handler.parent_handler.hass
+    hass.config.time_zone = "America/Chicago"
+
+    async def run_in_executor(func, *args):
+        return func(*args)
+
+    hass.async_add_executor_job = run_in_executor
+    return handler
+
+
+def _time_sync_input(timezone="auto", manage_dst=False):
+    """Return a full time sync form submission."""
+    return {
+        "clock_sync_timezone": timezone,
+        "clock_sync_enabled": True,
+        "clock_sync_frequency": "monthly_first",
+        "clock_sync_weekday": "sat",
+        "clock_sync_time": "03:30:00",
+        "clock_sync_manage_dst": manage_dst,
+    }
+
+
+class TestTimeSyncStep:
+    """Tests for the Time Synchronization options step."""
+
+    async def test_validate_stores_six_keys(self):
+        """All six option keys are written to the options."""
+        from custom_components.homeworks_hwi.config_flow import validate_time_sync
+
+        handler = _time_sync_handler()
+        user_input = _time_sync_input(manage_dst=True)
+        assert await validate_time_sync(handler, user_input) == {}
+        assert handler.options == user_input
+
+    async def test_zone_without_dst_rejected_when_managing_dst(self):
+        """UTC with manage DST on raises zone_has_no_dst."""
+        from homeassistant.helpers.schema_config_entry_flow import SchemaFlowError
+
+        from custom_components.homeworks_hwi.config_flow import validate_time_sync
+
+        handler = _time_sync_handler()
+        with pytest.raises(SchemaFlowError, match="zone_has_no_dst"):
+            await validate_time_sync(
+                handler, _time_sync_input(timezone="UTC", manage_dst=True)
+            )
+        assert handler.options == {}
+
+    async def test_zone_without_dst_allowed_without_managing_dst(self):
+        """UTC with manage DST off is accepted."""
+        from custom_components.homeworks_hwi.config_flow import validate_time_sync
+
+        handler = _time_sync_handler()
+        await validate_time_sync(handler, _time_sync_input(timezone="UTC"))
+        assert handler.options["clock_sync_timezone"] == "UTC"
+
+    async def test_first_timezone_option_is_auto(self):
+        """The first timezone option is auto, labelled with HA's zone."""
+        from custom_components.homeworks_hwi.config_flow import get_time_sync_schema
+
+        schema = await get_time_sync_schema(_time_sync_handler())
+        timezone_selector = next(
+            v for k, v in schema.schema.items() if k == "clock_sync_timezone"
+        )
+        options = timezone_selector.config["options"]
+        assert options[0] == {"value": "auto", "label": "Auto (America/Chicago)"}
+        assert {"value": "America/Chicago", "label": "America/Chicago"} in options
+
+    def test_time_sync_follows_controller_settings(self):
+        """The menu shows time_sync right after controller_settings."""
+        from custom_components.homeworks_hwi.config_flow import OPTIONS_FLOW
+
+        menu = list(OPTIONS_FLOW["init"].options)
+        assert menu[menu.index("controller_settings") + 1] == "time_sync"

@@ -21,9 +21,11 @@ from .exceptions import (
     HomeworksAuthenticationException,
     HomeworksConnectionLost,
     HomeworksException,
+    HomeworksTimeout,
 )
 from .messages import (
     AnyMessage,
+    HomeworksMessage,
 )
 from .protocol import MessageParser
 from .transport import HomeworksTransport
@@ -87,6 +89,11 @@ class HomeworksClient:
         self._running = False
         self._read_task: asyncio.Task | None = None
         self._reconnect_delay = RECONNECT_DELAY_MIN
+
+        # Pending request() calls, oldest first: (reply types, future)
+        self._waiters: list[
+            tuple[tuple[type[HomeworksMessage], ...], asyncio.Future[HomeworksMessage]]
+        ] = []
 
         # Health metrics
         self._connected_at: datetime | None = None
@@ -154,6 +161,7 @@ class HomeworksClient:
             except asyncio.CancelledError:
                 pass
             self._read_task = None
+        self._fail_waiters(HomeworksConnectionLost("Client stopped"))
         await self._transport.close()
 
     async def connect(self) -> bool:
@@ -212,18 +220,33 @@ class HomeworksClient:
                     for msg in messages:
                         self._message_count += 1
                         self._last_message_at = datetime.now(tz=UTC)
+                        self._resolve_waiter(msg)
                         if self._callback:
                             try:
                                 self._callback(msg)
                             except Exception:
                                 _LOGGER.exception("Callback error")
-            except HomeworksConnectionLost:
+            except HomeworksConnectionLost as err:
                 _LOGGER.warning("Connection lost, will reconnect")
+                self._fail_waiters(err)
                 self._reconnect_count += 1
                 self._parser.reset()
                 await self._transport.close()
                 if self._running:
                     await asyncio.sleep(self._reconnect_delay)
+
+    def _resolve_waiter(self, msg: AnyMessage) -> None:
+        """Complete the oldest waiter whose types match `msg`."""
+        for reply_types, future in self._waiters:
+            if isinstance(msg, reply_types) and not future.done():
+                future.set_result(msg)
+                return
+
+    def _fail_waiters(self, err: Exception) -> None:
+        """Fail every pending waiter with `err`."""
+        for _reply_types, future in self._waiters:
+            if not future.done():
+                future.set_exception(err)
 
     async def _subscribe(self) -> None:
         """Subscribe to monitoring events."""
@@ -247,6 +270,36 @@ class HomeworksClient:
             True if send succeeded
         """
         return await self._transport.write(command)
+
+    async def request(
+        self,
+        command: str,
+        reply_types: tuple[type[HomeworksMessage], ...],
+        timeout: float,
+    ) -> HomeworksMessage:
+        """Send a command and return the first later message of one of `reply_types`.
+
+        Raises `HomeworksTimeout`, or `HomeworksConnectionLost` if the write
+        fails or the connection drops.
+        """
+        if self._read_task is None:
+            raise HomeworksException("Read loop is not running")
+
+        future: asyncio.Future[HomeworksMessage] = (
+            asyncio.get_running_loop().create_future()
+        )
+        waiter = (reply_types, future)
+        self._waiters.append(waiter)
+        try:
+            if not await self._transport.write(command):
+                raise HomeworksConnectionLost(f"Write failed: {command}")
+            try:
+                async with asyncio.timeout(timeout):
+                    return await future
+            except TimeoutError as err:
+                raise HomeworksTimeout(command) from err
+        finally:
+            self._waiters.remove(waiter)
 
     async def fade_dim(
         self,

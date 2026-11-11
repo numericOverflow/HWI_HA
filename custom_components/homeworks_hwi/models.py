@@ -321,6 +321,15 @@ class ControllerHealth:
         self.last_error = error
 
 
+@dataclass(frozen=True)
+class ClockReading:
+    """One midnight-safe read of the controller clock."""
+
+    controller: datetime  # Naive controller wall time
+    received_utc: datetime  # Timestamp of the RST2 reply
+    dst: bool | None  # None when RDST was not read
+
+
 try:
     from .hwi_protocol.protocol import normalize_address
 except ImportError:

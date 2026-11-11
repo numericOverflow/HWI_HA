@@ -8,7 +8,9 @@ HA 2026.1 compliant:
 from __future__ import annotations
 
 import csv
+import functools
 import logging
+import zoneinfo
 from collections import Counter
 from io import StringIO
 from typing import Any, NamedTuple
@@ -39,8 +41,14 @@ from homeassistant.helpers.schema_config_entry_flow import (
     SchemaOptionsFlowHandlerWithReload,
 )
 from homeassistant.helpers.typing import VolDictType
+from homeassistant.util import dt as dt_util
 from homeassistant.util import slugify
 
+from .clock_sync import (
+    CLOCK_SYNC_OPTION_DEFAULTS,
+    find_next_transition,
+    resolve_timezone,
+)
 from .const import (
     CCO_TYPE_CLIMATE,
     CCO_TYPE_COVER,
@@ -48,12 +56,22 @@ from .const import (
     CCO_TYPE_LIGHT,
     CCO_TYPE_LOCK,
     CCO_TYPE_SWITCH,
+    CLOCK_SYNC_FREQ_MONTHLY_FIRST,
+    CLOCK_SYNC_FREQ_WEEKLY,
+    CLOCK_SYNC_TZ_AUTO,
+    CLOCK_SYNC_WEEKDAYS,
     CONF_ADDR,
     CONF_AREA,
     CONF_BUTTON_NUMBER,
     CONF_BUTTONS,
     CONF_CCI_DEVICES,
     CONF_CCO_DEVICES,
+    CONF_CLOCK_SYNC_ENABLED,
+    CONF_CLOCK_SYNC_FREQUENCY,
+    CONF_CLOCK_SYNC_MANAGE_DST,
+    CONF_CLOCK_SYNC_TIME,
+    CONF_CLOCK_SYNC_TIMEZONE,
+    CONF_CLOCK_SYNC_WEEKDAY,
     CONF_CONTROLLER_ID,
     CONF_DEVICE_CLASS,
     CONF_DIMMERS,
@@ -1058,6 +1076,98 @@ async def validate_controller_settings(
     handler.options[CONF_KLS_POLL_INTERVAL] = int(user_input[CONF_KLS_POLL_INTERVAL])
     handler.options[CONF_KLS_WINDOW_OFFSET] = int(user_input[CONF_KLS_WINDOW_OFFSET])
     return {}
+
+
+# === Time Synchronization ===
+
+
+@functools.cache
+def _available_timezones() -> list[str]:
+    """Return the sorted IANA zone names. Reads tzdata, so run in the executor."""
+    return sorted(zoneinfo.available_timezones())
+
+
+async def get_time_sync_schema(handler: SchemaCommonFlowHandler) -> vol.Schema:
+    """Build the time synchronization schema."""
+    hass = handler.parent_handler.hass
+    zones = await hass.async_add_executor_job(_available_timezones)
+    timezone_options = [
+        selector.SelectOptionDict(
+            value=CLOCK_SYNC_TZ_AUTO, label=f"Auto ({hass.config.time_zone})"
+        ),
+        *(selector.SelectOptionDict(value=zone, label=zone) for zone in zones),
+    ]
+    return vol.Schema(
+        {
+            vol.Required(CONF_CLOCK_SYNC_TIMEZONE): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=timezone_options,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
+            ),
+            vol.Required(CONF_CLOCK_SYNC_ENABLED): selector.BooleanSelector(),
+            vol.Required(CONF_CLOCK_SYNC_FREQUENCY): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[CLOCK_SYNC_FREQ_WEEKLY, CLOCK_SYNC_FREQ_MONTHLY_FIRST],
+                    mode=selector.SelectSelectorMode.LIST,
+                    translation_key=CONF_CLOCK_SYNC_FREQUENCY,
+                )
+            ),
+            vol.Required(CONF_CLOCK_SYNC_WEEKDAY): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list(CLOCK_SYNC_WEEKDAYS),
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                    translation_key=CONF_CLOCK_SYNC_WEEKDAY,
+                )
+            ),
+            vol.Required(CONF_CLOCK_SYNC_TIME): selector.TimeSelector(),
+            vol.Required(CONF_CLOCK_SYNC_MANAGE_DST): selector.BooleanSelector(),
+        }
+    )
+
+
+async def get_time_sync_suggested_values(
+    handler: SchemaCommonFlowHandler,
+) -> dict[str, Any]:
+    """Return the current time synchronization settings."""
+    return {
+        key: handler.options.get(key, default)
+        for key, default in CLOCK_SYNC_OPTION_DEFAULTS.items()
+    }
+
+
+async def validate_time_sync(
+    handler: SchemaCommonFlowHandler, user_input: dict[str, Any]
+) -> dict[str, Any]:
+    """Update the time synchronization settings."""
+    if user_input[CONF_CLOCK_SYNC_MANAGE_DST]:
+        tz = resolve_timezone(
+            user_input[CONF_CLOCK_SYNC_TIMEZONE],
+            handler.parent_handler.hass.config.time_zone,
+        )
+        if find_next_transition(tz, dt_util.utcnow()) is None:
+            raise SchemaFlowError("zone_has_no_dst")
+    for key in CLOCK_SYNC_OPTION_DEFAULTS:
+        handler.options[key] = user_input[key]
+    return {}
+
+
+async def get_time_sync_description_placeholders(
+    handler: SchemaCommonFlowHandler,
+) -> dict[str, str]:
+    """Return the last sync time and offset for the step description."""
+    last_sync = "unknown"
+    last_offset = "unknown"
+    runtime_data = getattr(handler.parent_handler.config_entry, "runtime_data", None)
+    if runtime_data is not None:
+        manager = runtime_data.clock_sync
+        if manager.synced_at is not None:
+            last_sync = dt_util.as_local(manager.synced_at).isoformat(
+                sep=" ", timespec="seconds"
+            )
+        if manager.last_offset is not None:
+            last_offset = f"{round(manager.last_offset):+d} s"
+    return {"last_sync": last_sync, "last_offset": last_offset}
 
 
 # === CSV Import ===
@@ -2460,6 +2570,7 @@ OPTIONS_FLOW = {
             "manage_cci_devices",
             "manage_keypads",
             "controller_settings",
+            "time_sync",
             "import_csv",
             "import_xml",
         ]
@@ -2596,6 +2707,12 @@ OPTIONS_FLOW = {
         DATA_SCHEMA_CONTROLLER_SETTINGS,
         suggested_values=get_controller_settings_suggested_values,
         validate_user_input=validate_controller_settings,
+    ),
+    "time_sync": SchemaFlowFormStep(
+        get_time_sync_schema,
+        suggested_values=get_time_sync_suggested_values,
+        validate_user_input=validate_time_sync,
+        description_placeholders=get_time_sync_description_placeholders,
     ),
     "import_csv": SchemaFlowFormStep(
         vol.Schema(

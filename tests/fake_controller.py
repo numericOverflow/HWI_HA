@@ -3,6 +3,10 @@
 import asyncio
 import logging
 from collections.abc import Callable
+from datetime import (
+    datetime,
+    time,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +38,16 @@ class FakeHomeworksController:
         # Simulated state
         self._kls_states: dict[str, list[int]] = {}
         self._dimmer_levels: dict[str, int] = {}
+
+        # Simulated processor clock (naive wall time, does not advance)
+        self.clock = datetime(2026, 11, 10, 17, 9, 29)
+        self.dst_active = False
+        # True: STARTDST/ENDDST are accepted (database with manual DST)
+        self.manual_dst = False
+        # True: write a KLS line before each clock reply
+        self.clock_reply_noise = False
+        # True: send no reply to clock commands
+        self.clock_silent = False
 
         # Event hooks for testing
         self._on_command: Callable[[str], None] | None = None
@@ -231,6 +245,55 @@ class FakeHomeworksController:
             response = f"DL, {address}, {level}\r\n"
             writer.write(response.encode())
             await writer.drain()
+
+        # Clock commands, with the exact replies seen on hardware
+        elif cmd == "ST" and len(parts) >= 2:
+            self.clock = datetime.combine(
+                self.clock.date(), time.fromisoformat(parts[1].strip())
+            )
+            await self._write_clock_reply(writer, f"Processor Time: {self.clock:%H:%M}")
+
+        elif cmd == "RST2":
+            await self._write_clock_reply(
+                writer, f"Processor Time: {self.clock:%H:%M:%S}"
+            )
+
+        elif cmd == "SD" and len(parts) >= 2:
+            new_date = datetime.strptime(parts[1].strip(), "%m/%d/%Y").date()
+            self.clock = datetime.combine(new_date, self.clock.time())
+            await self._write_clock_reply(writer, self._date_reply())
+
+        elif cmd == "RSD":
+            await self._write_clock_reply(writer, self._date_reply())
+
+        elif cmd == "RDST":
+            await self._write_clock_reply(writer, f"DST = {self.dst_active}")
+
+        elif cmd in ("STARTDST", "ENDDST"):
+            if not self.manual_dst:
+                reply = "Database does not support manual DST configuration"
+            elif cmd == "STARTDST":
+                self.dst_active = True
+                reply = "Daylight Savings Time Started"
+            else:
+                self.dst_active = False
+                reply = "Daylight Savings Time Ended"
+            await self._write_clock_reply(writer, reply)
+
+    def _date_reply(self) -> str:
+        """Return the RSD/SD reply for the simulated clock."""
+        return f"Processor Date: {self.clock:%A %m/%d/%Y}"
+
+    async def _write_clock_reply(
+        self, writer: asyncio.StreamWriter, reply: str
+    ) -> None:
+        """Write a clock reply, honoring the noise and silent options."""
+        if self.clock_silent:
+            return
+        if self.clock_reply_noise:
+            writer.write(f"KLS, [01:01:01], {'0' * 24}\r\n".encode())
+        writer.write(f"{reply}\r\n".encode())
+        await writer.drain()
 
     async def simulate_kls_change(self, address: str) -> None:
         """Simulate a KLS change (broadcast to all clients)."""

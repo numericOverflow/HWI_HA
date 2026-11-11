@@ -11,22 +11,51 @@ import asyncio
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any
+from datetime import (
+    datetime,
+    time,
+)
+from typing import (
+    Any,
+    cast,
+)
 
 from .hwi_protocol import (
     AnyMessage,
     ButtonEventMessage,
     ButtonEventType,
     DimmerLevelMessage,
+    DstChangedMessage,
+    DstManualUnsupportedMessage,
+    DstStateMessage,
     GrafikEyeSceneMessage,
     HomeworksAuthenticationException,
+    HomeworksException,
+    HomeworksMessage,
     KeypadEnableMessage,
     KLSMessage,
+    ProcessorDateMessage,
+    ProcessorTimeMessage,
     SivoiaSceneMessage,
     normalize_address,
 )
 from .hwi_protocol import HomeworksClient as PyHomeworksClient
-from .models import ControllerHealth, KLSState
+from .hwi_protocol.commands import (
+    end_dst,
+    format_clock_date,
+    format_clock_time,
+    request_date,
+    request_dst_state,
+    request_time_with_seconds,
+    set_date,
+    set_time,
+    start_dst,
+)
+from .models import (
+    ClockReading,
+    ControllerHealth,
+    KLSState,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +72,9 @@ HW_SIVOIA_SCENE_CHANGED = "sivoia_scene_changed"
 HW_LOGIN_INCORRECT = "login_incorrect"
 HW_CONNECTION_LOST = "connection_lost"
 HW_CONNECTION_RESTORED = "connection_restored"
+
+# A clock read is repeated once if it crossed midnight
+CLOCK_READ_ATTEMPTS = 2
 
 
 @dataclass
@@ -382,3 +414,73 @@ class HomeworksClient:
         """Poll KLS for all registered addresses."""
         for address in list(self._kls_poll_addresses):
             await self.request_keypad_led_states(address)
+
+    # === Clock Methods ===
+    # Each holds the command lock for its whole sequence and calls the
+    # protocol client directly, because the lock is not reentrant.
+
+    async def _request[MsgT: HomeworksMessage](
+        self, command: str, reply_type: type[MsgT], timeout: float
+    ) -> MsgT:
+        """Send a command and return its typed reply."""
+        return cast(MsgT, await self._client.request(command, (reply_type,), timeout))
+
+    async def read_clock(self, *, include_dst: bool, timeout: float) -> ClockReading:
+        """Read the controller clock with RSD, RST2, RDST (optional), RSD.
+
+        If the two dates differ, the read crossed midnight and is repeated.
+        """
+        async with self._command_lock:
+            for _attempt in range(CLOCK_READ_ATTEMPTS):
+                date_before = await self._request(
+                    request_date(), ProcessorDateMessage, timeout
+                )
+                reply = await self._request(
+                    request_time_with_seconds(), ProcessorTimeMessage, timeout
+                )
+                dst = None
+                if include_dst:
+                    dst_reply = await self._request(
+                        request_dst_state(), DstStateMessage, timeout
+                    )
+                    dst = dst_reply.active
+                date_after = await self._request(
+                    request_date(), ProcessorDateMessage, timeout
+                )
+                if date_before.date == date_after.date:
+                    wall_time = time(reply.hour, reply.minute, reply.second or 0)
+                    return ClockReading(
+                        controller=datetime.combine(date_before.date, wall_time),
+                        received_utc=reply.timestamp,
+                        dst=dst,
+                    )
+        raise HomeworksException("clock read crossed midnight twice")
+
+    async def set_clock(
+        self, now_local: Callable[[], datetime], *, timeout: float
+    ) -> None:
+        """Set the controller clock: ST first, then SD from a fresh now."""
+        async with self._command_lock:
+            await self._request(
+                set_time(format_clock_time(now_local())), ProcessorTimeMessage, timeout
+            )
+            await self._request(
+                set_date(format_clock_date(now_local().date())),
+                ProcessorDateMessage,
+                timeout,
+            )
+
+    async def read_dst(self, *, timeout: float) -> bool:
+        """Return the controller DST state (RDST)."""
+        async with self._command_lock:
+            reply = await self._request(request_dst_state(), DstStateMessage, timeout)
+            return reply.active
+
+    async def send_dst(self, start: bool, *, timeout: float) -> bool:
+        """Send STARTDST or ENDDST. Return False if the database rejects it."""
+        command = start_dst() if start else end_dst()
+        async with self._command_lock:
+            reply = await self._client.request(
+                command, (DstChangedMessage, DstManualUnsupportedMessage), timeout
+            )
+            return not isinstance(reply, DstManualUnsupportedMessage)
